@@ -1,7 +1,7 @@
 import { getServeLanguage } from '@/lang';
 import { resolveResError } from './helpers';
 import { showNotify } from 'vant';
-const groupPrefix = import.meta.env.VITE_GROUP_PREFIX
+import { useConfigStore } from '@/stores/config';
 
 export function setupInterceptors(axiosInstance) {
   function reqResolve(config) {
@@ -12,7 +12,18 @@ export function setupInterceptors(axiosInstance) {
     const accessToken = localStorage.getItem('access_token') || '';
     config.headers.Authorization = 'Bearer ' + accessToken;
 
-    config.headers['group_prefix'] = groupPrefix;
+    // 动态获取 group_prefix
+    try {
+      const configStore = useConfigStore();
+      const groupPrefix = configStore.groupPrefix;
+
+      if (groupPrefix) {
+        config.headers['group_prefix'] = groupPrefix;
+      }
+    } catch (error) {
+      // 如果store还没初始化，跳过group_prefix设置
+      console.warn('ConfigStore not initialized, skipping group_prefix:', error);
+    }
 
     return config;
   }

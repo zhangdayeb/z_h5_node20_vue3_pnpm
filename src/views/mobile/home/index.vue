@@ -1,51 +1,51 @@
 <template>
-  <RouterView />
-  <TabBar />
-  <loginPop :isShow="store.loginShow" />
+  <div v-if="configStore.isAppReady">
+    <RouterView />
+    <TabBar />
+    <loginPop :isShow="store.loginShow" />
+  </div>
+  <div v-else-if="configStore.isConfigLoading" class="loading-container">
+    <van-loading type="spinner" size="24px" />
+    <p class="loading-text">正在加载站点配置...</p>
+  </div>
+  <div v-else-if="configStore.configLoadError" class="error-container">
+    <van-empty description="配置加载失败">
+      <van-button type="primary" size="small" @click="configStore.retryLoadConfig">
+        重试
+      </van-button>
+    </van-empty>
+  </div>
 </template>
 
 <script setup lang="ts">
 defineOptions({ name: 'HomeIndex' })
-import { onMounted } from 'vue'
 import TabBar from './components/tab_bar.vue'
 import loginPop from '@/components/loginPop.vue'
 import { useAppStore } from '@/stores/app'
-import api from '@/api'
-import { getDomain } from '@/utils/tools'
+import { useConfigStore } from '@/stores/config'
 
 const store = useAppStore()
-
-async function systemConfig() {
-  if (store.systemConf) {
-    return
-  }
-  try {
-    const resp = await api.sysConfig({
-      group: 'system',
-      url: getDomain(),
-      is_mobile: 1,
-    })
-    if (resp && resp.code === 200 && resp.data) {
-      // 更新名字
-      document.title = resp.data.site_name || '综合娱乐'
-      // 通用设置
-      store.$patch({ systemConf: resp.data })
-    }
-  } catch (err) {
-    console.log(err)
-  }
-}
-
-onMounted(async () => {
-  await systemConfig()
-})
+const configStore = useConfigStore()
 </script>
 
 <style lang="less" scoped>
-.m-index {
-  width: 375px;
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.loading-text {
+  margin-top: 12px;
+  color: #646566;
+  font-size: 14px;
 }
 </style>
+
 <style lang="less">
 @import url('@/views/mobile/common.less');
 </style>
