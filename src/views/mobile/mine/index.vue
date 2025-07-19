@@ -186,7 +186,6 @@ import betRecordImg from '@/assets/mobile/betRecords.png'
 import vipImg from '@/assets/mobile/vip.png'
 import agentImg from '@/assets/mobile/agent.png'
 import api from '@/api'
-import { getDomain } from '@/utils/tools'
 import { useAppStore } from '@/stores/app'
 import { onMounted, ref } from 'vue'
 import { showToast } from 'vant'
@@ -201,22 +200,6 @@ const show = ref(false)
 
 async function getSiteConfig() {
   store.loading()
-  try {
-    const resp = await api.sysConfig({
-      group: 'site',
-      is_mobile: 1,
-      url: getDomain(),
-    })
-    console.log('service config resp:', resp)
-    if (resp && resp.code === 200 && resp.data) {
-      siteConfig.value = resp.data
-    } else {
-      throw new Error(resp.message)
-    }
-  } catch (err) {
-    console.log(err)
-    showToast((err as Error).message)
-  }
   store.stopLoad()
 }
 

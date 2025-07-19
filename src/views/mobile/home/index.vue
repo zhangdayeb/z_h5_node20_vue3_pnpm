@@ -26,6 +26,9 @@ async function systemConfig() {
       is_mobile: 1,
     })
     if (resp && resp.code === 200 && resp.data) {
+      // 更新名字
+      document.title = resp.data.site_name || '综合娱乐'
+      // 通用设置
       store.$patch({ systemConf: resp.data })
     }
   } catch (err) {

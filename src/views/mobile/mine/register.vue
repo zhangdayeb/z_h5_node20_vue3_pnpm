@@ -311,23 +311,6 @@ async function refreshCaptcha() {
   }
 }
 
-async function getConfig() {
-  try {
-    const resp = await api.sysConfig({
-      group: 'register',
-      url: 'm001.7484i3927.top',
-      is_mobile: 1,
-    })
-    console.log('register config resp:', resp)
-    if (resp && resp.code === 200 && resp.data) {
-      const tmp = resp.data
-      tmp.register_setting_json = JSON.parse(resp.data.register_setting_json)
-      store.$patch({ registerConf: tmp })
-    }
-  } catch (err) {
-    console.log('获取配置失败:', err)
-  }
-}
 
 // 返回
 function onClickLeft() {
@@ -338,7 +321,6 @@ function onClickLeft() {
 async function init() {
   store.loading()
 
-  await getConfig()
   await refreshCaptcha()
 
   store.stopLoad()

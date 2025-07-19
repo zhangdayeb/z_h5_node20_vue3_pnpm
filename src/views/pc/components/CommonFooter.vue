@@ -184,17 +184,6 @@ async function getLogos() {
     logos.value.push(tmp)
   }
 }
-//获取skpe，line和tg
-async function getAdminConfig() {
-  const resp = await invokeApi('sysConfig', {
-    group: 'admin',
-    url: getDomain(),
-  })
-  if (resp) {
-    const data = resp.data as AdminConf
-    adminConf.value = data
-  }
-}
 
 async function getAboutList() {
   const resp = await invokeApi('aboutList')
@@ -205,7 +194,6 @@ async function getAboutList() {
 getLogos()
 
 onMounted(async () => {
-  await getAdminConfig()
   await getAboutList()
 })
 </script>
