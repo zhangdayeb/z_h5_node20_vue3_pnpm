@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, readonly } from 'vue'
 import { defineStore } from 'pinia'
 import { showLoadingToast, showFailToast, type ToastWrapperInstance } from 'vant'
 import { ElLoading, ElMessage } from 'element-plus'
@@ -127,7 +127,7 @@ export const useConfigStore = defineStore('config', () => {
    */
   async function fetchSiteConfig(url: string): Promise<SiteConfig> {
     try {
-      const response = await api.getSysConfig({
+      const response = await api.sysConfig({
         group: 'system',
         url: url,
         is_mobile: isMobile() ? 1 : 0
