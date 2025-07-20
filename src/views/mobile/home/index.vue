@@ -24,12 +24,12 @@ import loginPop from '@/components/loginPop.vue'
 import { useAppStore } from '@/stores/app'
 import { useConfigStore } from '@/stores/config'
 import { onMounted, watch } from 'vue'
-import { handleTelegramAutoLogin, isTelegramMiniApp, initTelegramWebApp } from '@/utils/tools'
+import { handleTelegramAutoLogin, isTelegramMiniApp } from '@/utils/tools'
 
 const store = useAppStore()
 const configStore = useConfigStore()
 
-// 增强的 Telegram 自动登录
+// 简化的 Telegram 自动登录
 async function tryTelegramLogin() {
   // 只有在 Telegram 环境下才尝试自动登录
   if (isTelegramMiniApp() && !store.getUser()) {
@@ -47,10 +47,7 @@ watch(
   () => configStore.isAppReady,
   (isReady) => {
     if (isReady) {
-      // 先初始化 Telegram WebApp
-      initTelegramWebApp()
-      // 延迟执行自动登录
-      setTimeout(tryTelegramLogin, 2000)
+      setTimeout(tryTelegramLogin, 1000) // 延迟1秒执行
     }
   },
   { immediate: true }
@@ -59,11 +56,8 @@ watch(
 onMounted(() => {
   console.log('🏠 HomeIndex 组件已挂载')
 
-  // 立即初始化 Telegram WebApp
-  initTelegramWebApp()
-
   if (configStore.isAppReady) {
-    setTimeout(tryTelegramLogin, 2000)
+    setTimeout(tryTelegramLogin, 1000)
   }
 })
 </script>

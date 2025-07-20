@@ -10,17 +10,12 @@ const domain = location.origin
 
 /**
  * 智能设备检测
- * 优先级：is_tg=1 > is_mobile=1 > 设备检测
+ * 不再依赖 is_tg 参数判断移动端
  */
 export function isMobile(): boolean {
   const urlParams = new URLSearchParams(window.location.search)
 
-  // 1. Telegram 环境强制移动端
-  if (urlParams.get('is_tg') === '1') {
-    return true
-  }
-
-  // 2. URL 参数强制
+  // 1. URL 参数强制
   if (urlParams.get('is_mobile') === '1') {
     return true
   }
@@ -29,7 +24,7 @@ export function isMobile(): boolean {
     return false
   }
 
-  // 3. 设备检测
+  // 2. 设备检测
   const userAgent = navigator.userAgent
   const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
   const isMobileDevice = mobileRegex.test(userAgent)
@@ -42,264 +37,167 @@ export function isMobile(): boolean {
 
 /**
  * 检测是否在 Telegram Mini App 环境中
+ * 通过检测 window.Telegram.WebApp 对象
  */
 export function isTelegramMiniApp(): boolean {
-  const urlParams = new URLSearchParams(window.location.search)
-  return urlParams.get('is_tg') === '1'
-}
-
-/**
- * 全面调试 Telegram WebApp 数据
- */
-export function debugTelegramWebApp() {
-  console.log('🔍 开始调试 Telegram WebApp...')
-
   try {
-    // 1. 检查基本环境
-    console.log('📱 User Agent:', navigator.userAgent)
-    console.log('🌐 Location:', window.location.href)
-    console.log('🔗 Search Params:', window.location.search)
+    // 检查是否存在 Telegram WebApp 对象
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      console.log('✅ Telegram WebApp 对象存在')
+      return true
+    }
 
-    // 2. 检查 URL 参数
+    // 备用：检查 URL 参数（测试用）
     const urlParams = new URLSearchParams(window.location.search)
-    console.log('📋 URL Parameters:')
-    for (const [key, value] of urlParams.entries()) {
-      console.log(`  ${key}: ${value}`)
+    if (urlParams.get('is_tg') === '1') {
+      console.log('✅ 通过 URL 参数判断为 Telegram 环境')
+      return true
     }
 
-    // 3. 检查 window.Telegram 对象
-    if (typeof window !== 'undefined') {
-      const telegram = (window as any).Telegram
-      console.log('📡 window.Telegram exists:', !!telegram)
-
-      if (telegram) {
-        console.log('🔍 Telegram object keys:', Object.keys(telegram))
-
-        if (telegram.WebApp) {
-          const webApp = telegram.WebApp
-          console.log('📱 WebApp exists:', !!webApp)
-          console.log('🔍 WebApp keys:', Object.keys(webApp))
-
-          // 4. 检查 initDataUnsafe
-          if (webApp.initDataUnsafe) {
-            console.log('📊 initDataUnsafe:', JSON.stringify(webApp.initDataUnsafe, null, 2))
-
-            if (webApp.initDataUnsafe.user) {
-              console.log('👤 User data found:', JSON.stringify(webApp.initDataUnsafe.user, null, 2))
-            } else {
-              console.log('❌ No user data in initDataUnsafe')
-            }
-          } else {
-            console.log('❌ No initDataUnsafe')
-          }
-
-          // 5. 检查 initData 原始字符串
-          if (webApp.initData) {
-            console.log('📝 Raw initData:', webApp.initData)
-
-            try {
-              const params = new URLSearchParams(webApp.initData)
-              console.log('📋 initData parsed:')
-              for (const [key, value] of params.entries()) {
-                console.log(`  ${key}: ${value}`)
-
-                if (key === 'user') {
-                  try {
-                    const user = JSON.parse(value)
-                    console.log('👤 Parsed user:', JSON.stringify(user, null, 2))
-                  } catch (e) {
-                    console.error('❌ Failed to parse user JSON:', e)
-                  }
-                }
-              }
-            } catch (e) {
-              console.error('❌ Failed to parse initData:', e)
-            }
-          } else {
-            console.log('❌ No initData')
-          }
-
-          // 6. 检查其他有用的属性
-          const checkProps = [
-            'version', 'isExpanded', 'viewportHeight', 'viewportStableHeight',
-            'headerColor', 'backgroundColor', 'isClosingConfirmationEnabled',
-            'MainButton', 'BackButton', 'SettingsButton', 'HapticFeedback',
-            'CloudStorage', 'BiometricManager'
-          ]
-
-          checkProps.forEach(prop => {
-            if (webApp[prop] !== undefined) {
-              console.log(`🔍 ${prop}:`, webApp[prop])
-            }
-          })
-
-        } else {
-          console.log('❌ No WebApp in Telegram object')
-        }
-      } else {
-        console.log('❌ No Telegram object found')
-      }
-    }
-
+    console.log('❌ 不是 Telegram 环境')
+    return false
   } catch (error) {
-    console.error('❌ Debug error:', error)
+    console.log('❌ 检测 Telegram 环境出错:', error)
+    return false
   }
 }
 
 /**
- * 等待 Telegram WebApp 初始化
+ * 调试 Telegram WebApp 数据 - 简化版
  */
-export function waitForTelegramWebApp(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    let attempts = 0
-    const maxAttempts = 50 // 最多等待5秒
+export function debugTelegramWebApp() {
+  try {
+    alert('开始调试 Telegram WebApp')
 
-    const checkWebApp = () => {
-      attempts++
-      console.log(`⏳ 检查 Telegram WebApp (${attempts}/${maxAttempts})`)
+    // 检查 Telegram 对象
+    if ((window as any).Telegram) {
+      alert('✅ window.Telegram 存在')
 
-      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      if ((window as any).Telegram.WebApp) {
+        alert('✅ Telegram.WebApp 存在')
+
         const webApp = (window as any).Telegram.WebApp
-        console.log('✅ Telegram WebApp found!')
-        resolve(webApp)
-        return
-      }
 
-      if (attempts >= maxAttempts) {
-        console.log('❌ Telegram WebApp timeout')
-        reject(new Error('Telegram WebApp not found'))
-        return
-      }
+        // 检查 initDataUnsafe
+        if (webApp.initDataUnsafe) {
+          alert(`✅ initDataUnsafe 存在: ${JSON.stringify(webApp.initDataUnsafe)}`)
 
-      setTimeout(checkWebApp, 100)
+          if (webApp.initDataUnsafe.user) {
+            alert(`✅ 用户数据: ${JSON.stringify(webApp.initDataUnsafe.user)}`)
+          } else {
+            alert('❌ initDataUnsafe 中没有用户数据')
+          }
+        } else {
+          alert('❌ initDataUnsafe 不存在')
+        }
+
+        // 检查 initData
+        if (webApp.initData) {
+          alert(`✅ initData 存在: ${webApp.initData}`)
+        } else {
+          alert('❌ initData 不存在')
+        }
+
+      } else {
+        alert('❌ Telegram.WebApp 不存在')
+      }
+    } else {
+      alert('❌ window.Telegram 不存在')
     }
 
-    checkWebApp()
-  })
+  } catch (error) {
+    alert(`❌ 调试出错: ${error}`)
+  }
 }
 
 /**
- * 获取 Telegram 用户数据 - 增强版
+ * 获取 Telegram 用户数据 - 简化版
  */
-export async function getTelegramUserData() {
-  console.log('🔄 获取 Telegram 用户数据...')
-
+export function getTelegramUserData() {
   try {
-    // 先运行详细调试
-    debugTelegramWebApp()
+    console.log('🔄 获取 Telegram 用户数据...')
 
     // 方法1: 从 URL 参数获取（测试用）
     const urlParams = new URLSearchParams(window.location.search)
     const urlTgId = urlParams.get('tg_id')
-    const urlTgUsername = urlParams.get('tg_username')
 
     if (urlTgId) {
       console.log('📱 从 URL 获取 tg_id:', urlTgId)
-      return {
-        tg_id: urlTgId,
-        tg_username: urlTgUsername || '',
-        source: 'url'
-      }
+      alert(`从 URL 获取到 tg_id: ${urlTgId}`)
+      return { tg_id: urlTgId }
     }
 
-    // 方法2: 等待并从 Telegram WebApp API 获取
-    try {
-      const webApp = await waitForTelegramWebApp()
+    // 方法2: 从 Telegram WebApp API 获取
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      const tg = (window as any).Telegram.WebApp
 
-      // 尝试多种方式获取用户 ID
-      let userData = null
-
-      // 方式 A: initDataUnsafe.user
-      if (webApp.initDataUnsafe?.user?.id) {
-        userData = {
-          tg_id: webApp.initDataUnsafe.user.id.toString(),
-          tg_username: webApp.initDataUnsafe.user.username || '',
-          first_name: webApp.initDataUnsafe.user.first_name || '',
-          last_name: webApp.initDataUnsafe.user.last_name || '',
-          language_code: webApp.initDataUnsafe.user.language_code || '',
-          source: 'initDataUnsafe'
-        }
-        console.log('✅ 从 initDataUnsafe 获取用户数据:', userData)
-        return userData
+      // 方式 A: initDataUnsafe.user.id
+      if (tg.initDataUnsafe?.user?.id) {
+        const tg_id = tg.initDataUnsafe.user.id.toString()
+        console.log('📱 从 initDataUnsafe 获取 tg_id:', tg_id)
+        alert(`从 initDataUnsafe 获取到 tg_id: ${tg_id}`)
+        return { tg_id }
       }
 
       // 方式 B: 解析 initData 字符串
-      if (webApp.initData) {
+      if (tg.initData) {
         try {
-          const params = new URLSearchParams(webApp.initData)
+          const params = new URLSearchParams(tg.initData)
           const userStr = params.get('user')
-
           if (userStr) {
             const user = JSON.parse(userStr)
             if (user.id) {
-              userData = {
-                tg_id: user.id.toString(),
-                tg_username: user.username || '',
-                first_name: user.first_name || '',
-                last_name: user.last_name || '',
-                language_code: user.language_code || '',
-                source: 'initData'
-              }
-              console.log('✅ 从 initData 解析用户数据:', userData)
-              return userData
+              const tg_id = user.id.toString()
+              console.log('📱 从 initData 解析 tg_id:', tg_id)
+              alert(`从 initData 解析到 tg_id: ${tg_id}`)
+              return { tg_id }
             }
           }
         } catch (parseError) {
           console.error('❌ 解析 initData 失败:', parseError)
+          alert(`解析 initData 失败: ${parseError}`)
         }
       }
 
-      // 方式 C: 检查是否有 start_param 或其他有用信息
-      if (webApp.initDataUnsafe) {
-        console.log('ℹ️ 可用的 initDataUnsafe 数据:', webApp.initDataUnsafe)
-
-        // 检查是否有 chat 信息
-        if (webApp.initDataUnsafe.chat?.id) {
-          console.log('💬 发现 chat.id:', webApp.initDataUnsafe.chat.id)
-        }
-
-        // 检查 start_param
-        if (webApp.initDataUnsafe.start_param) {
-          console.log('🚀 发现 start_param:', webApp.initDataUnsafe.start_param)
-        }
-      }
-
-    } catch (webAppError) {
-      console.log('⚠️ 无法获取 Telegram WebApp:', webAppError.message)
+      // 如果都没获取到，显示调试信息
+      alert('❌ 无法获取 tg_id，开始调试...')
+      debugTelegramWebApp()
+    } else {
+      alert('❌ Telegram WebApp 不存在')
     }
 
-    console.log('❌ 未找到 Telegram 用户数据')
+    console.log('❌ 未找到 tg_id')
     return null
-
   } catch (error) {
     console.error('❌ 获取 Telegram 用户数据出错:', error)
+    alert(`获取用户数据出错: ${error}`)
     return null
   }
 }
 
 /**
- * Telegram 自动登录 - 增强版
+ * Telegram 自动登录
  */
 export async function handleTelegramAutoLogin(): Promise<boolean> {
-  console.log('🔄 开始 Telegram 自动登录...')
-
   try {
+    console.log('🔄 开始 Telegram 自动登录...')
+
     const store = useAppStore()
 
     // 检查是否已登录
     if (store.getUser() && store.getToken()) {
-      console.log('✅ 用户已登录，跳过自动登录')
+      console.log('✅ 用户已登录')
       return true
     }
 
     // 获取 tg_id
-    const tgUserData = await getTelegramUserData()
+    const tgUserData = getTelegramUserData()
     if (!tgUserData?.tg_id) {
-      console.log('❌ 无法获取 Telegram 用户 ID')
+      console.log('❌ 无法获取 tg_id')
       return false
     }
 
-    console.log('📱 准备使用 tg_id 登录:', tgUserData.tg_id)
+    console.log('📱 准备登录，tg_id:', tgUserData.tg_id)
 
     // 调用登录接口
     const response = await api.tglogin({ tg_id: tgUserData.tg_id })
@@ -324,54 +222,19 @@ export async function handleTelegramAutoLogin(): Promise<boolean> {
       }
 
       store.setUser(userForStore)
-      showToast('Telegram 自动登录成功')
+      showToast('自动登录成功')
+      alert('✅ Telegram 自动登录成功!')
 
       return true
     } else {
-      console.log('❌ 登录接口返回失败:', response)
+      console.log('❌ 登录失败:', response)
+      alert(`❌ 登录失败: ${response?.message || '未知错误'}`)
       return false
     }
-
   } catch (error) {
-    console.error('❌ Telegram 自动登录出错:', error)
+    console.error('❌ 自动登录出错:', error)
+    alert(`❌ 自动登录出错: ${error}`)
     return false
-  }
-}
-
-/**
- * Telegram WebApp 初始化
- */
-export function initTelegramWebApp() {
-  console.log('🚀 初始化 Telegram WebApp...')
-
-  // 立即检查环境
-  debugTelegramWebApp()
-
-  // 如果在 Telegram 环境中，等待并初始化
-  if (isTelegramMiniApp()) {
-    waitForTelegramWebApp()
-      .then(webApp => {
-        console.log('✅ Telegram WebApp 初始化完成')
-
-        // 设置主题
-        if (webApp.ready) {
-          webApp.ready()
-        }
-
-        // 展开应用
-        if (webApp.expand) {
-          webApp.expand()
-        }
-
-        // 禁用关闭确认
-        if (webApp.disableClosingConfirmation) {
-          webApp.disableClosingConfirmation()
-        }
-
-      })
-      .catch(error => {
-        console.log('❌ Telegram WebApp 初始化失败:', error)
-      })
   }
 }
 
