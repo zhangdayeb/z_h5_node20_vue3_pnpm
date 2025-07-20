@@ -24,21 +24,21 @@ import loginPop from '@/components/loginPop.vue'
 import { useAppStore } from '@/stores/app'
 import { useConfigStore } from '@/stores/config'
 import { onMounted, watch } from 'vue'
-import { handleTelegramAutoLogin, isTelegramMiniApp } from '@/utils/tools'
+import { handleTelegramAutoLogin, isTelegramMiniApp, initTelegramWebApp } from '@/utils/tools'
 
 const store = useAppStore()
 const configStore = useConfigStore()
 
-// 简化的 Telegram 自动登录 - 只在 TG 环境下执行
+// 增强的 Telegram 自动登录
 async function tryTelegramLogin() {
   // 只有在 Telegram 环境下才尝试自动登录
   if (isTelegramMiniApp() && !store.getUser()) {
-    console.log('📱 Telegram environment detected, trying auto login...')
+    console.log('📱 Telegram 环境检测到，尝试自动登录...')
     await handleTelegramAutoLogin()
   } else if (isTelegramMiniApp()) {
-    console.log('📱 Telegram environment but user already logged in')
+    console.log('📱 Telegram 环境但用户已登录')
   } else {
-    console.log('🌐 Normal web environment, skip auto login')
+    console.log('🌐 普通网页环境，跳过自动登录')
   }
 }
 
@@ -47,16 +47,23 @@ watch(
   () => configStore.isAppReady,
   (isReady) => {
     if (isReady) {
-      setTimeout(tryTelegramLogin, 1000) // 延迟1秒执行
+      // 先初始化 Telegram WebApp
+      initTelegramWebApp()
+      // 延迟执行自动登录
+      setTimeout(tryTelegramLogin, 2000)
     }
   },
   { immediate: true }
 )
 
 onMounted(() => {
-  console.log('🏠 HomeIndex mounted')
+  console.log('🏠 HomeIndex 组件已挂载')
+
+  // 立即初始化 Telegram WebApp
+  initTelegramWebApp()
+
   if (configStore.isAppReady) {
-    setTimeout(tryTelegramLogin, 1000)
+    setTimeout(tryTelegramLogin, 2000)
   }
 })
 </script>
