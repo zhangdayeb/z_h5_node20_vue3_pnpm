@@ -6,112 +6,6 @@ import type { AxiosResponse } from 'axios'
 
 const domain = location.origin
 
-// ==================== Telegram Mini App 相关功能 ====================
-
-/**
- * 检测是否在 Telegram Mini App 环境中
- * 简化版本：直接检查 URL 参数
- */
-export function isTelegramMiniApp(): boolean {
-  const urlParams = new URLSearchParams(window.location.search)
-  return urlParams.get('is_tg') === '1'
-}
-
-/**
- * 获取 Telegram 用户数据
- * 支持从 URL 参数直接获取 tg_id
- */
-export function getTelegramUserData() {
-  try {
-    // 方法1: 从 URL 参数直接获取 tg_id（优先，方便测试）
-    const urlParams = new URLSearchParams(window.location.search)
-    const urlTgId = urlParams.get('tg_id')
-    if (urlTgId) {
-      console.log('📱 Got tg_id from URL parameter:', urlTgId)
-      return { tg_id: urlTgId }
-    }
-
-    // 方法2: 从 window.Telegram.WebApp 获取
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
-      const tg = (window as any).Telegram.WebApp
-
-      if (tg.initDataUnsafe?.user?.id) {
-        const tg_id = tg.initDataUnsafe.user.id.toString()
-        console.log('📱 Got tg_id from WebApp:', tg_id)
-        return { tg_id }
-      }
-    }
-
-    console.log('🚫 No tg_id found')
-    return null
-  } catch (error) {
-    console.error('❌ Error getting Telegram user data:', error)
-    return null
-  }
-}
-
-/**
- * Telegram 自动登录功能
- * 简化版本 - 确保正确保存和更新状态
- */
-export async function handleTelegramAutoLogin(): Promise<boolean> {
-  try {
-    console.log('🔄 Telegram auto login...')
-
-    const store = useAppStore()
-    if (store.getUser()) {
-      console.log('✅ Already logged in')
-      return true
-    }
-
-    const tgUserData = getTelegramUserData()
-    if (!tgUserData?.tg_id) {
-      console.log('🚫 No tg_id available')
-      return false
-    }
-
-    console.log('🔄 Login with tg_id:', tgUserData.tg_id)
-
-    const response = await api.tglogin({ tg_id: tgUserData.tg_id })
-
-    if (response?.data?.code === 200 && response.data.data) {
-      const loginData = response.data.data
-
-      // 设置 token - 会自动保存到 localStorage
-      store.setToken(loginData.access_token)
-      console.log('✅ Token saved:', loginData.access_token)
-
-      // 转换用户信息格式以匹配 store 期望的格式（参考 loginPop.vue）
-      const userForStore = {
-        id: loginData.user_info.id,
-        name: loginData.user_info.name,
-        nick_name: loginData.user_info.nick_name,
-        money: loginData.user_info.money,
-        level: loginData.user_info.vip_grade, // 将 vip_grade 映射为 level
-        vip_grade: loginData.user_info.vip_grade,
-        group_prefix: loginData.user_info.group_prefix,
-        tg_id: loginData.user_info.tg_id,
-        tg_username: loginData.user_info.tg_username
-      }
-
-      // 设置用户信息 - 会自动保存到 localStorage
-      store.setUser(userForStore)
-      console.log('✅ User info saved:', userForStore)
-
-      console.log('✅ Telegram login successful')
-      showToast('自动登录成功')
-
-      return true
-    } else {
-      console.log('❌ Login failed:', response?.data?.message)
-      return false
-    }
-  } catch (error) {
-    console.error('❌ Login error:', error)
-    return false
-  }
-}
-
 // ==================== 设备检测功能 ====================
 
 export function isMobile_old(): boolean {
@@ -153,7 +47,108 @@ export function isMobile(): boolean {
   return isMobileDevice && isSmallScreen
 }
 
-// ==================== 其他工具函数 ====================
+// ==================== Telegram Mini App 功能 ====================
+
+/**
+ * 检测是否在 Telegram Mini App 环境中
+ */
+export function isTelegramMiniApp(): boolean {
+  const urlParams = new URLSearchParams(window.location.search)
+  return urlParams.get('is_tg') === '1'
+}
+
+/**
+ * 获取 Telegram 用户 ID
+ */
+export function getTelegramUserData() {
+  try {
+    // 方法1: 从 URL 参数获取（测试用）
+    const urlParams = new URLSearchParams(window.location.search)
+    const urlTgId = urlParams.get('tg_id')
+    if (urlTgId) {
+      console.log('📱 Got tg_id from URL:', urlTgId)
+      return { tg_id: urlTgId }
+    }
+
+    // 方法2: 从 Telegram WebApp API 获取
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      const tg = (window as any).Telegram.WebApp
+      if (tg.initDataUnsafe?.user?.id) {
+        const tg_id = tg.initDataUnsafe.user.id.toString()
+        console.log('📱 Got tg_id from WebApp:', tg_id)
+        return { tg_id }
+      }
+    }
+
+    console.log('🚫 No tg_id found')
+    return null
+  } catch (error) {
+    console.error('❌ Error getting Telegram user data:', error)
+    return null
+  }
+}
+
+/**
+ * Telegram 自动登录
+ */
+export async function handleTelegramAutoLogin(): Promise<boolean> {
+  try {
+    console.log('🔄 Telegram auto login...')
+
+    const store = useAppStore()
+
+    // 检查是否已登录
+    if (store.getUser() && store.getToken()) {
+      console.log('✅ Already logged in')
+      return true
+    }
+
+    // 获取 tg_id
+    const tgUserData = getTelegramUserData()
+    if (!tgUserData?.tg_id) {
+      console.log('🚫 No tg_id available')
+      return false
+    }
+
+    console.log('🔄 Calling login API with tg_id:', tgUserData.tg_id)
+
+    // 调用登录接口
+    const response = await api.tglogin({ tg_id: tgUserData.tg_id })
+
+    if (response?.code === 200) {
+      const loginData = response.data
+
+      // 保存 token
+      store.setToken(loginData.access_token)
+      console.log('✅ Token saved')
+      const user_info = loginData.user_info
+      console.log('✅ User info:', user_info)
+
+        const userForStore = {
+          id: user_info.id,
+          name: user_info.name,
+          nick_name: user_info.nick_name,
+          money: user_info.money,
+          level: user_info.vip_grade, // 将 vip_grade 映射为 level
+          vip_grade: user_info.vip_grade
+        }
+
+      store.setUser(userForStore)
+      console.log('✅ User saved:', userForStore.name)
+
+      showToast('自动登录成功')
+      return true
+    } else {
+      console.log('❌ Login failed:', response?.data?.message)
+      return false
+    }
+  } catch (error) {
+    console.error('❌ Login error:', error)
+    return false
+  }
+}
+
+// ==================== 图片和域名相关 ====================
 
 export function getImgUrl(url: string): string {
   if (url.trim().length <= 0) {
@@ -172,6 +167,8 @@ export function getImgUrl_old(url: string): string {
 export function getDomain(): string {
   return domain
 }
+
+// ==================== 时间相关功能 ====================
 
 export function getCurrentTime(): string {
   return dayjs().format('YYYY-MM-DD HH:mm:ss')
