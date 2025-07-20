@@ -13,6 +13,7 @@ const domain = location.origin
  * 不再依赖 is_tg 参数判断移动端
  */
 export function isMobile(): boolean {
+  return true
   const urlParams = new URLSearchParams(window.location.search)
 
   // 1. URL 参数强制
