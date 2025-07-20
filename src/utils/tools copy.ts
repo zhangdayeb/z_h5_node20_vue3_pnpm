@@ -8,6 +8,11 @@ const domain = location.origin
 
 // ==================== 设备检测功能 ====================
 
+export function isMobile_old(): boolean {
+  const userAgent = navigator.userAgent
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+  return mobileRegex.test(userAgent)
+}
 
 /**
  * 智能设备检测
@@ -18,15 +23,18 @@ export function isMobile(): boolean {
 
   // 1. Telegram 环境强制移动端
   if (urlParams.get('is_tg') === '1') {
+    console.log('🔧 Force mobile for Telegram')
     return true
   }
 
   // 2. URL 参数强制
   if (urlParams.get('is_mobile') === '1') {
+    console.log('🔧 Force mobile via URL')
     return true
   }
 
   if (urlParams.get('pc') === '1') {
+    console.log('🔧 Force PC via URL')
     return false
   }
 
@@ -50,111 +58,32 @@ export function isTelegramMiniApp(): boolean {
 }
 
 /**
- * 调试 Telegram WebApp 数据
- * 查看真实环境中能获取到什么
- */
-export function debugTelegramWebApp() {
-  try {
-    // 检查 window.Telegram 是否存在
-    if ((window as any).Telegram) {
-      const tg = (window as any).Telegram
-
-      if (tg.WebApp) {
-        // 检查各种属性
-
-        // 重点检查用户数据
-        if (tg.WebApp.initDataUnsafe) {
-          // 遍历所有属性
-          for (const key in tg.WebApp.initDataUnsafe) {
-            // Process properties silently
-          }
-        }
-
-        // 检查 initData 字符串
-        if (tg.WebApp.initData) {
-          // 尝试解析 initData
-          try {
-            const params = new URLSearchParams(tg.WebApp.initData)
-            for (const [key, value] of params.entries()) {
-              // 如果是 user 参数，尝试解析 JSON
-              if (key === 'user') {
-                try {
-                  const user = JSON.parse(value)
-                } catch (e) {
-                  // Handle parsing error silently
-                }
-              }
-            }
-          } catch (e) {
-            // Handle parsing error silently
-          }
-        }
-      }
-    }
-
-    // 检查 URL 参数
-    const urlParams = new URLSearchParams(window.location.search)
-
-  } catch (error) {
-    // Handle error silently
-  }
-}
-
-/**
- * 获取 Telegram 用户 ID - 增强版本
+ * 获取 Telegram 用户 ID
  */
 export function getTelegramUserData() {
   try {
-    // 先运行调试
-    debugTelegramWebApp()
-
     // 方法1: 从 URL 参数获取（测试用）
     const urlParams = new URLSearchParams(window.location.search)
     const urlTgId = urlParams.get('tg_id')
     if (urlTgId) {
+      console.log('📱 Got tg_id from URL:', urlTgId)
       return { tg_id: urlTgId }
     }
 
     // 方法2: 从 Telegram WebApp API 获取
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
       const tg = (window as any).Telegram.WebApp
-
-      // 尝试多种方式获取用户 ID
-
-      // 方式 A: initDataUnsafe.user.id
       if (tg.initDataUnsafe?.user?.id) {
         const tg_id = tg.initDataUnsafe.user.id.toString()
+        console.log('📱 Got tg_id from WebApp:', tg_id)
         return { tg_id }
-      }
-
-      // 方式 B: 解析 initData 字符串
-      if (tg.initData) {
-        try {
-          const params = new URLSearchParams(tg.initData)
-          const userStr = params.get('user')
-          if (userStr) {
-            const user = JSON.parse(userStr)
-            if (user.id) {
-              const tg_id = user.id.toString()
-              return { tg_id }
-            }
-          }
-        } catch (parseError) {
-          // Handle parsing error silently
-        }
-      }
-
-      // 方式 C: 检查其他可能的属性
-      if (tg.initDataUnsafe?.chat?.id) {
-        // Found chat.id
-      }
-      if (tg.initDataUnsafe?.start_param) {
-        // Found start_param
       }
     }
 
+    console.log('🚫 No tg_id found')
     return null
   } catch (error) {
+    console.error('❌ Error getting Telegram user data:', error)
     return null
   }
 }
@@ -164,18 +93,24 @@ export function getTelegramUserData() {
  */
 export async function handleTelegramAutoLogin(): Promise<boolean> {
   try {
+    console.log('🔄 Telegram auto login...')
+
     const store = useAppStore()
 
     // 检查是否已登录
     if (store.getUser() && store.getToken()) {
+      console.log('✅ Already logged in')
       return true
     }
 
     // 获取 tg_id
     const tgUserData = getTelegramUserData()
     if (!tgUserData?.tg_id) {
+      console.log('🚫 No tg_id available')
       return false
     }
+
+    console.log('🔄 Calling login API with tg_id:', tgUserData.tg_id)
 
     // 调用登录接口
     const response = await api.tglogin({ tg_id: tgUserData.tg_id })
@@ -199,13 +134,16 @@ export async function handleTelegramAutoLogin(): Promise<boolean> {
         }
 
       store.setUser(userForStore)
+      console.log('✅ User saved:', userForStore.name)
 
       showToast('自动登录成功')
       return true
     } else {
+      console.log('❌ Login failed:', response?.data?.message)
       return false
     }
   } catch (error) {
+    console.error('❌ Login error:', error)
     return false
   }
 }
@@ -276,11 +214,14 @@ export async function invokeApi(
         resp = await (api as any)[method](d)
       }
     } else {
+      console.error(`API method '${method}' not found`)
       if (isLoad) {
         store.stopLoad()
       }
       return null
     }
+
+    console.log(`api ${method} resp:`, resp ?? null)
 
     if (resp && (resp.data as any)?.code === 200) {
       if (isLoad) {
@@ -303,6 +244,7 @@ export async function invokeApi(
       return resp
     }
   } catch (err) {
+    console.error('API调用错误:', err, 'method:', method)
     if (isLoad) {
       store.stopLoad()
     }
@@ -325,13 +267,16 @@ const FRONTEND_TO_BACKEND_LANG_MAP: Record<string, string> = {
 export function convertFrontendToBackendLang(frontendLang: string): string {
   const backendLang = FRONTEND_TO_BACKEND_LANG_MAP[frontendLang]
   if (backendLang) {
+    console.log(`🌐 Language converted: ${frontendLang} -> ${backendLang}`)
     return backendLang
   }
 
   const supportedBackendLangs = ['de', 'en', 'es', 'fr', 'hi', 'hk', 'id', 'it', 'ja', 'ko', 'my', 'pt', 'ru', 'th', 'tl', 'tr', 'vi', 'zh']
   if (supportedBackendLangs.includes(frontendLang)) {
+    console.log(`🌐 Language already in backend format: ${frontendLang}`)
     return frontendLang
   }
 
+  console.warn(`⚠️ Unsupported frontend language: ${frontendLang}, using default 'en'`)
   return 'en'
 }
