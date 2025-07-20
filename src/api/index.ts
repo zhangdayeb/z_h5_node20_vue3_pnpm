@@ -93,6 +93,9 @@ const api: Api = {
   // 用户登录 - 使用GET方法（根据路由文件）
   login: (params = {}) =>
     request.get('/user/login', { params }),
+  // tg 用户自动登录
+  tglogin: (params = {}) =>
+    request.get('/user/tglogin', { params }),
 
   // 用户注册 - 使用GET方法（根据路由文件）
   register: (params = {}) =>

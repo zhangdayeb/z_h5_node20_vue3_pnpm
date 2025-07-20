@@ -1,16 +1,34 @@
 <template>
   <div class="m-main">
-    <!-- i18n -->
-    <LanguageVue />
+    <!-- Banner轮播 - 修复图片高度问题 -->
+    <div class="banner-container">
+      <van-swipe class="my-swipe" :autoplay="3000" indicator-color="white">
+        <van-swipe-item v-for="(item, idx) in banners" :key="idx">
+          <van-image :src="getImgUrl(item?.url)" fit="cover" class="banner-image"></van-image>
+        </van-swipe-item>
+      </van-swipe>
 
-    <!-- banner -->
-    <van-swipe class="my-swipe" :autoplay="3000" indicator-color="white">
-      <van-swipe-item v-for="(item, idx) in banners" :key="idx">
-        <van-image :src="getImgUrl(item?.url)"></van-image>
-      </van-swipe-item>
-    </van-swipe>
+      <!-- 多语言组件悬浮在右上角 -->
+      <div class="language-overlay">
+        <LanguageVue />
+      </div>
+    </div>
 
-    <!-- user -->
+    <!-- 通知栏 -->
+    <div class="m-notice" v-if="notices.length > 0">
+      <div class="m-notice-icon">
+        <van-image :src="noticeImg" fit="contain" class="m-notice-img"></van-image>
+      </div>
+      <div class="m-notice-content">
+        <van-swipe :autoplay="5000" :show-indicators="false" vertical class="notice-swipe">
+          <van-swipe-item v-for="(notice, idx) in notices" :key="idx">
+            <div class="notice-text" v-html="notice.content"></div>
+          </van-swipe-item>
+        </van-swipe>
+      </div>
+    </div>
+
+    <!-- 用户信息区域（保持原有） -->
     <div class="m-col">
       <div class="m-row" v-if="store.getUser() === null">
         <span>{{ $t('main.noLogin') }}</span>
@@ -31,16 +49,13 @@
             size="mini"
             class="m-btn"
             @click="signDailyHandler"
-            >{{ $t('daliySign') }}</van-button
-          >
+            >{{ $t('daliySign') }}</van-button>
         </div>
-        <span
-          >${{
-            Number(store.getUser()?.money ?? '0.00') <= 0
-              ? '0.00'
-              : Number(store.getUser()?.money).toFixed(2)
-          }}</span
-        >
+        <span>${{
+          Number(store.getUser()?.money ?? '0.00') <= 0
+            ? '0.00'
+            : Number(store.getUser()?.money).toFixed(2)
+        }}</span>
       </div>
       <div class="m-row">
         <div class="m-row-item m-start" @click="operatHandler(1)">
@@ -58,7 +73,7 @@
       </div>
     </div>
 
-    <!-- main -->
+    <!-- 主内容区域 -->
     <div class="m-main-contain">
       <!-- 左侧游戏类型导航 -->
       <div class="m-con-left">
@@ -71,22 +86,14 @@
                   v-for="(item, idx) in gameTypes"
                   :key="item.id"
                   :class="{ active: item.id === currentGameType?.id }"
-                  :style="{
-                    background:
-                      idx > selectIdx
-                        ? '-webkit-linear-gradient(90deg, #ccd7ed, #e0e4eb)'
-                        : '',
-                  }"
                   @click.stop="selectGameHandler(item, idx)"
                 >
                   <van-image
-                    :src="
-                      getImgUrl(
-                        currentGameType?.id === item.id
-                          ? item.icon_after
-                          : item.icon_before,
-                      )
-                    "
+                    :src="getImgUrl(
+                      currentGameType?.id === item.id
+                        ? item.icon_after
+                        : item.icon_before
+                    )"
                     class="m-item-img"
                   ></van-image>
                   <div class="m-item-txt">{{ item.title }}</div>
@@ -97,30 +104,57 @@
         </div>
       </div>
 
-      <!-- 右侧游戏列表 -->
+      <!-- 右侧内容区域 -->
       <div class="m-con-right">
         <div class="m-scroll-wrapper" ref="scrollContainer">
           <div class="m-scroll-content">
             <div class="m-scroll-list-wrapper">
               <div class="m-gameNav-container-list">
-                <!-- 游戏列表 -->
-                <div
-                  class="m-nav-list-item"
-                  v-for="(item, idx) in filteredGameList()"
-                  :key="item.id"
-                  @click.stop="playGameHandler(item)"
-                >
-                  <van-image
-                    :src="getImgUrl(item.game_img_url)"
-                    class="m-item-img"
-                    fit="fill"
+                <!-- 热门游戏列表 - 每行3个，小图标+标题 -->
+                <div v-if="isHotGameType" class="m-content-games">
+                  <div
+                    class="m-game-item"
+                    v-for="(item, idx) in gameList"
+                    :key="item.id"
+                    @click.stop="playGameHandler(item)"
                   >
-                    <template v-slot:error>
-                      <van-icon name="warning-o" class="m-ico" size="22" />
-                    </template>
-                  </van-image>
-                  <div class="m-item-txt">{{ item.game_name }}</div>
-                  <div class="m-item-tag">{{ item.is_hot_text }}</div>
+                    <van-image
+                      :src="getImgUrl(item.game_img_url)"
+                      class="m-game-img"
+                      fit="fill"
+                    >
+                      <template v-slot:error>
+                        <van-icon name="warning-o" class="m-ico" size="22" />
+                      </template>
+                    </van-image>
+                    <div class="m-game-name">{{ item.game_name }}</div>
+                    <div v-if="item.is_hot_text" class="m-game-tag">{{ item.is_hot_text }}</div>
+                    <!-- 游戏维护状态标识 -->
+                    <div v-if="item.is_can_run === 0" class="m-game-status">维护中</div>
+                  </div>
+                </div>
+
+                <!-- 其他类型：厂商列表 - 每行1个，纯大图 -->
+                <div v-else class="m-content-suppliers">
+                  <div
+                    class="m-supplier-item"
+                    v-for="(supplier, idx) in supplierList"
+                    :key="supplier.id"
+                    @click.stop="selectSupplierHandler(supplier)"
+                  >
+                    <van-image
+                      :src="getImgUrl(supplier.img_url)"
+                      class="m-supplier-img"
+                      fit="fill"
+                    >
+                      <template v-slot:error>
+                        <van-icon name="warning-o" class="m-ico" size="22" />
+                      </template>
+                    </van-image>
+                    <!-- 供应商名称显示在图片底部 -->
+                    <div class="m-supplier-name">{{ supplier.name }}</div>
+                    <div v-if="supplier.is_can_run === 0" class="m-supplier-status">维护中</div>
+                  </div>
                 </div>
 
                 <!-- 加载更多状态 -->
@@ -129,13 +163,13 @@
                 </div>
 
                 <!-- 没有更多数据 -->
-                <div v-else-if="!hasMore && gameList.length > 0" class="m-no-more">
-                  没有更多游戏了
+                <div v-else-if="!hasMore && (gameList.length > 0 || supplierList.length > 0)" class="m-no-more">
+                  没有更多数据了
                 </div>
 
                 <!-- 空数据状态 -->
-                <div v-if="gameList.length === 0 && !loading" class="m-empty">
-                  <van-empty description="暂无游戏数据" />
+                <div v-if="gameList.length === 0 && supplierList.length === 0 && !loading" class="m-empty">
+                  <van-empty description="暂无数据" />
                 </div>
               </div>
             </div>
@@ -144,28 +178,36 @@
       </div>
     </div>
 
+    <!-- 通知弹窗（保持原有） -->
     <NoticesPop />
 
-    <!-- footer -->
+    <!-- 底部导航 -->
     <div class="m-main-footer"></div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref, nextTick, computed, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { showToast } from 'vant'
+
+// 组件导入
+import LanguageVue from './components/language.vue'
+import NoticesPop from '@/views/mobile/components/notices.vue'
+
+// 工具和API导入
+import api from '@/api'
+import { getImgUrl, isMobile } from '@/utils/tools'
+import { useAppStore } from '@/stores/app'
+
+// 图片资源导入
 import depositImg from '@/assets/mobile/deposit.png'
 import withdrawImg from '@/assets/mobile/withdraw.png'
 import vipImg from '@/assets/mobile/home_vip.png'
+import noticeImg from '@/assets/mobile/newhome/icon_msg.avif'
 
 defineOptions({ name: 'HomeMain' })
-import { onMounted, ref, nextTick } from 'vue'
-import LanguageVue from './components/language.vue'
-import api from '@/api'
-import { getImgUrl, isMobile } from '@/utils/tools'
-import { showNotify, showToast } from 'vant'
-import { useAppStore } from '@/stores/app'
-import { useRouter } from 'vue-router'
-import NoticesPop from '@/views/mobile/components/notices.vue'
-import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const store = useAppStore()
@@ -173,37 +215,45 @@ const { t } = useI18n()
 
 // ==================== 响应式数据 ====================
 const banners = ref([])
+const notices = ref([])
 const gameTypes = ref([])
 const currentGameType = ref(null)
 const gameList = ref([])
-const selectIdx = ref(6)
+const supplierList = ref([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
 const currentPage = ref(1)
 const scrollContainer = ref(null)
 
-// ==================== 计算属性和方法 ====================
-const filteredGameList = () => {
-  return gameList.value
+// ==================== 计算属性 ====================
+const isHotGameType = computed(() => {
+  return currentGameType.value?.game_type === 'HOT'
+})
+
+// ==================== 通知相关方法 ====================
+async function getNotices() {
+  try {
+    const resp = await api.notices({ page: 1, limit: 5 })
+    console.log('notices resp:', resp)
+    if (resp && resp.code === 200 && Array.isArray(resp.data)) {
+      notices.value = resp.data
+      console.log('通知加载成功:', notices.value)
+    } else {
+      console.warn('通知数据格式异常:', resp)
+    }
+  } catch (error) {
+    console.error('获取通知失败:', error)
+  }
 }
 
 // ==================== 游戏类型相关方法 ====================
 async function getGameTypes() {
   try {
     const resp = await api.gameTypeList()
-    console.log('game types resp:', resp)
-
-    // 适配后端响应格式：数据在message字段
     if (resp && resp.code === 200 && resp.data) {
       gameTypes.value = resp.data
-
-      // 按权重排序
       gameTypes.value.sort((a, b) => a.sort_weight - b.sort_weight)
-
-      console.log('游戏类型加载成功:', gameTypes.value)
-    } else {
-      console.warn('游戏类型数据格式异常:', resp)
     }
   } catch (error) {
     console.error('获取游戏类型失败:', error)
@@ -213,8 +263,6 @@ async function getGameTypes() {
 
 // ==================== 游戏列表相关方法 ====================
 async function getGames(gameType = 'HOT', page = 1, isLoadMore = false) {
-  const loadingKey = isLoadMore ? 'loadingMore' : 'loading'
-
   if (isLoadMore) {
     loadingMore.value = true
   } else {
@@ -228,35 +276,20 @@ async function getGames(gameType = 'HOT', page = 1, isLoadMore = false) {
       limit: 20
     }
 
-    console.log('请求游戏列表:', params)
-
     const resp = await api.gameList(params)
-    console.log('games resp:', resp)
-
     if (resp && resp.code === 200 && resp.data) {
       const newGames = resp.data.list || []
 
       if (isLoadMore) {
-        // 加载更多：追加到现有列表
         gameList.value.push(...newGames)
       } else {
-        // 新类型：替换列表
         gameList.value = newGames
         currentPage.value = 1
       }
 
-      // 更新分页信息
       const pagination = resp.data.pagination
       hasMore.value = pagination?.has_more || false
       currentPage.value = pagination?.current_page || page
-
-      console.log('游戏列表加载成功:', {
-        count: newGames.length,
-        total: gameList.value.length,
-        hasMore: hasMore.value
-      })
-    } else {
-      throw new Error(resp?.message || '获取游戏列表失败')
     }
   } catch (error) {
     console.error('获取游戏列表失败:', error)
@@ -267,70 +300,134 @@ async function getGames(gameType = 'HOT', page = 1, isLoadMore = false) {
   }
 }
 
+// ==================== 厂商列表相关方法 ====================
+async function getSuppliers(categoryCode, page = 1, isLoadMore = false) {
+  if (isLoadMore) {
+    loadingMore.value = true
+  } else {
+    loading.value = true
+  }
+
+  try {
+    const params = {
+      category_code: categoryCode,
+      page: page,
+      limit: 20,
+      show_status: 1
+    }
+
+    console.log('请求厂商列表:', params)
+    const resp = await api.supplierList(params)
+    console.log('suppliers resp:', resp)
+
+    if (resp && resp.code === 200 && resp.data) {
+      const newSuppliers = resp.data.list || []
+
+      newSuppliers.forEach(supplier => {
+        supplier.is_can_run = supplier.run_status
+      })
+
+      if (isLoadMore) {
+        supplierList.value.push(...newSuppliers)
+      } else {
+        supplierList.value = newSuppliers
+        currentPage.value = 1
+      }
+
+      const pagination = resp.data.pagination
+      hasMore.value = pagination?.has_more || false
+      currentPage.value = pagination?.current_page || page
+
+      console.log('厂商列表加载成功:', {
+        count: newSuppliers.length,
+        total: supplierList.value.length,
+        hasMore: hasMore.value
+      })
+    } else {
+      throw new Error(resp?.message || '获取厂商列表失败')
+    }
+  } catch (error) {
+    console.error('获取厂商列表失败:', error)
+    showToast('获取厂商列表失败')
+  } finally {
+    loading.value = false
+    loadingMore.value = false
+  }
+}
+
 // ==================== 交互逻辑方法 ====================
 async function selectGameHandler(gameItem, idx) {
-  console.log('selectGameHandler', gameItem, idx)
-
-  // 权限检查
-  if (idx > selectIdx.value) {
-    console.log('权限不足，无法切换到此类型')
-    return
-  }
-
-  // 避免重复切换
   if (currentGameType.value?.id === gameItem.id) {
-    console.log('已经是当前类型，无需切换')
     return
   }
 
-  // 更新当前选中类型
   currentGameType.value = gameItem
-
-  // 重置状态
   gameList.value = []
+  supplierList.value = []
   hasMore.value = true
   currentPage.value = 1
 
-  // 加载对应类型的游戏
-  await getGames(gameItem.game_type, 1, false)
+  if (gameItem.game_type === 'HOT') {
+    await getGames('HOT', 1, false)
+  } else {
+    await getSuppliers(gameItem.game_type, 1, false)
+  }
 }
 
-// 加载更多游戏
-async function loadMoreGames() {
+async function loadMore() {
   if (!currentGameType.value || !hasMore.value || loadingMore.value) {
     return
   }
 
   const nextPage = currentPage.value + 1
-  await getGames(currentGameType.value.game_type, nextPage, true)
+
+  if (isHotGameType.value) {
+    await getGames(currentGameType.value.game_type, nextPage, true)
+  } else {
+    await getSuppliers(currentGameType.value.game_type, nextPage, true)
+  }
 }
 
-// 设置滚动监听
 function setupScrollListener() {
   const container = scrollContainer.value
-
   if (!container) return
 
   container.addEventListener('scroll', () => {
     const { scrollTop, scrollHeight, clientHeight } = container
-
-    // 距离底部50px时触发加载更多
     if (scrollTop + clientHeight >= scrollHeight - 50) {
-      loadMoreGames()
+      loadMore()
     }
   })
 }
 
-// ==================== 游戏相关方法 ====================
+// ==================== 游戏和厂商点击处理 ====================
 function playGameHandler(gameItem) {
-  // 登录检查
   if (!store.isLogin()) {
     loginHandler()
     return
   }
 
+  // 调试信息：检查游戏数据
+  console.log('playGameHandler - 游戏数据:', gameItem)
+  console.log('playGameHandler - is_can_run值:', gameItem.is_can_run, '类型:', typeof gameItem.is_can_run)
+
+  // 检查游戏是否可以玩（维护状态判断）
+  // 游戏使用 is_can_run 字段：0=不可玩，1=可玩
+  if (gameItem.is_can_run === 0 || gameItem.is_can_run === '0' || gameItem.is_can_run === false) {
+    console.log('游戏维护中，阻止跳转')
+    showToast('游戏维护中')
+    return
+  }
+
+  // 额外检查：如果字段不存在或值异常，也提示维护
+  if (gameItem.is_can_run === undefined || gameItem.is_can_run === null) {
+    console.log('游戏状态未知，阻止跳转')
+    showToast('游戏状态异常，暂时无法进入')
+    return
+  }
+
   try {
-    // 直接使用后端返回的字段跳转
+    console.log('开始跳转到游戏:', gameItem.game_name)
     router.push({
       name: 'to_game',
       params: {
@@ -345,10 +442,64 @@ function playGameHandler(gameItem) {
   }
 }
 
+// ==================== 更新后的 selectSupplierHandler 函数 ====================
+function selectSupplierHandler(supplier) {
+  if (!store.isLogin()) {
+    loginHandler()
+    return
+  }
+
+  // 调试信息：检查供应商数据
+  console.log('selectSupplierHandler - 供应商数据:', supplier)
+  console.log('selectSupplierHandler - is_can_run值:', supplier.is_can_run, '类型:', typeof supplier.is_can_run)
+
+  // 检查供应商是否可运行（维护状态判断）
+  // 供应商使用 is_can_run 字段：0=不可运行，1=可运行
+  if (supplier.is_can_run === 0 || supplier.is_can_run === '0' || supplier.is_can_run === false) {
+    console.log('供应商维护中，阻止跳转')
+    showToast('该厂商正在维护中')
+    return
+  }
+
+  // 额外检查：如果字段不存在或值异常，也提示维护
+  if (supplier.is_can_run === undefined || supplier.is_can_run === null) {
+    console.log('供应商状态未知，阻止跳转')
+    showToast('厂商状态异常，暂时无法进入')
+    return
+  }
+
+  try {
+    console.log('开始跳转到供应商:', supplier.name)
+
+    // ✅ 使用新的 supplier_games 路由，直接跳转到供应商游戏页面
+    router.push({
+      name: 'supplier_games',
+      params: {
+        supplier_code: supplier.code,
+        category_code: supplier.category_code || currentGameType.value?.game_type || 'SLOT'
+      },
+      query: {
+        supplier_name: supplier.name,
+        supplier_id: supplier.id,
+        currency_code: supplier.currency_code || 'CNY',
+        supplier_img: supplier.img_url,
+        supplier_desc: supplier.description || '',
+        is_can_run: supplier.is_can_run,
+        // 传递当前游戏类型信息
+        current_game_type_id: currentGameType.value?.id,
+        current_game_type_name: currentGameType.value?.title
+      }
+    })
+
+  } catch (error) {
+    console.error('厂商跳转失败:', error)
+    showToast('跳转失败')
+  }
+}
+
 // ==================== 用户相关方法 ====================
 function loginHandler() {
   store.$patch({ loginShow: true })
-  console.log('login show', store.getUser(), store.loginShow)
 }
 
 function signDailyHandler() {
@@ -371,39 +522,25 @@ function operatHandler(operationType) {
     case 3:
       router.push({ name: 'vip' })
       break
-    default:
-      console.warn('未知的操作类型:', operationType)
   }
 }
 
-// ==================== API 调用方法 ====================
-async function getNotices() {
-  console.log('获取通知 - 待实现')
-}
-
+// ==================== Banner相关方法 ====================
 async function getBanners() {
   try {
     const resp = await api.bannerList({ group: 'mobile1' })
-    console.log('banner resp:', resp)
-
     if (resp && resp.data && Array.isArray(resp.data)) {
       banners.value = resp.data
-      // 如果有banner数据，复制第一个用于无缝轮播
       if (banners.value.length >= 1) {
         banners.value.push(resp.data[0])
       }
-    } else {
-      console.warn('Banner数据格式异常:', resp)
     }
   } catch (error) {
     console.error('获取Banner失败:', error)
-    const message = error?.message
-    if (message && message.length > 0) {
-      showToast(message)
-    }
   }
 }
 
+// ==================== 用户信息刷新 ====================
 async function refreshUserInfo() {
   if (!store.isLogin()) {
     return
@@ -411,12 +548,8 @@ async function refreshUserInfo() {
 
   try {
     const resp = await api.getUserInfo()
-    console.log('user info resp:', resp)
-
     if (resp && resp.data) {
       store.setUser(resp.data)
-    } else {
-      console.warn('用户信息数据格式异常:', resp)
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
@@ -426,13 +559,9 @@ async function refreshUserInfo() {
 // ==================== 初始化方法 ====================
 async function init() {
   try {
-    // 隐藏登录弹窗
     store.$patch({ loginShow: false })
-
-    // 开始加载
     store.loading()
 
-    // 1. 并行获取基础数据
     const promises = [
       getNotices(),
       getBanners(),
@@ -441,34 +570,31 @@ async function init() {
 
     await Promise.allSettled(promises)
 
-    // 2. 默认选择HOT类型 (热门游戏)
     const hotGameType = gameTypes.value.find(type => type.game_type === 'HOT')
     if (hotGameType) {
       currentGameType.value = hotGameType
       await getGames('HOT', 1, false)
     } else if (gameTypes.value.length > 0) {
-      // 如果没有HOT类型，选择第一个类型
       const firstType = gameTypes.value[0]
       currentGameType.value = firstType
-      await getGames(firstType.game_type, 1, false)
+      if (firstType.game_type === 'HOT') {
+        await getGames('HOT', 1, false)
+      } else {
+        await getSuppliers(firstType.game_type, 1, false)
+      }
     }
 
-    // 3. 如果用户已登录，获取最新用户信息
     if (store.getUser()) {
       await refreshUserInfo()
     }
 
-    // 4. 设置滚动监听
     nextTick(() => {
       setupScrollListener()
     })
-
-    console.log('首页数据初始化完成')
   } catch (error) {
     console.error('首页初始化失败:', error)
     showToast('页面加载失败，请重试')
   } finally {
-    // 停止加载
     store.stopLoad()
   }
 }
@@ -486,17 +612,78 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
 
-  .my-swipe {
-    height: 140px;
-    .van-swipe-item {
-      color: var(--m-label-gb);
-      font-size: 20px;
-      height: 140px;
-      text-align: center;
-      background-color: #39a9ed;
+  // 顶部多语言样式
+  .m-header {
+    display: flex;
+    justify-content: flex-end; // 右对齐
+    align-items: center;
+    padding: 8px 16px; // 减少上下padding
+    background: var(--color-m-background);
+    min-height: 40px; // 设置最小高度
+
+    .m-header-right {
+      display: flex;
+      align-items: center;
     }
   }
 
+  // Banner样式 - 修复图片高度问题
+  .my-swipe {
+    height: 25vh !important; // 使用视口高度单位，加!important确保优先级
+    min-height: 200px !important; // 设置最小高度保底
+    .van-swipe-item {
+      color: var(--m-label-gb);
+      font-size: 20px;
+      height: 100% !important; // 确保轮播项填满容器
+      text-align: center;
+      background-color: #39a9ed;
+
+      // 确保banner图片填满容器
+      .banner-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; // 确保图片完整覆盖容器
+      }
+    }
+  }
+
+  // 通知栏样式
+  .m-notice {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 10px;
+
+    .m-notice-icon {
+      .m-notice-img {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .m-notice-content {
+      flex: 1;
+      height: 24px;
+      overflow: hidden;
+
+      .notice-swipe {
+        height: 24px;
+
+        .notice-text {
+          font-size: 14px;
+          color: #666;
+          line-height: 24px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+  }
+
+  // 用户信息区域样式
   .m-col {
     display: flex;
     flex-direction: column;
@@ -504,9 +691,7 @@ onMounted(() => {
     padding: 0 16px;
     color: var(--van-field-label-color);
     background: var(--color-m-background);
-    box-shadow:
-      0 0.08rem 0.32rem 0 rgba(209, 221, 242, 0.4),
-      0 -0.05333rem 0 0 hsla(0, 0%, 100%, 0.5);
+    box-shadow: 0 0.08rem 0.32rem 0 rgba(209, 221, 242, 0.4), 0 -0.05333rem 0 0 hsla(0, 0%, 100%, 0.5);
     border-radius: 0 0 0.13333rem 0.13333rem;
 
     .m-link {
@@ -581,11 +766,12 @@ onMounted(() => {
     }
   }
 
+  // 主内容区域样式
   .m-main-contain {
     display: flex;
     flex-direction: row;
     flex: 1;
-    height: calc(100vh - 270px);
+    height: calc(100vh - 350px);
     background-color: var(--color-m-background);
     gap: 10px;
 
@@ -595,10 +781,6 @@ onMounted(() => {
       width: 70px;
       height: 100%;
       background-color: var(--color-m-background);
-      background-image: var(--m-label-gb);
-      background-repeat: no-repeat;
-      background-position: 0 100%;
-      background-size: 60px 95%;
 
       .m-gameNav-container {
         padding-top: 10px;
@@ -647,46 +829,130 @@ onMounted(() => {
 
       .m-gameNav-container-list {
         padding: 10px 10px 10px 0px;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 9px;
 
-        .m-nav-list-item {
-          position: relative;
+        // 热门游戏列表样式 - 每行3个小图标，1:1比例
+        .m-content-games {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 8px;
+          justify-content: space-between;
+          padding: 0 4px;
+
+          .m-game-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: calc(33.333% - 6px); // 每行3个，减去gap
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 8px;
+
+            .m-game-img {
+              width: 100%;
+              aspect-ratio: 1; // 1:1 比例
+              border-radius: 6px;
+              margin-bottom: 6px;
+              background: #f5f5f5;
+            }
+
+            .m-game-name {
+              color: #333;
+              font-size: 11px;
+              text-align: center;
+              font-weight: 400;
+              line-height: 14px;
+              max-width: 100%;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+
+            .m-game-tag {
+              position: absolute;
+              top: 4px;
+              right: 4px;
+              font-size: 8px;
+              color: #fff;
+              background: #ff4444;
+              border-radius: 8px;
+              padding: 2px 4px;
+              min-width: 12px;
+              text-align: center;
+            }
+
+            // 游戏维护状态样式
+            .m-game-status {
+              position: absolute;
+              top: 4px;
+              left: 4px;
+              font-size: 8px;
+              color: #fff;
+              background: rgba(255, 0, 0, 0.9);
+              border-radius: 8px;
+              padding: 2px 4px;
+              font-weight: 500;
+              z-index: 2;
+            }
+          }
+        }
+
+        // 厂商列表样式 - 每行1个纯大图
+        .m-content-suppliers {
           display: flex;
           flex-direction: column;
-          gap: 5px;
-          justify-content: space-between;
-          align-items: flex-start;
-          width: 138px;
-          height: 108px;
-          background: var(--m-main-img-item-bg-color);
-          box-shadow: 0 0 0 2px rgb(0 0 0 / 5%);
-          border-radius: 2px;
+          gap: 12px;
+          padding: 0 4px;
 
-          .m-item-img {
-            width: 137.7px;
-            height: 80px;
-          }
+          .m-supplier-item {
+            position: relative;
+            width: 100%;
+            height: 120px; // 增加高度从 80px 到 120px
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
-          .m-item-txt {
-            color: var(--m-left-menu-color);
-            font-size: 12px;
-            line-height: 18px;
-            margin-left: 5px;
-            margin-bottom: 5px;
-          }
+            .m-supplier-img {
+              width: 100%;
+              height: 100%;
+              border-radius: 12px;
+            }
 
-          .m-item-tag {
-            position: absolute;
-            right: 5px;
-            top: 5px;
-            font-size: 12px;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 3px;
-            padding: 2px 5px;
+            // 供应商名称显示在图片底部中央
+            .m-supplier-name {
+              position: absolute;
+              bottom: 8px;
+              left: 50%;
+              transform: translateX(-50%);
+              font-size: 14px;
+              color: #fff;
+              background: rgba(0, 0, 0, 0.6);
+              border-radius: 6px;
+              padding: 4px 8px;
+              font-weight: 500;
+              z-index: 2;
+              max-width: calc(100% - 16px);
+              text-align: center;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+
+            .m-supplier-status {
+              position: absolute;
+              top: 8px;
+              right: 8px;
+              font-size: 10px;
+              color: #fff;
+              background: rgba(255, 0, 0, 0.9);
+              border-radius: 4px;
+              padding: 2px 6px;
+              font-weight: 500;
+              z-index: 2;
+            }
           }
         }
 
