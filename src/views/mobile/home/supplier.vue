@@ -123,7 +123,7 @@ import { onMounted, ref, computed, nextTick, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { showToast } from 'vant'
-import { getImgUrl, isMobile } from '@/utils/tools'
+import { getImgUrl, mobileFunc } from '@/utils/tools'
 import loginPop from '@/components/loginPop.vue'
 import api from '@/api'
 import { useI18n } from 'vue-i18n'
@@ -226,7 +226,7 @@ function enterGame(game: gameInfo) {
     params: {
       game: game.game_code,
       code: game.api_name || game.supplier_code || supplierInfo.value.code,
-      mobile: isMobile() ? 1 : 0,
+      mobile: mobileFunc() ? 1 : 0,
     },
   })
 }

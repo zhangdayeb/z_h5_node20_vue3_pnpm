@@ -4,7 +4,7 @@ import { showLoadingToast, type ToastWrapperInstance } from 'vant'
 import api from '@/api'
 import i18n from '@/lang'
 import type { ApiUser } from 'typings'
-import { isMobile } from '@/utils/tools'
+import { mobileFunc } from '@/utils/tools'
 import { ElLoading } from 'element-plus'
 import type { LoadingInstance } from 'element-plus/es/components/loading/src/loading.mjs'
 
@@ -22,7 +22,7 @@ export const useAppStore = defineStore('app', () => {
     return getUser() != null
   }
   function loading() {
-    if (isMobile()) {
+    if (mobileFunc()) {
       toast.value = showLoadingToast({
         message: i18n.global.t('loading'),
         duration: 0,

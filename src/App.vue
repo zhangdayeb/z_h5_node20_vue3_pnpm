@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { isMobile as mobileFunc } from '@/utils/tools'
+import { mobileFunc } from '@/utils/tools'
 import type { ConfigProviderTheme } from 'vant'
 
 const isMobile = ref(false)
@@ -9,15 +9,15 @@ const theme = ref<ConfigProviderTheme>('light')
 
 const isMobileFunc = () => {
   isMobile.value = mobileFunc()
-  // console.log('-----------------', isMobile.value)
 }
 
 isMobileFunc()
 
 window.addEventListener('resize', isMobileFunc)
+
 onMounted(() => {
-  // console.log('----------', isMobile.value)
 })
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', isMobileFunc)
 })

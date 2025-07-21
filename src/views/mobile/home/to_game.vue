@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { useAppStore } from '@/stores/app'
-import { invokeApi, isMobile } from '@/utils/tools'
+import { invokeApi, mobileFunc } from '@/utils/tools'
 import { showDialog } from 'vant'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -69,7 +69,7 @@ async function enterGame() {
       console.log(gameUrl)
 
       if (gameUrl) {
-        const h = isMobile()
+        const h = mobileFunc()
         if (h === false && window.parent) {
           // PC端：在父窗口中跳转
           window.parent.location.href = gameUrl

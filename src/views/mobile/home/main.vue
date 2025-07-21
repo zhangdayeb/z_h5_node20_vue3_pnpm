@@ -198,7 +198,7 @@ import NoticesPop from '@/views/mobile/components/notices.vue'
 
 // 工具和API导入
 import api from '@/api'
-import { getImgUrl, isMobile } from '@/utils/tools'
+import { getImgUrl, mobileFunc } from '@/utils/tools'
 import { useAppStore } from '@/stores/app'
 
 // 图片资源导入
@@ -433,7 +433,7 @@ function playGameHandler(gameItem) {
       params: {
         game: gameItem.game_code,
         code: gameItem.supplier_code,
-        mobile: isMobile() ? 1 : 0,
+        mobile: mobileFunc() ? 1 : 0,
       },
     })
   } catch (error) {

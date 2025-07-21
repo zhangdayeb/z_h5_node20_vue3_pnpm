@@ -160,8 +160,8 @@ defineOptions({ name: 'HomeMain' })
 import { onMounted, ref, nextTick } from 'vue'
 import LanguageVue from './components/language.vue'
 import api from '@/api'
-import { getImgUrl, isMobile } from '@/utils/tools'
-import { showNotify, showToast } from 'vant'
+import { getImgUrl, mobileFunc } from '@/utils/tools'
+import { showToast } from 'vant'
 import { useAppStore } from '@/stores/app'
 import { useRouter } from 'vue-router'
 import NoticesPop from '@/views/mobile/components/notices.vue'
@@ -336,7 +336,7 @@ function playGameHandler(gameItem) {
       params: {
         game: gameItem.game_code,
         code: gameItem.supplier_code,
-        mobile: isMobile() ? 1 : 0,
+        mobile: mobileFunc() ? 1 : 0,
       },
     })
   } catch (error) {

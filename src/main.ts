@@ -7,22 +7,18 @@ import i18n from './lang'
 import Vant, { Lazyload } from 'vant'
 import ElementPlus from 'element-plus'
 
-import { isMobile } from '@/utils/tools'
+import { mobileFunc } from '@/utils/tools'
 import { useConfigStore } from '@/stores/config'
 
 async function bootstrap() {
   const app = createApp(App)
   app.use(router)
 
-  if (isMobile()) {
-    // 动态加载 Vant 和 Lazyload
-    // const { default: Vant, Lazyload } = await import('vant')
+  if (mobileFunc()) {
     await import('vant/lib/index.css')
     app.use(Vant)
     app.use(Lazyload)
   } else {
-    // 动态加载 Element Plus
-    // const { default: ElementPlus } = await import('element-plus')
     await import('element-plus/dist/index.css')
     app.use(ElementPlus)
   }

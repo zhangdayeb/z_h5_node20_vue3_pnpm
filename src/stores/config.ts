@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { showLoadingToast, showFailToast, type ToastWrapperInstance } from 'vant'
 import { ElLoading, ElMessage } from 'element-plus'
 import type { LoadingInstance } from 'element-plus/es/components/loading/src/loading.mjs'
-import { isMobile } from '@/utils/tools'
+import { mobileFunc } from '@/utils/tools'
 import api from '@/api'
 
 // 站点配置接口定义
@@ -76,7 +76,7 @@ export const useConfigStore = defineStore('config', () => {
    * 显示加载状态
    */
   function showLoading(message: string = '加载配置中...') {
-    if (isMobile()) {
+    if (mobileFunc()) {
       loadingInstance.value = showLoadingToast({
         message,
         duration: 0,
@@ -108,7 +108,7 @@ export const useConfigStore = defineStore('config', () => {
    * 显示错误提示
    */
   function showError(message: string) {
-    if (isMobile()) {
+    if (mobileFunc()) {
       showFailToast(message)
     } else {
       ElMessage.error(message)
@@ -130,7 +130,7 @@ export const useConfigStore = defineStore('config', () => {
       const response = await api.sysConfig({
         group: 'system',
         url: url,
-        is_mobile: isMobile() ? 1 : 0
+        is_mobile: mobileFunc() ? 1 : 0
       })
 
       if (response && response.code === 200 && response.data) {

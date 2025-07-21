@@ -8,11 +8,7 @@ const domain = location.origin
 
 // ==================== 设备检测功能 ====================
 
-/**
- * 智能设备检测
- * 不再依赖 is_tg 参数判断移动端
- */
-export function isMobile(): boolean {
+export function mobileFunc(): boolean {
   return true
   const urlParams = new URLSearchParams(window.location.search)
 
@@ -32,6 +28,20 @@ export function isMobile(): boolean {
   const isSmallScreen = window.innerWidth < 768
 
   return isMobileDevice && isSmallScreen
+}
+
+// 返回主页类型
+export function mainTypeFunc(): string {
+  const urlParams = new URLSearchParams(window.location.search)
+
+  // 1. URL 参数强制
+  if (urlParams.get('mt') == '1') {
+    return 'main_game'
+  }else if(urlParams.get('mt') == '2') {
+    return 'main_supplier'
+  }else{
+    return 'main_game'
+  }
 }
 
 
@@ -181,7 +191,6 @@ export function getTelegramUserData() {
         const hashContent = hash.substring(1);
         console.log('🔍 处理 hash 内容:', hashContent);
 
-        // 尝试作为 URLSearchParams 解析
         const hashParams = new URLSearchParams(hashContent);
 
         // 直接获取 tg_id
