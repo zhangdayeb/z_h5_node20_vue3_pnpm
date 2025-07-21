@@ -42,6 +42,7 @@ export function mainTypeFunc(): string {
   }else{
     return 'main_game'
   }
+
 }
 
 

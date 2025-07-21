@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { mobileFunc } from '@/utils/tools'
+import { mobileFunc,mainTypeFunc } from '@/utils/tools'
 
 const dynaDir = () => (mobileFunc() ? 'mobile' : 'pc')
-const main_type = () => (mobileFunc() ? 'main_game' : 'main_supplier')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,7 +15,7 @@ const router = createRouter({
         {
           name: 'main',
           path: '/main',
-          component: () => import(`@/views/${dynaDir()}/home/${main_type()}.vue`),
+          component: () => import(`@/views/${dynaDir()}/home/${mainTypeFunc()}.vue`),
         },
         {
           name: 'gift',
