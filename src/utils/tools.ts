@@ -9,10 +9,9 @@ const domain = location.origin
 // ==================== 设备检测功能 ====================
 
 export function mobileFunc(): boolean {
-  return true
   const urlParams = new URLSearchParams(window.location.search)
 
-  // 1. URL 参数强制
+  // 1. URL 参数强制设置
   if (urlParams.get('is_mobile') === '1') {
     return true
   }
@@ -21,13 +20,32 @@ export function mobileFunc(): boolean {
     return false
   }
 
-  // 2. 设备检测
+  // 2. Telegram Web App 特殊检测
+  if (window.Telegram?.WebApp) {
+    // 检查是否在 Telegram 移动端打开
+    const platform = window.Telegram.WebApp.platform
+    const isTelegramMobile = ['android', 'ios'].includes(platform)
+
+    if (isTelegramMobile) {
+      return true
+    }
+  }
+
+  // 3. 通用设备检测
   const userAgent = navigator.userAgent
-  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+
+  // 增强的移动设备检测，包含更多 Telegram 相关的 UA
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Telegram/i
   const isMobileDevice = mobileRegex.test(userAgent)
+
+  // 屏幕尺寸检测
   const isSmallScreen = window.innerWidth < 768
 
-  return isMobileDevice && isSmallScreen
+  // 检测触摸设备
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+  // 综合判断
+  return (isMobileDevice && isSmallScreen) || (isTouchDevice && isSmallScreen)
 }
 
 // 返回主页类型
