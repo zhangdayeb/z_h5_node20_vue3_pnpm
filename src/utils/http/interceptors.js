@@ -18,7 +18,7 @@ export function setupInterceptors(axiosInstance) {
       const groupPrefix = configStore.groupPrefix;
 
       if (groupPrefix) {
-        config.headers['group_prefix'] = groupPrefix;
+        config.headers['group-prefix'] = groupPrefix;
       }
     } catch (error) {
       // 如果store还没初始化，跳过group_prefix设置

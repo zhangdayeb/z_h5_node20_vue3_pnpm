@@ -212,7 +212,6 @@ export const useConfigStore = defineStore('config', () => {
   function updateSiteConfig(config: SiteConfig): void {
     siteConfig.value = config
 
-    // 更新 group_prefix
     if (config.group_prefix) {
       groupPrefix.value = config.group_prefix
     }
