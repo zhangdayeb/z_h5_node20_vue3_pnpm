@@ -33,7 +33,7 @@
             {{ $t('mine.fsWallet')
             }}<van-icon name="arrow" color="#c3dae9" class="m-p-icon" />
           </p>
-          <h6>{{ Number(store.getUser()?.fs_money ?? '0').toFixed(2) }}</h6>
+          <h6>{{ Number(store.getUser()?.money_rebate ?? '0').toFixed(2) }}</h6>
         </div>
         <div
           class="m-col"

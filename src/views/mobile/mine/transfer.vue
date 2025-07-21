@@ -19,8 +19,8 @@
         <h5>{{ $t('mine.totalBalance') }}</h5>
       </div>
       <div class="m-col m-static-item">
-        <span class="m-c-red">{{ statistic?.fs_money?.money ?? '0.00' }}</span>
-        <h5>{{ $t('mine.fs_money') }}</h5>
+        <span class="m-c-red">{{ statistic?.money_rebate?.money ?? '0.00' }}</span>
+        <h5>{{ $t('mine.money_rebate') }}</h5>
       </div>
     </div>
 
@@ -121,9 +121,9 @@ const router = useRouter()
 const list = ref<ApiWallet[]>([])
 const statistic = ref<{ [key: string]: ApiWallet | null }>({
   money: null,
-  fs_money: null,
+  money_rebate: null,
 })
-const moneyArr = ref(['money', 'fs_money'])
+const moneyArr = ref(['money', 'money_rebate'])
 const btnLabel = computed(() => {
   return store.getUser()?.is_trans_on ?? 0
 })
@@ -234,8 +234,8 @@ async function transferMoneyHandler() {
     showToast(t('mine.inputTransferMoney'))
     return
   }
-  if (['money', 'fs_money'].includes(frm.value.from)) {
-    if (['money', 'fs_money'].includes(frm.value.to)) {
+  if (['money', 'money_rebate'].includes(frm.value.from)) {
+    if (['money', 'money_rebate'].includes(frm.value.to)) {
       showToast(t('moneyTransferMoneyNot'))
     } else {
       const rest = await deposit(m)

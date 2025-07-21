@@ -58,7 +58,7 @@ export interface ApiUser {
   deleted_at?: string
   email?: string
   facebook?: string
-  fs_money: number
+  money_rebate: number
   gender: number
   has_qk_pwd: boolean
   id: number
