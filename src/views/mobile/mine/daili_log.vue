@@ -1,13 +1,13 @@
 <template>
-  <div class="fanshui-record">
+  <div class="daili-record">
     <van-nav-bar
       left-arrow
-      title="返水记录"
+      title="代理记录"
       @click-left="onClickLeft"
       class="nav-bar"
     />
 
-    <!-- 返水记录列表 -->
+    <!-- 代理记录列表 -->
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
       <van-list
         v-model:loading="loading"
@@ -16,68 +16,133 @@
         @load="onLoad"
         class="record-list"
       >
-        <van-cell
+        <div
           v-for="item in list"
           :key="item.id"
-          :title="item.remark"
-          :label="item.create_time"
-          :value="item.money_display"
-          :value-class="getAmountClass(item.money)"
-        />
+          class="record-item"
+        >
+          <div class="record-info">
+            <div class="record-title">{{ item.name }}</div>
+            <div class="record-time">{{ item.created_at }}</div>
+          </div>
+          <div class="record-action">
+            <div class="record-proportion">{{ item.fanyong_proportion }}%</div>
+            <van-button
+              type="primary"
+              size="small"
+              @click="handleEdit(item)"
+              class="edit-btn"
+            >
+              调整比例
+            </van-button>
+          </div>
+        </div>
       </van-list>
     </van-pull-refresh>
 
     <!-- 空状态 -->
     <van-empty
       v-if="!loading && !refreshing && list.length === 0"
-      description="暂无返水记录"
+      description="暂无代理记录"
       image="https://img.yzcdn.cn/vant/custom-empty-image.png"
     />
+
+    <!-- 编辑弹窗 -->
+    <van-dialog
+      v-model:show="showEditDialog"
+      title="调整返佣比例"
+      show-cancel-button
+      confirm-button-text="确认"
+      cancel-button-text="取消"
+      :before-close="handleDialogAction"
+    >
+      <div class="edit-content">
+        <div class="edit-info">
+          <p>代理：{{ currentEditItem?.name || '' }}</p>
+          <p>当前比例：{{ currentEditItem?.fanyong_proportion || '0.00' }}</p>
+          <p>您的比例：{{ currentUserInfo?.fanyong_proportion || '0.00' }}</p>
+        </div>
+        <van-field
+          v-model="editProportion"
+          type="number"
+          label="新比例"
+          placeholder="请输入小数，如：0.05"
+          step="0.01"
+        />
+      </div>
+    </van-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { invokeApi } from '@/utils/tools'
+import { showToast } from 'vant'
 
-defineOptions({ name: 'FanshuiRecord' })
+defineOptions({ name: 'DailiRecord' })
 
-interface FanshuiRecordItem {
+interface DailiRecordItem {
   id: number
-  create_time: string
-  money: string
-  money_display: string
-  remark: string
+  name: string
+  created_at: string
+  fanyong_proportion: string
+}
+
+interface UserInfo {
+  fanyong_proportion: string
 }
 
 const router = useRouter()
 
 const page = ref(0)
-const list = ref<FanshuiRecordItem[]>([])
+const list = ref<DailiRecordItem[]>([])
 const loading = ref(false)
 const refreshing = ref(false)
 const finished = ref(false)
+const currentUserInfo = ref<UserInfo | null>(null) // 当前登录用户信息
 
-// 获取金额样式类
-function getAmountClass(money: string): string {
-  const amount = parseFloat(money)
-  return amount >= 0 ? 'amount-positive' : 'amount-negative'
+// 编辑相关
+const showEditDialog = ref(false)
+const currentEditItem = ref<DailiRecordItem | null>(null)
+const editProportion = ref('')
+
+// 验证比例
+const validateProportion = (value: string) => {
+  console.log('验证比例:', {
+    value,
+    currentUserInfo: currentUserInfo.value
+  })
+
+  if (!currentUserInfo.value?.fanyong_proportion) {
+    console.log('当前用户返佣比例信息不存在')
+    return false
+  }
+
+  const inputValue = parseFloat(value)
+  const userProportion = parseFloat(currentUserInfo.value.fanyong_proportion)
+
+  console.log('比例比较:', {
+    inputValue,
+    userProportion,
+    isValid: !isNaN(inputValue) && inputValue <= userProportion && inputValue >= 0
+  })
+
+  return !isNaN(inputValue) && inputValue <= userProportion && inputValue >= 0
 }
 
 // 下拉刷新
 const onRefresh = async () => {
   finished.value = false
-  loading.value = true
   page.value = 0
   list.value = []
-  await getFanshuiRecords()
+  await getDailiRecords()
   refreshing.value = false
 }
 
 // 加载更多
 const onLoad = async () => {
-  await getFanshuiRecords()
+  await getDailiRecords()
 }
 
 // 返回上一页
@@ -85,10 +150,10 @@ function onClickLeft() {
   router.back()
 }
 
-// 获取返水记录
-async function getFanshuiRecords() {
+// 获取代理记录
+async function getDailiRecords() {
   try {
-    const resp = await invokeApi('fanshuiRecord', {
+    const resp = await invokeApi('dailiRecord', {
       page: page.value + 1,
       limit: 20
     })
@@ -98,8 +163,16 @@ async function getFanshuiRecords() {
       return
     }
 
-    if (resp.data) {
-      const data = resp.data
+    // 后端返回的数据在 resp.message 中，因为后端使用的是 success() 方法
+    if (resp.message) {
+      const data = resp.message
+
+      // 每次加载数据时都更新当前用户信息
+      if (data.user_info) {
+        currentUserInfo.value = data.user_info
+        console.log('更新当前用户信息:', currentUserInfo.value)
+      }
+
       page.value = data.pagination?.current_page ?? 1
       const newList = data.list ?? []
 
@@ -117,21 +190,112 @@ async function getFanshuiRecords() {
       finished.value = true
     }
   } catch (error) {
-    console.error('获取返水记录失败:', error)
+    console.error('获取代理记录失败:', error)
     finished.value = true
   } finally {
     loading.value = false
   }
 }
 
-// 页面加载时获取数据
-onMounted(() => {
-  getFanshuiRecords()
-})
+// 处理编辑
+function handleEdit(item: DailiRecordItem) {
+  console.log('点击编辑按钮，目标用户:', item)
+  console.log('当前用户信息:', currentUserInfo.value)
+
+  currentEditItem.value = item
+  editProportion.value = item.fanyong_proportion
+  showEditDialog.value = true
+
+  console.log('弹窗状态设置完成:', {
+    showEditDialog: showEditDialog.value,
+    currentEditItem: currentEditItem.value,
+    editProportion: editProportion.value
+  })
+}
+
+// 处理弹窗操作
+function handleDialogAction(action: string) {
+  console.log('弹窗操作:', action)
+
+  if (action === 'confirm') {
+    return handleConfirmEdit()
+  } else {
+    handleCancelEdit()
+    return true
+  }
+}
+
+// 确认编辑
+async function handleConfirmEdit() {
+  console.log('点击确认按钮')
+  console.log('当前编辑项:', currentEditItem.value)
+  console.log('输入的比例:', editProportion.value)
+  console.log('用户信息:', currentUserInfo.value)
+
+  if (!currentEditItem.value) {
+    console.log('没有选中的编辑项')
+    return false
+  }
+
+  // 验证输入
+  if (!editProportion.value) {
+    console.log('比例为空')
+    showToast('请输入返佣比例')
+    return false
+  }
+
+  const isValid = validateProportion(editProportion.value)
+  console.log('比例验证结果:', isValid)
+
+  if (!isValid) {
+    const userProp = currentUserInfo.value?.fanyong_proportion || '0.00'
+    showToast(`比例不能超过您的返佣比例 ${userProp}，且不能小于0`)
+    return false
+  }
+
+  console.log('验证通过，准备发送请求')
+
+  try {
+    const requestData = {
+      user_id: currentEditItem.value.id,
+      fanyong_proportion: parseFloat(editProportion.value).toFixed(2)
+    }
+
+    console.log('发送编辑请求:', requestData)
+
+    const resp = await invokeApi('dailiEdit', requestData)
+
+    console.log('编辑响应:', resp)
+
+    if (resp && resp.code === 200) {
+      showToast('修改成功')
+      showEditDialog.value = false
+      // 刷新列表
+      onRefresh()
+      return true
+    } else {
+      showToast(resp?.data || resp?.message || '修改失败')
+      return false
+    }
+  } catch (error) {
+    console.error('修改失败:', error)
+    showToast(error?.message || '修改失败')
+    return false
+  }
+}
+
+// 取消编辑
+function handleCancelEdit() {
+  showEditDialog.value = false
+  currentEditItem.value = null
+  editProportion.value = ''
+}
+
+// 移除多余的函数，直接从API获取用户信息
 </script>
 
 <style scoped>
-.fanshui-record {
+.daili-record {
   min-height: 100vh;
   background-color: #f7f8fa;
 }
@@ -142,53 +306,94 @@ onMounted(() => {
 }
 
 .record-list {
-  padding: 0;
+  padding: 16px;
 }
 
-.fanshui-record :deep(.van-cell) {
-  margin-bottom: 8px;
+.record-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background-color: #fff;
   border-radius: 8px;
-  margin-left: 16px;
-  margin-right: 16px;
+  padding: 16px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.fanshui-record :deep(.van-cell:first-child) {
-  margin-top: 16px;
+.record-info {
+  flex: 1;
 }
 
-.fanshui-record :deep(.van-cell__title) {
-  font-size: 14px;
+.record-title {
+  font-size: 16px;
   color: #333;
   font-weight: 500;
+  margin-bottom: 4px;
 }
 
-.fanshui-record :deep(.van-cell__label) {
+.record-time {
   font-size: 12px;
   color: #999;
-  margin-top: 4px;
 }
 
-.fanshui-record :deep(.van-cell__value) {
-  font-size: 16px;
+.record-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.record-proportion {
+  font-size: 14px;
+  color: #07c160;
   font-weight: 600;
 }
 
-.fanshui-record :deep(.van-cell__value.amount-positive) {
-  color: #07c160;
+.edit-btn {
+  min-width: 80px;
+  height: 32px;
+  font-size: 12px;
 }
 
-.fanshui-record :deep(.van-cell__value.amount-negative) {
-  color: #ee0a24;
+.edit-content {
+  padding: 16px;
 }
 
-.fanshui-record :deep(.van-list__finished-text) {
+.edit-info {
+  margin-bottom: 16px;
+}
+
+.edit-info p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.proportion-unit {
+  color: #999;
+  font-size: 14px;
+}
+
+.daili-record :deep(.van-list__finished-text) {
   color: #999;
   font-size: 12px;
   padding: 20px 0;
 }
 
-.fanshui-record :deep(.van-empty) {
+.daili-record :deep(.van-empty) {
   padding: 100px 0;
+}
+
+.daili-record :deep(.van-dialog) {
+  border-radius: 12px;
+}
+
+.daili-record :deep(.van-field__label) {
+  font-size: 14px;
+  color: #333;
+}
+
+.daili-record :deep(.van-field__control) {
+  font-size: 14px;
 }
 </style>
