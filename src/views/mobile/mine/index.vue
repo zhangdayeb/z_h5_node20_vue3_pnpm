@@ -122,7 +122,7 @@
         @click.stop="menuHandler(3)"
       >
         <template #icon>
-          <van-icon name="gold-coin-o" class="m-cell-icon m-f17" />
+          <van-icon name="records" class="m-cell-icon m-f17" />
         </template>
       </van-cell>
       <van-cell
@@ -131,7 +131,34 @@
         @click.stop="menuHandler(4)"
       >
         <template #icon>
-          <van-icon name="cash-o" class="m-cell-icon m-f17" />
+          <van-icon name="bill-o" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        title="返水记录"
+        is-link
+        @click.stop="menuHandler(5)"
+      >
+        <template #icon>
+          <van-icon name="balance-o" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        title="返佣记录"
+        is-link
+        @click.stop="menuHandler(6)"
+      >
+        <template #icon>
+          <van-icon name="gift-o" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        title="下级会员"
+        is-link
+        @click.stop="menuHandler(7)"
+      >
+        <template #icon>
+          <van-icon name="friends-o" class="m-cell-icon m-f17" />
         </template>
       </van-cell>
       <van-cell
@@ -140,7 +167,7 @@
         @click.stop="logoutHandler"
       >
         <template #icon>
-          <van-icon name="arrow-left" class="m-cell-icon m-f17" />
+          <van-icon name="logout" class="m-cell-icon m-f17" />
         </template>
       </van-cell>
     </van-cell-group>
@@ -280,6 +307,15 @@ function menuHandler(n: number) {
       break
     case 4:
       router.push({ path: '/withdrawLog' })
+      break
+    case 5:
+      router.push({ path: '/fanyongRecord' })
+      break
+    case 6:
+      router.push({ path: '/fanshuiRecord' })
+      break
+    case 7:
+      router.push({ path: '/dailiRecord' })
       break
   }
 }

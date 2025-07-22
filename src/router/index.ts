@@ -117,6 +117,21 @@ const router = createRouter({
       component: () => import(`@/views/${dynaDir()}/mine/game_log.vue`),
     },
     {
+      name: 'fanyongRecord',
+      path: '/fanyongRecord',
+      component: () => import(`@/views/${dynaDir()}/mine/fanyong_log.vue`),
+    },
+    {
+      name: 'fanshuiRecord',
+      path: '/fanshuiRecord',
+      component: () => import(`@/views/${dynaDir()}/mine/fanshui_log.vue`),
+    },
+    {
+      name: 'dailiRecord',
+      path: '/dailiRecord',
+      component: () => import(`@/views/${dynaDir()}/mine/daili_log.vue`),
+    },
+    {
       name: 'extension',
       path: '/extension',
       component: () => import(`@/views/${dynaDir()}/mine/extension.vue`),

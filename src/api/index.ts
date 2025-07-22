@@ -170,6 +170,22 @@ const api: Api = {
   gameRecord: (params = {}) =>
     request.get('/money/game_record', { params }),
 
+  // 返水记录
+  fanshuiRecord: (params = {}) =>
+    request.get('/money/fanshui_record', { params }),
+
+  // 返佣记录
+  fanyongRecord: (params = {}) =>
+    request.get('/money/fanyong_record', { params }),
+
+  // 代理列表
+  dailiRecord: (params = {}) =>
+    request.get('/money/daili_record', { params }),
+
+  // 代理比例调整
+  dailiEdit: (params = {}) =>
+    request.get('/money/daili_edit', { params }),
+
   // ========== 团队模块 ==========
   // 团队信息
   teamInfo: (params = {}) =>
