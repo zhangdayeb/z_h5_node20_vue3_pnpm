@@ -244,6 +244,11 @@ export const moneyApi = {
   setDefaultAccount: api.setDefaultAccount,
   accountList: api.accountList,
   gameRecord: api.gameRecord,
+  fanshuiRecord: api.fanshuiRecord,
+  fanyongRecord: api.fanyongRecord,
+  dailiRecord: api.dailiRecord,
+  dailiEdit: api.dailiEdit,
+
 }
 
 export const teamApi = {
