@@ -15,6 +15,41 @@
       />
     </van-cell-group>
 
+    <!-- 资金信息 -->
+    <van-cell-group class="m-top10">
+      <van-cell class="money-cell">
+        <template #title>
+          <span class="money-title">用户余额</span>
+        </template>
+        <template #value>
+          <span class="money-value">{{ formatMoney(userInfo?.money) }}</span>
+        </template>
+      </van-cell>
+
+      <van-cell class="money-cell">
+        <template #title>
+          <span class="money-title">返水金额</span>
+        </template>
+        <template #value>
+          <span class="money-value rebate">{{ formatMoney(userInfo?.money_rebate) }}</span>
+        </template>
+      </van-cell>
+
+      <van-cell class="money-cell">
+        <template #title>
+          <span class="money-title">返佣金额</span>
+        </template>
+        <template #value>
+          <span class="money-value commission">{{ formatMoney(userInfo?.money_fanyong) }}</span>
+        </template>
+      </van-cell>
+
+      <van-cell
+        title="货币类型"
+        :value="formatCurrency(userInfo?.currency)"
+      />
+    </van-cell-group>
+
     <!-- 个人资料 -->
     <van-cell-group class="m-top10">
       <van-cell
@@ -34,8 +69,6 @@
         @click="editUserInfo('nick_name')"
       />
     </van-cell-group>
-
-
 
     <!-- 编辑基础信息弹窗 -->
     <van-popup
@@ -66,8 +99,6 @@
         </van-button>
       </div>
     </van-popup>
-
-
   </div>
 </template>
 
@@ -97,6 +128,35 @@ const basicForm = ref({
 
 // 计算属性：获取用户信息
 const userInfo = computed(() => store.getUser())
+
+// 格式化金额显示
+function formatMoney(amount: string | number | undefined): string {
+  if (!amount) return '0.00'
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount
+  return num.toFixed(2)
+}
+
+// 格式化货币类型显示
+function formatCurrency(currency: string | undefined): string {
+  const currencyMap: Record<string, string> = {
+    'CNY': '人民币 (CNY)',
+    'USD': '美元 (USD)',
+    'EUR': '欧元 (EUR)',
+    'JPY': '日元 (JPY)',
+    'KRW': '韩元 (KRW)',
+    'THB': '泰铢 (THB)',
+    'VND': '越南盾 (VND)',
+    'SGD': '新加坡元 (SGD)',
+    'MYR': '马来西亚令吉 (MYR)',
+    'PHP': '菲律宾比索 (PHP)',
+    'IDR': '印尼盾 (IDR)',
+    'BTC': '比特币 (BTC)',
+    'ETH': '以太坊 (ETH)',
+    'USDT': '泰达币 (USDT)'
+  }
+
+  return currencyMap[currency || 'CNY'] || `${currency || 'CNY'}`
+}
 
 // 返回
 function onClickLeft() {
@@ -188,11 +248,45 @@ onMounted(() => {
   .m-top10 {
     margin-top: 10px;
   }
+
   .m-pop-frm {
     margin-top: 46px;
   }
+
+  .money-cell {
+    .money-title {
+      font-size: 14px;
+      color: #323233;
+      font-weight: 500;
+    }
+
+    .money-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #07c160;
+
+      &.rebate {
+        color: #1989fa;
+      }
+
+      &.commission {
+        color: #ff976a;
+      }
+    }
+  }
+}
+
+.m-person :deep(.van-cell__title) {
+  font-size: 14px;
+  color: #323233;
+}
+
+.m-person :deep(.van-cell__value) {
+  font-size: 14px;
+  color: #646566;
 }
 </style>
+
 <style lang="less">
 @import url('@/views/mobile/common.less');
 </style>
