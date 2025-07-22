@@ -133,11 +133,13 @@ const validateProportion = (value: string) => {
 
 // 下拉刷新
 const onRefresh = async () => {
+  console.log('开始刷新数据')
   finished.value = false
-  page.value = 0
-  list.value = []
-  await getDailiRecords()
+  page.value = 0  // 重置页码
+  list.value = []  // 清空现有数据
+  await getDailiRecords()  // 获取第一页数据
   refreshing.value = false
+  console.log('刷新完成，当前数据条数:', list.value.length)
 }
 
 // 加载更多
@@ -270,8 +272,14 @@ async function handleConfirmEdit() {
     if (resp && resp.code === 200) {
       showToast('修改成功')
       showEditDialog.value = false
-      // 刷新列表
-      onRefresh()
+
+      // 直接更新当前列表中的数据，而不是重新刷新整个列表
+      const targetIndex = list.value.findIndex(item => item.id === currentEditItem.value?.id)
+      if (targetIndex !== -1) {
+        list.value[targetIndex].fanyong_proportion = parseFloat(editProportion.value).toFixed(2)
+        console.log('直接更新列表数据，索引:', targetIndex)
+      }
+
       return true
     } else {
       showToast(resp?.data || resp?.message || '修改失败')
