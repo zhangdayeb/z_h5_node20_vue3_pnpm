@@ -186,6 +186,9 @@ const api: Api = {
   dailiEdit: (params = {}) =>
     request.get('/money/daili_edit', { params }),
 
+  dailiAddMemberMoney: (params = {}) =>
+    request.get('/money/daili_add_memeber_money', { params }),
+
   // ========== 团队模块 ==========
   // 团队信息
   teamInfo: (params = {}) =>
@@ -248,7 +251,7 @@ export const moneyApi = {
   fanyongRecord: api.fanyongRecord,
   dailiRecord: api.dailiRecord,
   dailiEdit: api.dailiEdit,
-
+  dailiAddMemberMoney: api.dailiAddMemberMoney,
 }
 
 export const teamApi = {
