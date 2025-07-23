@@ -23,6 +23,7 @@
         >
           <div class="record-info">
             <div class="record-title">{{ item.name }}</div>
+            <div class="record-time">余额:{{ item.money }}</div>
             <div class="record-time">{{ item.created_at }}</div>
           </div>
           <div class="record-action">
