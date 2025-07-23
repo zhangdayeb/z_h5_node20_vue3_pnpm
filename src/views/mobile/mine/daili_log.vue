@@ -65,7 +65,7 @@
       show-cancel-button
       confirm-button-text="确认"
       cancel-button-text="取消"
-      :before-close="handleDialogAction"
+      :before-close="handleEditConfirm"
     >
       <div class="edit-content">
         <div class="edit-info">
@@ -90,7 +90,7 @@
       show-cancel-button
       confirm-button-text="确认转账"
       cancel-button-text="取消"
-      :before-close="handleAddMoneyDialogAction"
+      :before-close="handleAddMoneyConfirm"
     >
       <div class="add-money-content">
         <div class="add-money-info">
@@ -116,7 +116,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { invokeApi } from '@/utils/tools'
 import { showToast } from 'vant'
 
@@ -126,6 +126,7 @@ interface DailiRecordItem {
   id: number
   name: string
   created_at: string
+  money: string
   fanyong_proportion: string
 }
 
@@ -136,364 +137,247 @@ interface UserInfo {
 
 const router = useRouter()
 
-const page = ref(0)
+// === 数据状态 ===
 const list = ref<DailiRecordItem[]>([])
+const currentUserInfo = ref<UserInfo | null>(null)
+const currentPage = ref(1)
 const loading = ref(false)
 const refreshing = ref(false)
 const finished = ref(false)
-const currentUserInfo = ref<UserInfo | null>(null) // 当前登录用户信息
 
-// 编辑比例相关
+// === 编辑比例状态 ===
 const showEditDialog = ref(false)
 const currentEditItem = ref<DailiRecordItem | null>(null)
 const editProportion = ref('')
 
-// 上分相关
+// === 上分状态 ===
 const showAddMoneyDialog = ref(false)
 const currentAddMoneyItem = ref<DailiRecordItem | null>(null)
 const addMoneyAmount = ref('')
 
-// 验证比例
-const validateProportion = (value: string) => {
-  console.log('验证比例:', {
-    value,
-    currentUserInfo: currentUserInfo.value
-  })
+// === 初始化 ===
+onMounted(() => {
+  loadData(1, true)
+})
 
-  if (!currentUserInfo.value?.fanyong_proportion) {
-    console.log('当前用户返佣比例信息不存在')
-    return false
-  }
-
-  const inputValue = parseFloat(value)
-  const userProportion = parseFloat(currentUserInfo.value.fanyong_proportion)
-
-  console.log('比例比较:', {
-    inputValue,
-    userProportion,
-    isValid: !isNaN(inputValue) && inputValue <= userProportion && inputValue >= 0
-  })
-
-  return !isNaN(inputValue) && inputValue <= userProportion && inputValue >= 0
-}
-
-// 验证转账金额（动态获取最新余额）
-const validateAmount = async (value: string) => {
-  console.log('验证转账金额:', {
-    value,
-    currentUserInfo: currentUserInfo.value
-  })
-
-  // 先刷新用户信息获取最新余额
-  await refreshUserInfo()
-
-  if (!currentUserInfo.value?.money) {
-    console.log('当前用户余额信息不存在')
-    return false
-  }
-
-  const inputValue = parseFloat(value)
-  const userMoney = parseFloat(currentUserInfo.value.money)
-
-  console.log('余额比较:', {
-    inputValue,
-    userMoney,
-    isValid: !isNaN(inputValue) && inputValue > 0 && inputValue <= userMoney
-  })
-
-  return !isNaN(inputValue) && inputValue > 0 && inputValue <= userMoney
-}
-
-// 刷新用户信息
-const refreshUserInfo = async () => {
+// === 核心数据加载函数 ===
+async function loadData(page: number, isRefresh: boolean = false) {
   try {
-    console.log('刷新用户信息中...')
-    const resp = await invokeApi('dailiRecord', {
-      page: 1,
-      limit: 1  // 只需要获取用户信息，不需要列表数据
-    })
+    console.log(`开始加载第${page}页数据，是否刷新:${isRefresh}`)
 
-    if (resp && resp.message && resp.message.user_info) {
-      currentUserInfo.value = resp.message.user_info
-      console.log('用户信息已刷新:', currentUserInfo.value)
+    if (isRefresh) {
+      loading.value = false
+      finished.value = false
+      currentPage.value = 1
+      list.value = []
+    } else {
+      loading.value = true
     }
-  } catch (error) {
-    console.error('刷新用户信息失败:', error)
-  }
-}
 
-// 下拉刷新
-const onRefresh = async () => {
-  console.log('开始刷新数据')
-  finished.value = false
-  page.value = 0  // 重置页码
-  list.value = []  // 清空现有数据
-  await getDailiRecords()  // 获取第一页数据
-  refreshing.value = false
-  console.log('刷新完成，当前数据条数:', list.value.length)
-}
-
-// 加载更多
-const onLoad = async () => {
-  await getDailiRecords()
-}
-
-// 返回上一页
-function onClickLeft() {
-  router.back()
-}
-
-// 获取代理记录
-async function getDailiRecords() {
-  try {
     const resp = await invokeApi('dailiRecord', {
-      page: page.value + 1,
+      page: page,
       limit: 20
     })
 
-    if (!resp) {
-      loading.value = false
+    if (!resp || !resp.message) {
+      console.error('API响应异常')
+      finished.value = true
       return
     }
 
-    // 后端返回的数据在 resp.message 中，因为后端使用的是 success() 方法
-    if (resp.message) {
-      const data = resp.message
+    const data = resp.message
+    console.log('API响应数据:', data)
 
-      // 每次加载数据时都更新当前用户信息
-      if (data.user_info) {
-        currentUserInfo.value = data.user_info
-        console.log('更新当前用户信息:', currentUserInfo.value)
-      }
-
-      page.value = data.pagination?.current_page ?? 1
-      const newList = data.list ?? []
-
-      if (page.value === 1) {
-        // 首次加载或刷新
-        list.value = newList
-      } else {
-        // 加载更多
-        list.value.push(...newList)
-      }
-
-      // 判断是否还有更多数据
-      finished.value = !data.pagination?.has_more
-    } else {
-      finished.value = true
+    // 更新用户信息
+    if (data.user_info) {
+      currentUserInfo.value = data.user_info
+      updateLocalStorage(data.user_info.money)
+      console.log('更新用户信息:', currentUserInfo.value)
     }
+
+    // 处理列表数据
+    const newList = data.list || []
+    if (page === 1) {
+      list.value = newList
+      console.log('设置第一页数据，共:', newList.length, '条')
+    } else {
+      list.value = [...list.value, ...newList]
+      console.log('追加第', page, '页数据，新增:', newList.length, '条，总计:', list.value.length, '条')
+    }
+
+    // 更新分页状态
+    currentPage.value = page
+    finished.value = !data.pagination?.has_more
+
+    console.log('数据加载完成，当前页:', currentPage.value, '是否还有更多:', !finished.value)
+
   } catch (error) {
-    console.error('获取代理记录失败:', error)
+    console.error('加载数据失败:', error)
     finished.value = true
   } finally {
     loading.value = false
+    refreshing.value = false
   }
 }
 
-// 处理编辑比例
-function handleEdit(item: DailiRecordItem) {
-  console.log('点击编辑按钮，目标用户:', item)
-  console.log('当前用户信息:', currentUserInfo.value)
+// === 下拉刷新 ===
+async function onRefresh() {
+  console.log('=== 开始下拉刷新 ===')
+  await loadData(1, true)
+  console.log('=== 下拉刷新完成 ===')
+}
 
+// === 上拉加载更多 ===
+async function onLoad() {
+  console.log('=== 开始加载更多 ===')
+  await loadData(currentPage.value + 1, false)
+  console.log('=== 加载更多完成 ===')
+}
+
+// === 更新本地存储 ===
+function updateLocalStorage(money: string) {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('current_user') || '{}')
+    currentUser.money = money
+    localStorage.setItem('current_user', JSON.stringify(currentUser))
+    console.log('localStorage已更新，余额:', money)
+  } catch (error) {
+    console.error('更新localStorage失败:', error)
+  }
+}
+
+// === 编辑比例 ===
+function handleEdit(item: DailiRecordItem) {
+  console.log('打开编辑弹窗:', item.name)
   currentEditItem.value = item
   editProportion.value = item.fanyong_proportion
   showEditDialog.value = true
-
-  console.log('弹窗状态设置完成:', {
-    showEditDialog: showEditDialog.value,
-    currentEditItem: currentEditItem.value,
-    editProportion: editProportion.value
-  })
 }
 
-// 处理上分
-async function handleAddMoney(item: DailiRecordItem) {
-  console.log('点击上分按钮，目标用户:', item)
-  console.log('当前用户信息:', currentUserInfo.value)
-
-  // 在打开弹窗前先刷新用户信息，确保余额是最新的
-  await refreshUserInfo()
-
-  currentAddMoneyItem.value = item
-  addMoneyAmount.value = ''
-  showAddMoneyDialog.value = true
-
-  console.log('上分弹窗状态设置完成:', {
-    showAddMoneyDialog: showAddMoneyDialog.value,
-    currentAddMoneyItem: currentAddMoneyItem.value,
-    refreshedUserInfo: currentUserInfo.value
-  })
-}
-
-// 处理编辑比例弹窗操作
-function handleDialogAction(action: string) {
-  console.log('编辑比例弹窗操作:', action)
-
-  if (action === 'confirm') {
-    return handleConfirmEdit()
-  } else {
-    handleCancelEdit()
+async function handleEditConfirm(action: string) {
+  if (action !== 'confirm') {
+    showEditDialog.value = false
     return true
   }
-}
 
-// 处理上分弹窗操作
-function handleAddMoneyDialogAction(action: string) {
-  console.log('上分弹窗操作:', action)
-
-  if (action === 'confirm') {
-    return handleConfirmAddMoney()
-  } else {
-    handleCancelAddMoney()
-    return true
-  }
-}
-
-// 确认编辑比例
-async function handleConfirmEdit() {
-  console.log('点击确认按钮')
-  console.log('当前编辑项:', currentEditItem.value)
-  console.log('输入的比例:', editProportion.value)
-  console.log('用户信息:', currentUserInfo.value)
-
-  if (!currentEditItem.value) {
-    console.log('没有选中的编辑项')
-    return false
-  }
-
-  // 验证输入
-  if (!editProportion.value) {
-    console.log('比例为空')
+  if (!currentEditItem.value || !editProportion.value) {
     showToast('请输入返佣比例')
     return false
   }
 
-  const isValid = validateProportion(editProportion.value)
-  console.log('比例验证结果:', isValid)
+  const inputValue = parseFloat(editProportion.value)
+  const userProportion = parseFloat(currentUserInfo.value?.fanyong_proportion || '0')
 
-  if (!isValid) {
-    const userProp = currentUserInfo.value?.fanyong_proportion || '0.00'
-    showToast(`比例不能超过您的返佣比例 ${userProp}，且不能小于0`)
+  if (isNaN(inputValue) || inputValue < 0 || inputValue > userProportion) {
+    showToast(`比例必须在0到${userProportion}之间`)
     return false
   }
 
-  console.log('验证通过，准备发送请求')
-
   try {
-    const requestData = {
+    const resp = await invokeApi('dailiEdit', {
       user_id: currentEditItem.value.id,
-      fanyong_proportion: parseFloat(editProportion.value).toFixed(2)
-    }
-
-    console.log('发送编辑请求:', requestData)
-
-    const resp = await invokeApi('dailiEdit', requestData)
-
-    console.log('编辑响应:', resp)
+      fanyong_proportion: inputValue.toFixed(2)
+    })
 
     if (resp && resp.code === 200) {
       showToast('修改成功')
-      showEditDialog.value = false
 
-      // 直接更新当前列表中的数据，而不是重新刷新整个列表
-      const targetIndex = list.value.findIndex(item => item.id === currentEditItem.value?.id)
-      if (targetIndex !== -1) {
-        list.value[targetIndex].fanyong_proportion = parseFloat(editProportion.value).toFixed(2)
-        console.log('直接更新列表数据，索引:', targetIndex)
+      // 更新列表中的数据
+      const index = list.value.findIndex(item => item.id === currentEditItem.value?.id)
+      if (index !== -1) {
+        list.value[index].fanyong_proportion = inputValue.toFixed(2)
       }
 
+      showEditDialog.value = false
       return true
     } else {
-      showToast(resp?.data || resp?.message || '修改失败')
+      showToast(resp?.message || '修改失败')
       return false
     }
   } catch (error) {
     console.error('修改失败:', error)
-    showToast(error?.message || '修改失败')
+    showToast('修改失败')
     return false
   }
 }
 
-// 确认上分
-async function handleConfirmAddMoney() {
-  console.log('点击确认转账按钮')
-  console.log('当前上分项:', currentAddMoneyItem.value)
-  console.log('输入的金额:', addMoneyAmount.value)
-  console.log('用户信息:', currentUserInfo.value)
+// === 上分功能 ===
+function handleAddMoney(item: DailiRecordItem) {
+  console.log('打开上分弹窗:', item.name)
+  currentAddMoneyItem.value = item
+  addMoneyAmount.value = ''
+  showAddMoneyDialog.value = true
+}
 
-  if (!currentAddMoneyItem.value) {
-    console.log('没有选中的上分项')
-    return false
+async function handleAddMoneyConfirm(action: string) {
+  if (action !== 'confirm') {
+    showAddMoneyDialog.value = false
+    return true
   }
 
-  // 验证输入
-  if (!addMoneyAmount.value) {
-    console.log('金额为空')
+  if (!currentAddMoneyItem.value || !addMoneyAmount.value) {
     showToast('请输入转账金额')
     return false
   }
 
-  // 动态验证金额（会刷新最新余额）
-  const isValid = await validateAmount(addMoneyAmount.value)
-  console.log('金额验证结果:', isValid)
+  const inputValue = parseFloat(addMoneyAmount.value)
+  const userMoney = parseFloat(currentUserInfo.value?.money || '0')
 
-  if (!isValid) {
-    const userMoney = currentUserInfo.value?.money || '0.00'
-    showToast(`转账金额不能超过您的余额 ${userMoney}，且必须大于0`)
+  if (isNaN(inputValue) || inputValue <= 0) {
+    showToast('请输入有效的转账金额')
     return false
   }
 
-  console.log('验证通过，准备发送转账请求')
+  if (inputValue > userMoney) {
+    showToast(`转账金额不能超过您的余额 ${userMoney.toFixed(2)}`)
+    return false
+  }
 
   try {
-    const requestData = {
+    console.log('发送转账请求:', {
       user_id: currentAddMoneyItem.value.id,
-      amount: parseFloat(addMoneyAmount.value).toFixed(2)
-    }
+      amount: inputValue.toFixed(2)
+    })
 
-    console.log('发送转账请求:', requestData)
-
-    const resp = await invokeApi('dailiAddMemberMoney', requestData)
+    const resp = await invokeApi('dailiAddMemberMoney', {
+      user_id: currentAddMoneyItem.value.id,
+      amount: inputValue.toFixed(2)
+    })
 
     console.log('转账响应:', resp)
 
-    if (resp && resp.code === 200) {
-      showToast('转账成功')
+    // 检查成功条件
+    const isSuccess = (resp && resp.code === 200) ||
+                     (resp && resp.message && resp.message.includes('成功'))
+
+    if (isSuccess) {
       showAddMoneyDialog.value = false
 
-      // 更新当前用户余额信息
-      if (resp.message && resp.message.agent_balance && currentUserInfo.value) {
-        currentUserInfo.value.money = resp.message.agent_balance
-        console.log('更新用户余额:', currentUserInfo.value.money)
-      }
+      // 延时提示和刷新
+      setTimeout(() => {
+        showToast('转账成功')
+      }, 200)
 
-      // 转账成功后刷新用户信息，确保余额同步
-      await refreshUserInfo()
+      setTimeout(() => {
+        console.log('转账成功，开始刷新列表')
+        onRefresh()
+      }, 400)
 
       return true
     } else {
-      showToast(resp?.data || resp?.message || '转账失败')
+      showToast(resp?.message || '转账失败')
       return false
     }
   } catch (error) {
     console.error('转账失败:', error)
-    showToast(error?.message || '转账失败')
+    showToast('转账失败')
     return false
   }
 }
 
-// 取消编辑比例
-function handleCancelEdit() {
-  showEditDialog.value = false
-  currentEditItem.value = null
-  editProportion.value = ''
-}
-
-// 取消上分
-function handleCancelAddMoney() {
-  showAddMoneyDialog.value = false
-  currentAddMoneyItem.value = null
-  addMoneyAmount.value = ''
+// === 返回上一页 ===
+function onClickLeft() {
+  router.back()
 }
 </script>
 
@@ -589,11 +473,6 @@ function handleCancelAddMoney() {
   font-size: 12px;
   color: #999;
   line-height: 1.4;
-}
-
-.proportion-unit {
-  color: #999;
-  font-size: 14px;
 }
 
 .daili-record :deep(.van-list__finished-text) {
