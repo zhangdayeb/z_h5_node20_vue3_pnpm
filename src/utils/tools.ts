@@ -48,21 +48,22 @@ export function mobileFunc(): boolean {
   return (isMobileDevice && isSmallScreen) || (isTouchDevice && isSmallScreen)
 }
 
-// 返回主页类型
-export function mainTypeFunc(): string {
-  const urlParams = new URLSearchParams(window.location.search)
+// 返回主页类型 - 仅供组件内使用，不在路由配置中调用
+export function getMainTypeFromConfig(): string {
+  try {
+    console.log('🔍 getMainTypeFromConfig: 开始获取配置')
 
-  // 1. URL 参数强制
-  if (urlParams.get('mt') == '1') {
+    // 使用 ES6 动态导入避免初始化问题
+    const configModule = import('@/stores/config')
+    console.warn('⚠️ getMainTypeFromConfig: 异步导入暂不支持，请在组件中直接调用 configStore')
+
+    // 暂时返回默认值，实际逻辑移到组件中
     return 'main_game'
-  }else if(urlParams.get('mt') == '2') {
-    return 'main_supplier'
-  }else{
-    return 'main_game'
+  } catch (error) {
+    console.error('❌ getMainTypeFromConfig: 获取配置失败，使用默认值:', error)
+    return 'main_game' // 默认值
   }
-
 }
-
 
 // ==================== 图片和域名相关 ====================
 

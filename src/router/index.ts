@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { mobileFunc,mainTypeFunc } from '@/utils/tools'
+import { mobileFunc } from '@/utils/tools'
 
 const dynaDir = () => (mobileFunc() ? 'mobile' : 'pc')
 
@@ -15,7 +15,8 @@ const router = createRouter({
         {
           name: 'main',
           path: '/main',
-          component: () => import(`@/views/${dynaDir()}/home/${mainTypeFunc()}.vue`),
+          // 使用动态组件，避免在路由配置时调用 store
+          component: () => import(`@/views/${dynaDir()}/home/main_dynamic.vue`),
         },
         {
           name: 'gift',
