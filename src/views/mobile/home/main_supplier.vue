@@ -1,18 +1,14 @@
 <template>
   <div class="m-main">
-    <!-- Banner轮播 - 修复图片高度问题 -->
-    <div class="banner-container">
-      <van-swipe class="my-swipe" :autoplay="3000" indicator-color="white">
-        <van-swipe-item v-for="(item, idx) in banners" :key="idx">
-          <van-image :src="getImgUrl(item?.url)" fit="cover" class="banner-image"></van-image>
-        </van-swipe-item>
-      </van-swipe>
+    <!-- i18n -->
+    <LanguageVue />
 
-      <!-- 多语言组件悬浮在右上角 -->
-      <div class="language-overlay">
-        <LanguageVue />
-      </div>
-    </div>
+    <!-- banner -->
+    <van-swipe class="my-swipe" :autoplay="3000" indicator-color="white">
+      <van-swipe-item v-for="(item, idx) in banners" :key="idx">
+        <van-image :src="getImgUrl(item?.url)"></van-image>
+      </van-swipe-item>
+    </van-swipe>
 
     <!-- 通知栏 -->
     <div class="m-notice" v-if="notices.length > 0">
@@ -612,38 +608,15 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
 
-  // 顶部多语言样式
-  .m-header {
-    display: flex;
-    justify-content: flex-end; // 右对齐
-    align-items: center;
-    padding: 8px 16px; // 减少上下padding
-    background: var(--color-m-background);
-    min-height: 40px; // 设置最小高度
-
-    .m-header-right {
-      display: flex;
-      align-items: center;
-    }
-  }
-
-  // Banner样式 - 修复图片高度问题
+  // Banner样式 - 完全参考第一个文件
   .my-swipe {
-    height: 25vh !important; // 使用视口高度单位，加!important确保优先级
-    min-height: 200px !important; // 设置最小高度保底
+    height: 140px;
     .van-swipe-item {
       color: var(--m-label-gb);
       font-size: 20px;
-      height: 100% !important; // 确保轮播项填满容器
+      height: 140px;
       text-align: center;
       background-color: #39a9ed;
-
-      // 确保banner图片填满容器
-      .banner-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover; // 确保图片完整覆盖容器
-      }
     }
   }
 
@@ -771,7 +744,7 @@ onMounted(() => {
     display: flex;
     flex-direction: row;
     flex: 1;
-    height: calc(100vh - 350px);
+    height: calc(100vh - 270px);
     background-color: var(--color-m-background);
     gap: 10px;
 
