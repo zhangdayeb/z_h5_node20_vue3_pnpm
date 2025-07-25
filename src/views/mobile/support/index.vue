@@ -224,29 +224,54 @@ onMounted(async () => {
   }
 
   .m-kf {
-    min-height: 300px; // 设置更大的最小高度以适应多个配置项
+    /* 使用CSS Grid布局 - 方案3的实现 */
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 10px;
+    height: 70vh;
+
+    /* 基础样式保持不变 */
     margin: -59px 16px 20px 16px;
     padding: 20px 20px 30px 20px;
     background-image: url('../../../assets/mobile/kf_bg.png');
     background-repeat: no-repeat;
-    background-size: 100% 100%; // 背景图片拉伸填满整个容器
+    background-size: 120% 100%;
     background-position: center;
-    // 确保容器高度能包含所有内容
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    // 如果内容超出最小高度，容器会自动扩展
-    height: auto;
+
+    /* 关键修改：确保内容不会超出背景 */
+    max-height: calc(100vh - 300px); /* 限制最大高度，防止超出视口 */
+    overflow: hidden; /* 防止内容溢出 */
 
     .m-config-list {
+      /* Grid第一行：配置列表区域 */
+      grid-row: 1;
       display: flex;
       flex-direction: column;
-      gap: 8px; // 减少间距让背景更好展示
+      gap: 8px;
+
+      /* 关键：当内容过多时启用滚动 */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+
+      /* 确保滚动条样式 */
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+      &::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+      }
     }
 
     .m-cell {
       padding: 0px;
-      margin-bottom: 6px; // 减少边距
+      margin-bottom: 6px;
+      /* 确保单元格不会变形 */
+      flex-shrink: 0;
 
       &:last-child {
         margin-bottom: 0;
@@ -254,36 +279,57 @@ onMounted(async () => {
     }
 
     .m-col {
-      display: flex;
-      flex-direction: column;
-      min-height: 50px; // 减少高度让更多内容显示
-      flex: 1;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: nowrap;
-      padding: 3px 0; // 减少内边距
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: 4px;
+      min-height: 50px;
+      padding: 8px 0;
+
+      /* 确保文本不会溢出 */
+      overflow: hidden;
+      align-content: start;
 
       .m-title {
-        font-size: 16px; // 稍微减小字体
+        /* Grid第一行：标题 */
+        grid-row: 1;
+        font-size: 16px;
         font-weight: 500;
-        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #fff;
       }
 
       .m-subtitle {
-        font-size: 11px; // 减小字体
+        /* Grid第二行：副标题 */
+        grid-row: 2;
+        font-size: 11px;
         opacity: 0.7;
-        margin-bottom: 2px;
         word-break: break-all;
+        /* 限制副标题行数 */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: #fff;
       }
 
       .m-label {
-        font-size: 11px; // 减小字体
+        /* Grid第三行：标签 */
+        grid-row: 3;
+        font-size: 11px;
         opacity: 0.8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #fff;
       }
     }
 
-    // 加载状态样式
+    /* 加载状态样式 */
     .m-loading {
+      /* Grid占满所有行 */
+      grid-row: 1 / -1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -298,14 +344,31 @@ onMounted(async () => {
       }
     }
 
-    // 空状态样式
+    /* 空状态样式 */
     .m-empty {
+      /* Grid占满所有行 */
+      grid-row: 1 / -1;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 40px 20px;
       color: #fff;
     }
+  }
+}
+
+/* 响应式调整 */
+@media screen and (max-height: 600px) {
+  .m-support .m-kf {
+    max-height: calc(100vh - 250px);
+    min-height: 200px;
+  }
+}
+
+@media screen and (min-height: 800px) {
+  .m-support .m-kf {
+    max-height: calc(100vh - 350px);
+    min-height: 400px;
   }
 }
 </style>
@@ -315,11 +378,20 @@ onMounted(async () => {
   .van-cell {
     background-color: transparent;
     color: #fff;
-    align-items: center;
+    align-items: flex-start; /* 改为顶部对齐，确保内容布局正确 */
+
+    .van-cell__title {
+      /* 确保标题区域正确填充 */
+      flex: 1;
+      overflow: hidden;
+    }
 
     .van-cell__right-icon {
       color: #fff;
       font-size: 22px;
+      /* 确保箭头图标不会影响布局 */
+      flex-shrink: 0;
+      margin-left: 10px;
     }
   }
 
