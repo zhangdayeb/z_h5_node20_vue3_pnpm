@@ -11,18 +11,39 @@
         <span class="m-sub-title">{{ $t('support.welcome') }}</span>
       </div>
     </div>
+
     <div class="m-kf">
-      <van-cell :is-link="true" class="m-cell" @click="goServiceHandler">
-        <template #title>
-          <div class="m-col">
-            <div class="m-title">{{ $t('support.mainCustom') }}</div>
-            <div class="m-subtitle">{{ $t('support.agentCoustom') }}</div>
-            <div class="m-label">
-              <span>7*24 </span><span>{{ $t('support.serviceTop') }}</span>
+      <!-- 动态配置项列表 -->
+      <div v-if="configList.length > 0" class="m-config-list">
+        <van-cell
+          v-for="(config, index) in configList"
+          :key="index"
+          :is-link="true"
+          class="m-cell"
+          @click="openConfigUrl(config)"
+        >
+          <template #title>
+            <div class="m-col">
+              <div class="m-title">{{ config.name }}</div>
+              <div class="m-subtitle">{{ config.value }}</div>
+              <div class="m-label">
+                <span>点击打开</span>
+              </div>
             </div>
-          </div>
-        </template>
-      </van-cell>
+          </template>
+        </van-cell>
+      </div>
+
+      <!-- 加载状态 -->
+      <div v-else-if="loading" class="m-loading">
+        <van-loading type="spinner" size="24px" />
+        <p class="loading-text">加载配置中...</p>
+      </div>
+
+      <!-- 无配置项 -->
+      <div v-else class="m-empty">
+        <van-empty description="暂无服务配置" />
+      </div>
     </div>
   </div>
 </template>
@@ -32,19 +53,21 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useAppStore } from '@/stores/app'
-import { getDomain } from '@/utils/tools'
 import api from '@/api'
 
 defineOptions({ name: 'SupportIndex' })
 
+// 配置项类型定义
+interface ConfigItem {
+  name: string
+  value: string
+  remark?: string
+}
+
 // 游戏配置响应类型
 interface GameConfigResponse {
   configs?: {
-    kefu_url?: string
-    mainCustom?: string
-    agentCoustom?: string
-    serviceTop?: string
-    [key: string]: any
+    [key: string]: string
   }
   raw_configs?: Array<{
     id: number
@@ -58,74 +81,100 @@ interface GameConfigResponse {
 const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
-const serviceUrl = ref<string>('')
 
-// 客服跳转处理函数
-function goServiceHandler() {
-  if (!serviceUrl.value || serviceUrl.value.length === 0) {
-    showToast('客服链接未配置')
+// 响应式数据
+const configList = ref<ConfigItem[]>([])
+const loading = ref(false)
+
+// 打开配置链接
+function openConfigUrl(config: ConfigItem) {
+  if (!config.value || config.value.length === 0) {
+    showToast(`${config.name}链接未配置`)
     return
   }
 
-  console.log('跳转到客服:', serviceUrl.value)
+  console.log('打开配置链接:', config.name, '->', config.value)
 
-  // 在新窗口中打开客服链接
   try {
-    window.open(serviceUrl.value, '_blank')
+    // 统一使用 window.open 在新窗口打开
+    window.open(config.value, '_blank')
   } catch (error) {
-    console.error('打开客服链接失败:', error)
-    showToast('打开客服失败')
+    console.error('打开链接失败:', error)
+    showToast(`打开${config.name}失败`)
   }
 }
 
-// 使用 gameConfig 接口获取客服配置
-async function getServiceConfig() {
-  store.loading()
+// 获取配置数据
+async function getConfigList() {
+  loading.value = true
+
   try {
-    // 使用 gameConfig 接口获取配置
+    console.log('开始获取配置数据...')
     const resp = await api.gameConfig()
 
-    console.log('游戏配置响应:', resp)
+    console.log('配置响应:', resp)
 
     if (resp && resp.code === 200 && resp.data) {
       const configData = resp.data as GameConfigResponse
+      const tempList: ConfigItem[] = []
 
-      // 方式1：从 configs 对象中获取 kefu_url
-      if (configData.configs?.kefu_url) {
-        serviceUrl.value = configData.configs.kefu_url
-      }
-      // 方式2：从 raw_configs 数组中查找 kefu_url
-      else if (configData.raw_configs) {
-        const kefuConfig = configData.raw_configs.find(item => item.name === 'kefu_url')
-        if (kefuConfig?.value) {
-          serviceUrl.value = kefuConfig.value
-        }
-      }
-
-      // 如果都没找到，使用默认值（根据数据库截图中的数据）
-      if (!serviceUrl.value) {
-        serviceUrl.value = 'https://www.baidu.com'
-        console.log('使用默认客服链接:', serviceUrl.value)
+      // 方式1：从 configs 对象中获取（推荐，格式化后的数据）
+      if (configData.configs) {
+        Object.entries(configData.configs).forEach(([name, value]) => {
+          if (value && value.trim().length > 0) {
+            tempList.push({
+              name: name,
+              value: value.trim()
+            })
+          }
+        })
+        console.log('从 configs 获取到配置项:', tempList.length)
       }
 
-      console.log('最终客服链接:', serviceUrl.value)
+      // 方式2：如果 configs 为空，从 raw_configs 获取
+      if (tempList.length === 0 && configData.raw_configs) {
+        configData.raw_configs.forEach(item => {
+          if (item.value && item.value.trim().length > 0) {
+            tempList.push({
+              name: item.name,
+              value: item.value.trim(),
+              remark: item.remark
+            })
+          }
+        })
+        console.log('从 raw_configs 获取到配置项:', tempList.length)
+      }
+
+      // 更新配置列表
+      configList.value = tempList
+
+      if (tempList.length === 0) {
+        console.warn('没有找到有效的配置项')
+        showToast('暂无可用的服务配置')
+      } else {
+        console.log('配置加载成功，共', tempList.length, '项:', tempList)
+      }
+
     } else {
       throw new Error(resp?.message || '获取配置失败')
     }
-  } catch (err) {
-    console.error('获取客服配置出错:', err)
-    // 出错时使用默认值
-    serviceUrl.value = 'https://www.baidu.com'
-    console.log('配置获取失败，使用默认客服链接:', serviceUrl.value)
-    showToast('配置加载失败，使用默认客服')
+  } catch (error) {
+    console.error('获取配置出错:', error)
+    showToast('配置加载失败，请重试')
+
+    // 出错时显示默认配置（可选）
+    configList.value = [{
+      name: '客服中心',
+      value: 'https://www.baidu.com'
+    }]
   } finally {
-    store.stopLoad()
+    loading.value = false
   }
 }
 
 // 组件挂载时获取配置
 onMounted(async () => {
-  await getServiceConfig()
+  await getConfigList()
 })
 </script>
 
@@ -175,39 +224,87 @@ onMounted(async () => {
   }
 
   .m-kf {
-    height: 150px;
-    margin: -59px 16px 0px 16px;
-    padding: 20px 20px 50px 20px;
+    min-height: 300px; // 设置更大的最小高度以适应多个配置项
+    margin: -59px 16px 20px 16px;
+    padding: 20px 20px 30px 20px;
     background-image: url('../../../assets/mobile/kf_bg.png');
     background-repeat: no-repeat;
-    background-size: 100% 100%;
+    background-size: 100% 100%; // 背景图片拉伸填满整个容器
+    background-position: center;
+    // 确保容器高度能包含所有内容
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    // 如果内容超出最小高度，容器会自动扩展
+    height: auto;
+
+    .m-config-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px; // 减少间距让背景更好展示
+    }
 
     .m-cell {
       padding: 0px;
+      margin-bottom: 6px; // 减少边距
+
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
 
     .m-col {
       display: flex;
       flex-direction: column;
-      height: 80px;
+      min-height: 50px; // 减少高度让更多内容显示
       flex: 1;
       justify-content: space-between;
       align-items: flex-start;
       flex-wrap: nowrap;
+      padding: 3px 0; // 减少内边距
 
       .m-title {
-        font-size: 20px;
-        font-weight: 400;
+        font-size: 16px; // 稍微减小字体
+        font-weight: 500;
+        margin-bottom: 2px;
       }
 
       .m-subtitle {
-        font-size: 14px;
-        opacity: 0.6;
+        font-size: 11px; // 减小字体
+        opacity: 0.7;
+        margin-bottom: 2px;
+        word-break: break-all;
       }
 
       .m-label {
-        font-size: 14px;
+        font-size: 11px; // 减小字体
+        opacity: 0.8;
       }
+    }
+
+    // 加载状态样式
+    .m-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      color: #fff;
+
+      .loading-text {
+        margin-top: 12px;
+        font-size: 14px;
+        opacity: 0.8;
+      }
+    }
+
+    // 空状态样式
+    .m-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      color: #fff;
     }
   }
 }
@@ -223,6 +320,19 @@ onMounted(async () => {
     .van-cell__right-icon {
       color: #fff;
       font-size: 22px;
+    }
+  }
+
+  .van-empty {
+    .van-empty__description {
+      color: #fff;
+      opacity: 0.8;
+    }
+  }
+
+  .van-loading {
+    .van-loading__spinner {
+      color: #fff;
     }
   }
 }
