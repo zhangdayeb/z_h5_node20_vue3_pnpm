@@ -11,7 +11,7 @@ const domain = location.origin
 export function mobileFunc(): boolean {
   const urlParams = new URLSearchParams(window.location.search)
 
-  // 1. URL 参数强制设置
+  // 1. URL 参数强制设置（最高优先级）
   if (urlParams.get('is_mobile') === '1') {
     return true
   }
@@ -20,18 +20,14 @@ export function mobileFunc(): boolean {
     return false
   }
 
-  // 2. Telegram Web App 特殊检测
-  if (window.Telegram?.WebApp) {
-    // 检查是否在 Telegram 移动端打开
-    const platform = window.Telegram.WebApp.platform
-    const isTelegramMobile = ['android', 'ios'].includes(platform)
-
-    if (isTelegramMobile) {
-      return true
-    }
+  // 2. Telegram Web App 检测（第二优先级）
+  // 如果检测到是 Telegram 环境，直接使用移动端模板
+  if (isTelegramMiniApp()) {
+    console.log('✅ Telegram 环境检测到，使用移动端模板')
+    return true
   }
 
-  // 3. 通用设备检测
+  // 3. 通用设备检测（最后执行）
   const userAgent = navigator.userAgent
 
   // 增强的移动设备检测，包含更多 Telegram 相关的 UA
@@ -45,7 +41,17 @@ export function mobileFunc(): boolean {
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
   // 综合判断
-  return (isMobileDevice && isSmallScreen) || (isTouchDevice && isSmallScreen)
+  const result = (isMobileDevice && isSmallScreen) || (isTouchDevice && isSmallScreen)
+
+  console.log('🔍 设备检测结果:', {
+    userAgent: userAgent.substring(0, 50) + '...',
+    isMobileDevice,
+    isSmallScreen,
+    isTouchDevice,
+    finalResult: result
+  })
+
+  return result
 }
 
 // 返回主页类型 - 仅供组件内使用，不在路由配置中调用
