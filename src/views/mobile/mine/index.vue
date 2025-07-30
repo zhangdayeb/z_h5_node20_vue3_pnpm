@@ -28,7 +28,8 @@
           </p>
           <h6>{{ Number(store.getUser()?.money ?? '0').toFixed(2) }}</h6>
         </div>
-        <div class="m-col m-gap10">
+        <!-- 条件渲染：只有当配置允许时才显示返水钱包 -->
+        <div class="m-col m-gap10" v-if="shouldShowFanshui">
           <p>
             {{ $t('mine.fsWallet')
             }}<van-icon name="arrow" color="#c3dae9" class="m-p-icon" />
@@ -134,10 +135,12 @@
           <van-icon name="bill-o" class="m-cell-icon m-f17" />
         </template>
       </van-cell>
+      <!-- 条件渲染：只有当配置允许时才显示返水记录菜单 -->
       <van-cell
         title="返水记录"
         is-link
         @click.stop="menuHandler(5)"
+        v-if="shouldShowFanshui"
       >
         <template #icon>
           <van-icon name="balance-o" class="m-cell-icon m-f17" />
@@ -214,7 +217,8 @@ import vipImg from '@/assets/mobile/vip.png'
 import agentImg from '@/assets/mobile/agent.png'
 import api from '@/api'
 import { useAppStore } from '@/stores/app'
-import { onMounted, ref } from 'vue'
+import { useConfigStore } from '@/stores/config'
+import { onMounted, ref, computed } from 'vue'
 import { showToast } from 'vant'
 import type { SiteConfig } from 'typings'
 import { useRouter } from 'vue-router'
@@ -222,8 +226,19 @@ import { useRouter } from 'vue-router'
 defineOptions({ name: 'MineIndex' })
 const router = useRouter()
 const store = useAppStore()
+const configStore = useConfigStore()
 const siteConfig = ref<SiteConfig | null>(null)
 const show = ref(false)
+
+// 计算属性：判断是否显示返水相关功能
+const shouldShowFanshui = computed(() => {
+  const fanshuiConfig = configStore.getConfigValue('default_user_fanshui', '0')
+
+  // 兼容字符串和数字，只要是0就不显示
+  const value = typeof fanshuiConfig === 'string' ? parseFloat(fanshuiConfig) : fanshuiConfig
+
+  return value > 0
+})
 
 async function getSiteConfig() {
   store.loading()
@@ -309,10 +324,10 @@ function menuHandler(n: number) {
       router.push({ path: '/withdrawLog' })
       break
     case 5:
-      router.push({ path: '/fanyongRecord' })
+      router.push({ path: '/fanshuiRecord' })
       break
     case 6:
-      router.push({ path: '/fanshuiRecord' })
+      router.push({ path: '/fanyongRecord' })
       break
     case 7:
       router.push({ path: '/dailiRecord' })

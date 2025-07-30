@@ -26,7 +26,8 @@
         </template>
       </van-cell>
 
-      <van-cell class="money-cell">
+      <!-- 条件渲染：只有当配置允许时才显示返水金额 -->
+      <van-cell class="money-cell" v-if="shouldShowFanshui">
         <template #title>
           <span class="money-title">返水金额</span>
         </template>
@@ -105,6 +106,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useConfigStore } from '@/stores/config'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { userApi } from '@/api/index'
@@ -114,6 +116,7 @@ defineOptions({ name: 'PersonalVue' })
 
 const { t } = useI18n()
 const store = useAppStore()
+const configStore = useConfigStore()
 const router = useRouter()
 
 // 响应式数据
@@ -128,6 +131,16 @@ const basicForm = ref({
 
 // 计算属性：获取用户信息
 const userInfo = computed(() => store.getUser())
+
+// 计算属性：判断是否显示返水金额
+const shouldShowFanshui = computed(() => {
+  const fanshuiConfig = configStore.getConfigValue('default_user_fanshui', '0')
+
+  // 兼容字符串和数字，只要是0就不显示
+  const value = typeof fanshuiConfig === 'string' ? parseFloat(fanshuiConfig) : fanshuiConfig
+
+  return value > 0
+})
 
 // 格式化金额显示
 function formatMoney(amount: string | number | undefined): string {
