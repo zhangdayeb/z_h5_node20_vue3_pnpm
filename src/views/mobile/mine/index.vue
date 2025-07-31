@@ -21,12 +21,13 @@
         <div class="m-seetings" @click="settingHandler"></div>
       </div>
       <div class="m-info">
-        <div class="m-col m-gap10">
+        <div class="m-col m-gap10" @click="refreshBalance" :class="{ 'm-clickable': true }">
           <p>
             {{ $t('mine.centerWallet')
             }}<van-icon name="arrow" color="#c3dae9" class="m-p-icon" />
           </p>
-          <h6>{{ Number(store.getUser()?.money ?? '0').toFixed(2) }}</h6>
+          <h6 v-if="!balanceLoading">{{ Number(store.getUser()?.money ?? '0').toFixed(2) }}</h6>
+          <h6 v-else class="m-loading-text">加载中...</h6>
         </div>
         <!-- 条件渲染：只有当配置允许时才显示返水钱包 -->
         <div class="m-col m-gap10" v-if="shouldShowFanshui">
@@ -216,6 +217,7 @@ import betRecordImg from '@/assets/mobile/betRecords.png'
 import vipImg from '@/assets/mobile/vip.png'
 import agentImg from '@/assets/mobile/agent.png'
 import api from '@/api'
+import { userApi } from '@/api'
 import { useAppStore } from '@/stores/app'
 import { useConfigStore } from '@/stores/config'
 import { onMounted, ref, computed } from 'vue'
@@ -230,6 +232,9 @@ const configStore = useConfigStore()
 const siteConfig = ref<SiteConfig | null>(null)
 const show = ref(false)
 
+// 新增：余额刷新加载状态
+const balanceLoading = ref(false)
+
 // 计算属性：判断是否显示返水相关功能
 const shouldShowFanshui = computed(() => {
   const fanshuiConfig = configStore.getConfigValue('default_user_fanshui', '0')
@@ -239,6 +244,40 @@ const shouldShowFanshui = computed(() => {
 
   return value > 0
 })
+
+// 新增：刷新余额功能
+async function refreshBalance() {
+  // 检查用户是否登录
+  if (!store.isLogin()) {
+    store.$patch({ loginShow: true })
+    return
+  }
+
+  // 防止重复点击
+  if (balanceLoading.value) {
+    return
+  }
+
+  try {
+    balanceLoading.value = true
+
+    // 调用获取用户信息API
+    const response = await userApi.getUserInfo()
+
+    if (response && response.code === 200 && response.data) {
+      // 更新用户信息到store
+      store.setUser(response.data)
+      showToast('余额已更新')
+    } else {
+      showToast('刷新失败，请重试')
+    }
+  } catch (error) {
+    console.error('刷新余额失败:', error)
+    showToast('刷新失败，请重试')
+  } finally {
+    balanceLoading.value = false
+  }
+}
 
 async function getSiteConfig() {
   store.loading()
@@ -482,6 +521,26 @@ onMounted(async () => {
       }
       .m-gap10 {
         gap: 10px;
+      }
+
+      // 新增：点击样式
+      .m-clickable {
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+          opacity: 0.8;
+        }
+
+        &:active {
+          opacity: 0.6;
+        }
+      }
+
+      // 新增：加载中文字样式
+      .m-loading-text {
+        color: #999;
+        font-size: 16px !important;
       }
     }
   }
