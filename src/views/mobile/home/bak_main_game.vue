@@ -110,21 +110,17 @@
                   :key="item.id"
                   @click.stop="playGameHandler(item)"
                 >
-                  <div class="m-item-img-wrapper">
-                    <van-image
-                      :src="getImgUrl(item.game_img_url)"
-                      class="m-item-img"
-                      fit="cover"
-                    >
-                      <template v-slot:error>
-                        <div class="m-img-error">
-                          <van-icon name="warning-o" class="m-ico" size="22" />
-                        </div>
-                      </template>
-                    </van-image>
-                    <div v-if="item.is_hot_text" class="m-item-tag">{{ item.is_hot_text }}</div>
-                  </div>
+                  <van-image
+                    :src="getImgUrl(item.game_img_url)"
+                    class="m-item-img"
+                    fit="fill"
+                  >
+                    <template v-slot:error>
+                      <van-icon name="warning-o" class="m-ico" size="22" />
+                    </template>
+                  </van-image>
                   <div class="m-item-txt">{{ item.game_name }}</div>
+                  <div class="m-item-tag">{{ item.is_hot_text }}</div>
                 </div>
 
                 <!-- 加载更多状态 -->
@@ -651,101 +647,59 @@ onMounted(() => {
 
       .m-gameNav-container-list {
         padding: 10px 10px 10px 0px;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 9px;
 
-        // 游戏卡片 - 响应式布局
         .m-nav-list-item {
           position: relative;
           display: flex;
           flex-direction: column;
+          gap: 5px;
+          justify-content: space-between;
+          align-items: flex-start;
+          width: 138px;
+          height: 108px;
           background: var(--m-main-img-item-bg-color);
           box-shadow: 0 0 0 2px rgb(0 0 0 / 5%);
-          border-radius: 4px;
-          overflow: hidden;
-          cursor: pointer;
-          transition: transform 0.2s ease;
+          border-radius: 2px;
 
-          &:active {
-            transform: scale(0.98);
+          .m-item-img {
+            width: 137.7px;
+            height: 80px;
           }
 
-          // 图片容器 - 保持1:1比例
-          .m-item-img-wrapper {
-            position: relative;
-            width: 100%;
-            padding-bottom: 100%; // 关键：创建1:1的容器
-            background: #f5f5f5;
-            overflow: hidden;
-
-            .m-item-img {
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-
-              // 错误状态
-              .m-img-error {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #f0f0f0;
-
-                .m-ico {
-                  color: #999;
-                }
-              }
-            }
-
-            // 标签定位
-            .m-item-tag {
-              position: absolute;
-              right: 5px;
-              top: 5px;
-              font-size: 10px;
-              color: #fff;
-              background: rgba(254, 68, 68, 0.9);
-              border-radius: 10px;
-              padding: 2px 6px;
-              line-height: 1.2;
-              font-weight: 500;
-              z-index: 1;
-            }
-          }
-
-          // 文字标题
           .m-item-txt {
-            padding: 8px 5px;
             color: var(--m-left-menu-color);
             font-size: 12px;
-            line-height: 1.4;
-            text-align: center;
-            min-height: 32px; // 固定最小高度，确保布局一致
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+            line-height: 18px;
+            margin-left: 5px;
+            margin-bottom: 5px;
+          }
+
+          .m-item-tag {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            font-size: 12px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 3px;
+            padding: 2px 5px;
           }
         }
 
         // 加载状态样式
         .m-loading-more {
-          grid-column: 1 / -1; // 占满整行
+          width: 100%;
           text-align: center;
           padding: 20px;
           color: #999;
         }
 
         .m-no-more {
-          grid-column: 1 / -1;
+          width: 100%;
           text-align: center;
           padding: 20px;
           color: #999;
@@ -753,7 +707,7 @@ onMounted(() => {
         }
 
         .m-empty {
-          grid-column: 1 / -1;
+          width: 100%;
           text-align: center;
           padding: 40px 20px;
         }
@@ -763,8 +717,7 @@ onMounted(() => {
     .m-scroll-wrapper {
       position: relative;
       height: 100%;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch; // iOS平滑滚动
+      overflow-y: scroll;
 
       .m-scroll-content {
         position: relative;
@@ -779,40 +732,6 @@ onMounted(() => {
   .m-main-footer {
     display: flex;
     height: 50px;
-  }
-}
-
-// 响应式适配 - 小屏幕优化
-@media screen and (max-width: 320px) {
-  .m-main {
-    .m-main-contain {
-      .m-con-right {
-        .m-gameNav-container-list {
-          gap: 8px;
-
-          .m-nav-list-item {
-            .m-item-txt {
-              font-size: 11px;
-              padding: 6px 4px;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// 大屏幕限制最大宽度
-@media screen and (min-width: 768px) {
-  .m-main {
-    .m-main-contain {
-      .m-con-right {
-        .m-gameNav-container-list {
-          max-width: 600px;
-          margin: 0 auto;
-        }
-      }
-    }
   }
 }
 </style>
