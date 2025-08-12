@@ -61,6 +61,7 @@ export function getMainTypeFromConfig(): string {
 
     // 使用 ES6 动态导入避免初始化问题
     const configModule = import('@/stores/config')
+    console.log(configModule)
     console.warn('⚠️ getMainTypeFromConfig: 异步导入暂不支持，请在组件中直接调用 configStore')
 
     // 暂时返回默认值，实际逻辑移到组件中
@@ -164,6 +165,7 @@ export async function invokeApi(
       return resp
     }
   } catch (err) {
+    console.error('❌ invokeApi 错误:', err)
     if (isLoad) {
       store.stopLoad()
     }
