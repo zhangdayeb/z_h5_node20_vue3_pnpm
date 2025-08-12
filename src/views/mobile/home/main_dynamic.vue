@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, defineAsyncComponent, shallowRef } from 'vue'
+import { onMounted, defineAsyncComponent, shallowRef } from 'vue'
 import { useConfigStore } from '@/stores/config'
 
 defineOptions({ name: 'MainDynamic' })

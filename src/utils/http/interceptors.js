@@ -1,4 +1,4 @@
-import { getServeLanguage } from '@/lang';
+import { getServeLanguage } from '@/lang/index';
 import { resolveResError } from './helpers';
 import { showNotify } from 'vant';
 import { useConfigStore } from '@/stores/config';
@@ -7,6 +7,7 @@ export function setupInterceptors(axiosInstance) {
   function reqResolve(config) {
     // 添加语言参数
     config.params = { lang: getServeLanguage(), ...config.params }
+    config.params.lang = getServeLanguage();
 
     // 默认所有请求都带token，如果没有token则为空字符串
     const accessToken = localStorage.getItem('access_token') || '';

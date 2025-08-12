@@ -89,7 +89,7 @@
                     "
                     class="m-item-img"
                   ></van-image>
-                  <div class="m-item-txt">{{ item.title }}</div>
+                  <div class="m-item-txt">{{ getGameTypeTitle(item) }}</div>
                 </div>
               </div>
             </div>
@@ -122,24 +122,24 @@
                         </div>
                       </template>
                     </van-image>
-                    <div v-if="item.is_hot_text" class="m-item-tag">{{ item.is_hot_text }}</div>
+                    <div v-if="item.is_hot_text" class="m-item-tag">{{ getHotText(item) }}</div>
                   </div>
-                  <div class="m-item-txt">{{ item.game_name }}</div>
+                  <div class="m-item-txt">{{ getGameName(item) }}</div>
                 </div>
 
                 <!-- 加载更多状态 -->
                 <div v-if="loadingMore" class="m-loading-more">
-                  <van-loading>加载中...</van-loading>
+                  <van-loading>{{ $t('loading') }}</van-loading>
                 </div>
 
                 <!-- 没有更多数据 -->
                 <div v-else-if="!hasMore && gameList.length > 0" class="m-no-more">
-                  没有更多游戏了
+                  {{ $t('noMore') }}
                 </div>
 
                 <!-- 空数据状态 -->
                 <div v-if="gameList.length === 0 && !loading" class="m-empty">
-                  <van-empty description="暂无游戏数据" />
+                  <van-empty :description="$t('noData')" />
                 </div>
               </div>
             </div>
@@ -161,7 +161,7 @@ import withdrawImg from '@/assets/mobile/withdraw.png'
 import vipImg from '@/assets/mobile/home_vip.png'
 
 defineOptions({ name: 'HomeMain' })
-import { onMounted, ref, nextTick } from 'vue'
+import { onMounted, ref, nextTick, computed } from 'vue'
 import LanguageVue from './components/language.vue'
 import api from '@/api'
 import { getImgUrl, mobileFunc } from '@/utils/tools'
@@ -173,7 +173,7 @@ import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const store = useAppStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // ==================== 响应式数据 ====================
 const banners = ref([])
@@ -187,6 +187,69 @@ const hasMore = ref(true)
 const currentPage = ref(1)
 const scrollContainer = ref(null)
 
+// ==================== 多语言处理方法 ====================
+// 获取游戏类型标题（支持多语言）
+function getGameTypeTitle(gameType) {
+  // 如果有多语言字段，根据当前语言返回
+  if (gameType.title_i18n) {
+    const titles = gameType.title_i18n
+    return titles[locale.value] || titles['zh-CN'] || gameType.title
+  }
+
+  // 如果没有多语言字段，尝试使用预定义的翻译key
+  const typeKeyMap = {
+    'HOT': 'hotGames',
+    'SPORTS': 'sportsEvents',
+    'LIVE': 'liveCasino',
+    'SLOTS': 'electronicGames',
+    'CARD': 'cardGames',
+    'FISH': 'fishingGames',
+    'LOTTERY': 'lotteryGames',
+    'dianzi': 'dianzi',
+    'zhenren': 'zhenren',
+    'tiyu': 'tiyu',
+    'lottery': 'lottery',
+    'qipai': 'qipai',
+    'fishGame': 'fishGame'
+  }
+
+  const key = typeKeyMap[gameType.game_type]
+  if (key) {
+    return t(key)
+  }
+
+  // 默认返回原始标题
+  return gameType.title
+}
+
+// 获取游戏名称（支持多语言）
+function getGameName(game) {
+  // 如果有多语言字段
+  if (game.game_name_i18n) {
+    const names = game.game_name_i18n
+    return names[locale.value] || names['zh-CN'] || game.game_name
+  }
+
+  // 默认返回原始名称
+  return game.game_name
+}
+
+// 获取热门标签文本（支持多语言）
+function getHotText(game) {
+  // 如果有多语言的热门标签
+  if (game.is_hot_text_i18n) {
+    const texts = game.is_hot_text_i18n
+    return texts[locale.value] || texts['zh-CN'] || game.is_hot_text
+  }
+
+  // 使用默认的热门标签或返回原文本
+  if (game.is_hot_text === 'HOT' || game.is_hot_text === '热门') {
+    return t('hot') || 'HOT'
+  }
+
+  return game.is_hot_text
+}
+
 // ==================== 计算属性和方法 ====================
 const filteredGameList = () => {
   return gameList.value
@@ -195,7 +258,9 @@ const filteredGameList = () => {
 // ==================== 游戏类型相关方法 ====================
 async function getGameTypes() {
   try {
-    const resp = await api.gameTypeList()
+    const resp = await api.gameTypeList({
+      lang: locale.value // 传递当前语言参数
+    })
     console.log('game types resp:', resp)
 
     // 适配后端响应格式：数据在message字段
@@ -211,7 +276,7 @@ async function getGameTypes() {
     }
   } catch (error) {
     console.error('获取游戏类型失败:', error)
-    showToast('获取游戏类型失败')
+    showToast(t('operationFailed'))
   }
 }
 
@@ -229,7 +294,8 @@ async function getGames(gameType = 'HOT', page = 1, isLoadMore = false) {
     const params = {
       game_type: gameType,
       page: page,
-      limit: 20
+      limit: 20,
+      lang: locale.value // 传递当前语言参数
     }
 
     console.log('请求游戏列表:', params)
@@ -260,11 +326,11 @@ async function getGames(gameType = 'HOT', page = 1, isLoadMore = false) {
         hasMore: hasMore.value
       })
     } else {
-      throw new Error(resp?.message || '获取游戏列表失败')
+      throw new Error(resp?.message || t('dataLoadFailed'))
     }
   } catch (error) {
     console.error('获取游戏列表失败:', error)
-    showToast('获取游戏列表失败')
+    showToast(t('dataLoadFailed'))
   } finally {
     loading.value = false
     loadingMore.value = false
@@ -345,7 +411,7 @@ function playGameHandler(gameItem) {
     })
   } catch (error) {
     console.error('游戏跳转失败:', error)
-    showToast('游戏启动失败')
+    showToast(t('operationFailed'))
   }
 }
 
@@ -387,7 +453,10 @@ async function getNotices() {
 
 async function getBanners() {
   try {
-    const resp = await api.bannerList({ group: 'mobile1' })
+    const resp = await api.bannerList({
+      group: 'mobile1',
+      lang: locale.value // 传递当前语言参数
+    })
     console.log('banner resp:', resp)
 
     if (resp && resp.data && Array.isArray(resp.data)) {
@@ -470,12 +539,29 @@ async function init() {
     console.log('首页数据初始化完成')
   } catch (error) {
     console.error('首页初始化失败:', error)
-    showToast('页面加载失败，请重试')
+    showToast(t('tryAgainLater'))
   } finally {
     // 停止加载
     store.stopLoad()
   }
 }
+
+// ==================== 监听语言变化 ====================
+// 当语言改变时，重新加载数据
+const currentLocale = computed(() => locale.value)
+import { watch } from 'vue'
+
+watch(currentLocale, (newLocale, oldLocale) => {
+  if (newLocale !== oldLocale) {
+    // 重新获取游戏类型和游戏列表（使用新语言）
+    getGameTypes()
+    if (currentGameType.value) {
+      getGames(currentGameType.value.game_type, 1, false)
+    }
+    // 重新获取banner
+    getBanners()
+  }
+})
 
 // ==================== 生命周期 ====================
 onMounted(() => {

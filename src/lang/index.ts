@@ -63,7 +63,7 @@ export function getServeLanguage() {
     case 'ko-KR':
       return 'ko'
     default:
-      return 'ko-KR'
+      return 'zh_cn'
   }
 }
 export function setLanguage(
