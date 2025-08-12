@@ -6,12 +6,48 @@
     "mine": "我的",
     "collectionSuccess": "收藏成功",
     "noLogin": "未登录",
-    "loginCheck": "登录后查看"
+    "loginCheck": "登录后查看",
+    "downloadApp": "下载手机版",
+    "hotline": "热线电话"
   },
   "user": {
     "register": "注册",
     "settings": "设置",
     "conactUs": "联系我们"
+  },
+  "game": {
+    "myCollection": "我的收藏",
+    "start": "开始",
+    "venues": "场馆"
+  },
+  "common": {
+    "viewMore": "查看更多",
+    "viewDetails": "查看详情"
+  },
+  "footer": {
+    "brandInfo1": "ATB 中国由MI平台 (台湾)",
+    "brandInfo2": "包网团队提供平台技术支持",
+    "mga": "马耳他牌照（MGA）认证",
+    "bvi": "英属维尔京群岛（BVI）认证",
+    "gc": "英国GC监督委员会",
+    "pagcor": "菲律宾（PAGCOR）监督牌照",
+    "consultNow": "立即咨询",
+    "disclaimer": "ATB 中国拥有欧洲马耳他MGA、英国GC监督委员会（GamblingCommission）和菲律宾政府（PAGCOR）颁发的合法执照。注册于英属维尔京群岛，是受国际行业协会认可的合法公司。进行注册并娱乐前，请确保您年满18周岁！",
+    "copyright": "版权所有 ©2019-2023 ATB 中国 保留所有权"
+  },
+  "home": {
+    "newMemberOffer": "新会员优惠",
+    "moreOffersInVip": "更多优惠尽在VIP",
+    "electronicOffer": "电子游戏专属优惠",
+    "electronicOfferDesc": "电子游艺专属存款送25%优惠",
+    "liveOffer": "真人视讯专属优惠",
+    "liveOfferDesc": "会员首笔存款得30％的奖金",
+    "safeBetting": "安全畅快 实时投注",
+    "enjoyExperience": "纵想指尖畅快体验",
+    "appDescription": "全球首家一体化娱乐原生APP，尽显流畅、完美操作。海量体育、捕鱼游戏，真人娱乐、彩票投注及电子游艺等，最新最全娱乐项目尽在掌中体验扫码下载，即刻拥有！",
+    "scanTip": "(提示：用手机自带浏览器扫码或者使用手机自带的照相机扫描二维码下载）",
+    "browserAccess": "手机浏览器也能直接访问",
+    "comprehensiveChoice": "包容万象 从容选择"
   },
   "noData": "无数据",
   "all": "全部",
@@ -159,9 +195,6 @@
     "configLoadFailed": "配置加载失败，请重试"
   },
   "selected": "请选择",
-  "game": {
-    "myCollection": "我的收藏"
-  },
   "login": {
     "openFixed": "开启极致体验",
     "inputAccount": "请输入账号",

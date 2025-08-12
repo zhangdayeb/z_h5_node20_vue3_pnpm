@@ -15,7 +15,6 @@ defineOptions({ name: 'WebHomeIndex' })
 @import url('../common.less');
 
 #app {
-  // overflow: auto;
   min-width: 1300px;
 }
 </style>
