@@ -45,10 +45,6 @@
 
           <!-- 右侧按钮区域 -->
           <div class="p-header-right">
-            <div class="p-app" @click="downloadApp">
-              <el-icon><Download /></el-icon>
-              <span>{{ $t('main.downloadApp') }}</span>
-            </div>
             <el-button type="primary" class="p-btn-login" @click="goToLogin">
               {{ $t('login.login') }}
             </el-button>
@@ -62,15 +58,6 @@
       <!-- 导航菜单 -->
       <div class="p-header-menu">
         <div class="p-menu-wrapper">
-          <RouterLink to="/">
-            <div class="p-logo">
-              <el-image
-                :src="getImgUrl(store.systemConf?.site_logo ?? '')"
-                fit="contain"
-                class="p-logo-img"
-              />
-            </div>
-          </RouterLink>
           <div class="p-other">
             <div class="p-nav">
               <div
@@ -248,12 +235,6 @@ function goToGift() {
 // 跳转到客服页面
 function goToSupport() {
   router.push('/support')
-}
-
-// 下载APP
-function downloadApp() {
-  // TODO: 处理APP下载逻辑
-  console.log('Download APP')
 }
 
 // 获取系统配置
