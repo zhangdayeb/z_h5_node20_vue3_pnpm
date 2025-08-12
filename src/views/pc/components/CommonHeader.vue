@@ -145,7 +145,6 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   CaretBottom,
-  Download,
   StarFilled,
   Present,
   Service,
