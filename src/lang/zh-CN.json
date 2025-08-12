@@ -291,5 +291,13 @@
   "tryAgainLater": "请稍后重试",
   "dataLoadFailed": "数据加载失败",
   "parameterError": "参数错误",
-  "confirmLogout": "确认退出登录？"
+  "confirmLogout": "确认退出登录？",
+  "applyTime": "申请时间",
+  "completeTime": "完成时间",
+  "rechargeDetail": "充值详情",
+  "orderNumber": "订单号",
+  "bankAccountName": "银行户名",
+  "bankCardNumber": "银行卡号",
+  "unknownStatus": "未知状态",
+  "getRechargeRecordFailed": "获取充值记录失败"
 }

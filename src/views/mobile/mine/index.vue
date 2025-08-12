@@ -119,7 +119,7 @@
 
     <van-cell-group class="m-mine-menu m-mt10">
       <van-cell
-        title="充值记录"
+        :title="$t('rechargeRecord')"
         is-link
         @click.stop="menuHandler(3)"
       >
@@ -128,7 +128,7 @@
         </template>
       </van-cell>
       <van-cell
-        title="提现记录"
+        :title="$t('moneyLog')"
         is-link
         @click.stop="menuHandler(4)"
       >
@@ -138,7 +138,7 @@
       </van-cell>
       <!-- 条件渲染：只有当配置允许时才显示返水记录菜单 -->
       <van-cell
-        title="返水记录"
+        :title="$t('rebateRecord')"
         is-link
         @click.stop="menuHandler(5)"
         v-if="shouldShowFanshui"
@@ -148,7 +148,7 @@
         </template>
       </van-cell>
       <van-cell
-        title="返佣记录"
+        :title="$t('commissionRecord')"
         is-link
         @click.stop="menuHandler(6)"
       >
@@ -157,7 +157,7 @@
         </template>
       </van-cell>
       <van-cell
-        title="下级会员"
+        :title="$t('subordinateMembers')"
         is-link
         @click.stop="menuHandler(7)"
       >
@@ -166,7 +166,7 @@
         </template>
       </van-cell>
       <van-cell
-        title="退出登录"
+        :title="$t('mine.logout')"
         is-link
         @click.stop="logoutHandler"
       >

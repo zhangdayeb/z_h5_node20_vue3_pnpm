@@ -2,7 +2,7 @@
   <div class="top-up-record">
     <van-nav-bar
       left-arrow
-      title="充值记录"
+      :title="$t('rechargeRecord')"
       @click-left="onClickLeft"
       class="nav-bar"
     />
@@ -10,10 +10,10 @@
     <!-- 状态筛选 -->
     <div class="filter-bar">
       <van-tabs v-model:active="activeStatus" @click-tab="onTabChange" sticky>
-        <van-tab title="全部" name=""></van-tab>
-        <van-tab title="待审核" name="0"></van-tab>
-        <van-tab title="已通过" name="1"></van-tab>
-        <van-tab title="已拒绝" name="2"></van-tab>
+        <van-tab :title="$t('all')" name=""></van-tab>
+        <van-tab :title="$t('pending')" name="0"></van-tab>
+        <van-tab :title="$t('approved')" name="1"></van-tab>
+        <van-tab :title="$t('rejected')" name="2"></van-tab>
       </van-tabs>
     </div>
 
@@ -22,7 +22,7 @@
       <van-list
         v-model:loading="loading"
         :finished="finished"
-        finished-text="没有更多了"
+        :finished-text="$t('noMore')"
         @load="onLoad"
         class="record-list"
       >
@@ -48,15 +48,15 @@
           </div>
           <div class="record-info">
             <div class="info-row">
-              <span class="label">申请时间：</span>
+              <span class="label">{{ $t('applyTime') }}：</span>
               <span class="value">{{ formatTime(item.create_time) }}</span>
             </div>
             <div class="info-row" v-if="item.success_time">
-              <span class="label">完成时间：</span>
+              <span class="label">{{ $t('completeTime') }}：</span>
               <span class="value">{{ formatTime(item.success_time) }}</span>
             </div>
             <div class="info-row" v-if="item.u_bank_name">
-              <span class="label">转账银行：</span>
+              <span class="label">{{ $t('transferBankName') }}：</span>
               <span class="value">{{ item.u_bank_name }}</span>
             </div>
           </div>
@@ -74,13 +74,13 @@
     >
       <div class="detail-content" v-if="selectedRecord">
         <div class="detail-header">
-          <h3>充值详情</h3>
+          <h3>{{ $t('rechargeDetail') }}</h3>
           <van-icon name="cross" @click="showDetail = false" />
         </div>
 
         <div class="detail-body">
           <div class="detail-amount">
-            <span class="amount-label">充值金额</span>
+            <span class="amount-label">{{ $t('rechargeAmount') }}</span>
             <span class="amount-value" :class="getAmountClass(selectedRecord.status)">
               ¥{{ selectedRecord.amount }}
             </span>
@@ -96,26 +96,26 @@
           </div>
 
           <van-cell-group class="detail-info">
-            <van-cell title="订单号" :value="selectedRecord.id" />
-            <van-cell title="申请时间" :value="formatTime(selectedRecord.create_time)" />
+            <van-cell :title="$t('orderNumber')" :value="selectedRecord.id" />
+            <van-cell :title="$t('applyTime')" :value="formatTime(selectedRecord.create_time)" />
             <van-cell
               v-if="selectedRecord.success_time"
-              title="完成时间"
+              :title="$t('completeTime')"
               :value="formatTime(selectedRecord.success_time)"
             />
             <van-cell
               v-if="selectedRecord.u_bank_name"
-              title="转账银行"
+              :title="$t('transferBankName')"
               :value="selectedRecord.u_bank_name"
             />
             <van-cell
               v-if="selectedRecord.u_bank_user_name"
-              title="银行户名"
+              :title="$t('bankAccountName')"
               :value="selectedRecord.u_bank_user_name"
             />
             <van-cell
               v-if="selectedRecord.u_bank_card"
-              title="银行卡号"
+              :title="$t('bankCardNumber')"
               :value="formatBankCard(selectedRecord.u_bank_card)"
             />
           </van-cell-group>
@@ -130,8 +130,12 @@ import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
 import { invokeApi } from '@/utils/tools'
 import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 
 defineOptions({ name: 'TopUpRecord' })
+
+const { t, locale } = useI18n()
+const router = useRouter()
 
 interface TopUpRecordItem {
   id: number
@@ -145,8 +149,6 @@ interface TopUpRecordItem {
   u_bank_card?: string
   sys_bank_id?: number
 }
-
-const router = useRouter()
 
 const page = ref(0)
 const list = ref<TopUpRecordItem[]>([])
@@ -183,27 +185,55 @@ function getStatusTagType(status: number): string {
   }
 }
 
-// 获取状态文本
+// 获取状态文本 - 使用多语言
 function getStatusText(status: number): string {
   switch (status) {
     case 0:
-      return '待审核'
+      return t('pending')
     case 1:
-      return '已通过'
+      return t('approved')
     case 2:
-      return '已拒绝'
+      return t('rejected')
     default:
-      return '未知状态'
+      return t('unknownStatus')
   }
 }
 
-// 格式化时间
+// 格式化时间 - 根据语言环境调整
 function formatTime(timeStr: string): string {
   if (!timeStr) return '-'
 
   try {
     const date = new Date(timeStr)
-    return date.toLocaleString('zh-CN', {
+    // 根据当前语言获取对应的 locale
+    const currentLocale = locale.value || 'zh-CN'
+
+    // 将 vue-i18n 的 locale 格式转换为标准的 locale 格式
+    let dateLocale = currentLocale
+    switch (currentLocale) {
+      case 'zh-CN':
+        dateLocale = 'zh-CN'
+        break
+      case 'zh-TW':
+        dateLocale = 'zh-TW'
+        break
+      case 'en-US':
+        dateLocale = 'en-US'
+        break
+      case 'ko-KR':
+        dateLocale = 'ko-KR'
+        break
+      case 'th-TH':
+        dateLocale = 'th-TH'
+        break
+      case 'vi-VN':
+        dateLocale = 'vi-VN'
+        break
+      default:
+        dateLocale = 'zh-CN'
+    }
+
+    return date.toLocaleString(dateLocale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -295,7 +325,7 @@ async function getTopUpRecords() {
     }
   } catch (error) {
     console.error('获取充值记录失败:', error)
-    showToast('获取充值记录失败')
+    showToast(t('getRechargeRecordFailed'))
   }
 
   loading.value = false
