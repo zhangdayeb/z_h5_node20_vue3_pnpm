@@ -146,7 +146,17 @@
     "welcome": "欢迎来到客服中心",
     "mainCustom": "主线客服",
     "agentCoustom": "客户服务代表",
-    "serviceTop": "小时专线服务 贴心至上"
+    "serviceTop": "小时专线服务 贴心至上",
+    "onlineService": "在线客服",
+    "vipService": "VIP客服",
+    "agentCooperation": "代理合作",
+    "complaints": "投诉建议",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "noServiceConfig": "暂无服务配置",
+    "linkNotConfigured": "{{name}}链接未配置",
+    "openLinkFailed": "打开{{name}}失败",
+    "configLoadFailed": "配置加载失败，请重试"
   },
   "selected": "请选择",
   "game": {
