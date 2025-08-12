@@ -384,16 +384,7 @@ export async function handleTelegramAutoLogin(): Promise<boolean> {
       const user_info = loginData.user_info;
       console.log('✅ 用户信息:', user_info);
 
-      const userForStore = {
-        id: user_info.id,
-        name: user_info.name,
-        nick_name: user_info.nick_name,
-        money: user_info.money,
-        level: user_info.vip_grade,
-        vip_grade: user_info.vip_grade
-      };
-
-      store.setUser(userForStore);
+      store.setUser(user_info);
       showToast('自动登录成功');
       console.log('✅ Telegram 自动登录成功!');
 
