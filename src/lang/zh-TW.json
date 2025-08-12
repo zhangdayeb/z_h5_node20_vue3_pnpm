@@ -146,7 +146,17 @@
     "welcome": "歡迎來到客服中心",
     "mainCustom": "主線客服",
     "agentCoustom": "客戶服務代表",
-    "serviceTop": "小時專線服務 貼心至上"
+    "serviceTop": "小時專線服務 貼心至上",
+    "onlineService": "線上客服",
+    "vipService": "VIP客服",
+    "agentCooperation": "代理合作",
+    "complaints": "投訴建議",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "noServiceConfig": "暫無服務配置",
+    "linkNotConfigured": "{{name}}連結未配置",
+    "openLinkFailed": "開啟{{name}}失敗",
+    "configLoadFailed": "配置載入失敗，請重試"
   },
   "selected": "請選擇",
   "game": {
@@ -291,5 +301,13 @@
   "tryAgainLater": "請稍後重試",
   "dataLoadFailed": "資料載入失敗",
   "parameterError": "參數錯誤",
-  "confirmLogout": "確認登出？"
+  "confirmLogout": "確認登出？",
+  "applyTime": "申請時間",
+  "completeTime": "完成時間",
+  "rechargeDetail": "充值詳情",
+  "orderNumber": "訂單號",
+  "bankAccountName": "銀行戶名",
+  "bankCardNumber": "銀行卡號",
+  "unknownStatus": "未知狀態",
+  "getRechargeRecordFailed": "獲取充值記錄失敗"
 }

@@ -146,7 +146,17 @@
     "welcome": "ยินดีต้อนรับสู่ศูนย์บริการลูกค้า",
     "mainCustom": "ฝ่ายบริการหลัก",
     "agentCoustom": "ตัวแทนฝ่ายบริการลูกค้า",
-    "serviceTop": "บริการตลอด 24 ชั่วโมง ใส่ใจทุกรายละเอียด"
+    "serviceTop": "บริการตลอด 24 ชั่วโมง ใส่ใจทุกรายละเอียด",
+    "onlineService": "บริการออนไลน์",
+    "vipService": "บริการ VIP",
+    "agentCooperation": "ความร่วมมือตัวแทน",
+    "complaints": "ข้อร้องเรียนและข้อเสนอแนะ",
+    "telegram": "เทเลแกรม",
+    "whatsapp": "วอทส์แอป",
+    "noServiceConfig": "ไม่มีการกำหนดค่าบริการ",
+    "linkNotConfigured": "ลิงก์ {{name}} ยังไม่ได้กำหนดค่า",
+    "openLinkFailed": "เปิด {{name}} ล้มเหลว",
+    "configLoadFailed": "โหลดการกำหนดค่าล้มเหลว กรุณาลองใหม่"
   },
   "selected": "กรุณาเลือก",
   "game": {
@@ -291,5 +301,13 @@
   "tryAgainLater": "กรุณาลองใหม่ภายหลัง",
   "dataLoadFailed": "โหลดข้อมูลล้มเหลว",
   "parameterError": "ข้อผิดพลาดพารามิเตอร์",
-  "confirmLogout": "ยืนยันการออกจากระบบ?"
+  "confirmLogout": "ยืนยันการออกจากระบบ?",
+  "applyTime": "เวลาสมัคร",
+  "completeTime": "เวลาเสร็จสิ้น",
+  "rechargeDetail": "รายละเอียดการเติมเงิน",
+  "orderNumber": "หมายเลขคำสั่งซื้อ",
+  "bankAccountName": "ชื่อบัญชีธนาคาร",
+  "bankCardNumber": "หมายเลขบัตรธนาคาร",
+  "unknownStatus": "สถานะไม่ทราบ",
+  "getRechargeRecordFailed": "ไม่สามารถรับประวัติการเติมเงิน"
 }

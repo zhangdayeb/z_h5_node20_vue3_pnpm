@@ -146,7 +146,17 @@
     "welcome": "Welcome to Customer Service Center",
     "mainCustom": "Main Customer Service",
     "agentCoustom": "Customer Service Representative",
-    "serviceTop": "24/7 Dedicated Service"
+    "serviceTop": "24/7 Dedicated Service",
+    "onlineService": "Online Support",
+    "vipService": "VIP Support",
+    "agentCooperation": "Agent Cooperation",
+    "complaints": "Complaints & Suggestions",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "noServiceConfig": "No service configuration available",
+    "linkNotConfigured": "{{name}} link not configured",
+    "openLinkFailed": "Failed to open {{name}}",
+    "configLoadFailed": "Failed to load configuration, please try again"
   },
   "selected": "Please select",
   "game": {
@@ -291,5 +301,13 @@
   "tryAgainLater": "Please try again later",
   "dataLoadFailed": "Data loading failed",
   "parameterError": "Parameter error",
-  "confirmLogout": "Confirm logout?"
+  "confirmLogout": "Confirm logout?",
+  "applyTime": "Application Time",
+  "completeTime": "Completion Time",
+  "rechargeDetail": "Recharge Details",
+  "orderNumber": "Order Number",
+  "bankAccountName": "Bank Account Name",
+  "bankCardNumber": "Bank Card Number",
+  "unknownStatus": "Unknown Status",
+  "getRechargeRecordFailed": "Failed to get recharge records"
 }

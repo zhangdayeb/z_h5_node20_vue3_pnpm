@@ -146,7 +146,17 @@
     "welcome": "고객센터에 오신 것을 환영합니다",
     "mainCustom": "메인 고객센터",
     "agentCoustom": "고객 서비스 담당자",
-    "serviceTop": "24시간 전담 서비스"
+    "serviceTop": "24시간 전담 서비스",
+    "onlineService": "온라인 지원",
+    "vipService": "VIP 지원",
+    "agentCooperation": "에이전트 협력",
+    "complaints": "불만 및 제안",
+    "telegram": "텔레그램",
+    "whatsapp": "왓츠앱",
+    "noServiceConfig": "서비스 구성이 없습니다",
+    "linkNotConfigured": "{{name}} 링크가 구성되지 않았습니다",
+    "openLinkFailed": "{{name}} 열기 실패",
+    "configLoadFailed": "구성 로드 실패, 다시 시도해 주세요"
   },
   "selected": "선택하세요",
   "game": {
@@ -291,5 +301,13 @@
   "tryAgainLater": "나중에 다시 시도하세요",
   "dataLoadFailed": "데이터 로드 실패",
   "parameterError": "매개변수 오류",
-  "confirmLogout": "로그아웃하시겠습니까?"
+  "confirmLogout": "로그아웃하시겠습니까?",
+  "applyTime": "신청 시간",
+  "completeTime": "완료 시간",
+  "rechargeDetail": "충전 상세내역",
+  "orderNumber": "주문 번호",
+  "bankAccountName": "예금주명",
+  "bankCardNumber": "은행 카드 번호",
+  "unknownStatus": "알 수 없는 상태",
+  "getRechargeRecordFailed": "충전 기록 가져오기 실패"
 }

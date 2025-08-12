@@ -146,7 +146,17 @@
     "welcome": "Chào mừng đến trung tâm dịch vụ khách hàng",
     "mainCustom": "Dịch vụ khách hàng chính",
     "agentCoustom": "Đại diện dịch vụ khách hàng",
-    "serviceTop": "Dịch vụ 24/7 tận tâm phục vụ"
+    "serviceTop": "Dịch vụ 24/7 tận tâm phục vụ",
+    "onlineService": "Hỗ trợ trực tuyến",
+    "vipService": "Hỗ trợ VIP",
+    "agentCooperation": "Hợp tác đại lý",
+    "complaints": "Khiếu nại & Đề xuất",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "noServiceConfig": "Không có cấu hình dịch vụ",
+    "linkNotConfigured": "Liên kết {{name}} chưa được cấu hình",
+    "openLinkFailed": "Mở {{name}} thất bại",
+    "configLoadFailed": "Tải cấu hình thất bại, vui lòng thử lại"
   },
   "selected": "Vui lòng chọn",
   "game": {
@@ -291,5 +301,13 @@
   "tryAgainLater": "Vui lòng thử lại sau",
   "dataLoadFailed": "Tải dữ liệu thất bại",
   "parameterError": "Lỗi tham số",
-  "confirmLogout": "Xác nhận đăng xuất?"
+  "confirmLogout": "Xác nhận đăng xuất?",
+  "applyTime": "Thời gian đăng ký",
+  "completeTime": "Thời gian hoàn thành",
+  "rechargeDetail": "Chi tiết nạp tiền",
+  "orderNumber": "Mã đơn hàng",
+  "bankAccountName": "Tên tài khoản ngân hàng",
+  "bankCardNumber": "Số thẻ ngân hàng",
+  "unknownStatus": "Trạng thái không xác định",
+  "getRechargeRecordFailed": "Lấy lịch sử nạp tiền thất bại"
 }
