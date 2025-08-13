@@ -10,7 +10,7 @@
     <!-- 基础信息 -->
     <van-cell-group>
       <van-cell
-        :title="$t('register.username')"
+        :title="$t('login.username')"
         :value="userInfo?.name ?? ''"
       />
     </van-cell-group>
@@ -19,7 +19,7 @@
     <van-cell-group class="m-top10">
       <van-cell class="money-cell">
         <template #title>
-          <span class="money-title">{{ $t('mine.balance') }}</span>
+          <span class="money-title">{{ $t('user.balance') }}</span>
         </template>
         <template #value>
           <span class="money-value">{{ formatMoney(userInfo?.money) }}</span>
@@ -64,7 +64,7 @@
         @click="editUserInfo('phone')"
       />
       <van-cell
-        :title="$t('mine.nickname')"
+        :title="$t('nickname')"
         :value="userInfo?.nick_name ?? userInfo?.nickname ?? ''"
         :is-link="true"
         @click="editUserInfo('nick_name')"
@@ -81,7 +81,7 @@
       <van-cell-group inset class="m-pop-frm">
         <van-field
           v-model="basicForm.nick_name"
-          :label="$t('mine.nickname')"
+          :label="$t('nickname')"
           :rules="[{ required: true, message: $t('mine.inputNickname') }]"
           :placeholder="$t('mine.inputNickname')"
           v-if="editField === 'nick_name'"

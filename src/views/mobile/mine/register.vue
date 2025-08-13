@@ -12,9 +12,9 @@
             v-model="frm.name"
             label-align="top"
             :required="true"
-            :name="$t('register.username')"
-            :label="$t('register.username')"
-            :placeholder="$t('register.username')"
+            :name="$t('login.username')"
+            :label="$t('login.username')"
+            :placeholder="$t('login.enterUsername')"
             :rules="[{ required: true, message: $t('register.inputUsername') }]"
           />
           <van-field
@@ -22,9 +22,9 @@
             :required="true"
             label-align="top"
             type="password"
-            :name="$t('register.password')"
-            :label="$t('register.password')"
-            :placeholder="$t('register.password')"
+            :name="$t('login.password')"
+            :label="$t('login.password')"
+            :placeholder="$t('login.enterPassword')"
             :rules="[{ required: true, message: $t('register.inputPassword') }]"
           />
           <van-field
@@ -34,7 +34,7 @@
             type="password"
             :name="$t('register.confirmPassword')"
             :label="$t('register.confirmPassword')"
-            :placeholder="$t('register.confirmPassword')"
+            :placeholder="$t('register.inputConfirmPassword')"
             :rules="[
               { required: true, message: $t('register.inputConfirmPassword') },
               { validator: validatePasswordConfirmation }
@@ -51,7 +51,7 @@
             type="text"
             :name="$t('register.realName')"
             :label="$t('register.realName')"
-            :placeholder="$t('register.realName')"
+            :placeholder="$t('register.inputRealname')"
             :rules="[{ required: true, message: $t('register.inputRealname') }]"
           />
 
@@ -60,9 +60,9 @@
             :required="true"
             label-align="top"
             type="password"
-            :name="$t('register.qkPwd')"
-            :label="$t('register.qkPwd')"
-            :placeholder="$t('register.qkPwd')"
+            :name="$t('mine.qknewPwd')"
+            :label="$t('mine.qknewPwd')"
+            :placeholder="$t('register.inputQkpwd')"
             :rules="[{ required: true, message: $t('register.inputQkpwd') }]"
           />
 
@@ -77,7 +77,7 @@
             type="digit"
             :name="$t('register.phone')"
             :label="$t('register.phone')"
-            :placeholder="$t('register.phone')"
+            :placeholder="$t('register.inputPhone')"
             :rules="[{ required: true, message: $t('register.inputPhone') }]"
           />
 
@@ -100,7 +100,7 @@
               :columns="columns"
               @confirm="onConfirm"
               @cancel="cancelHandler"
-              title="选择货币"
+              :title="$t('register.currency')"
             />
           </van-popup>
 
@@ -125,10 +125,10 @@
             :required="true"
             label-align="top"
             type="digit"
-            :name="$t('register.captcha')"
-            :label="$t('register.captcha')"
-            :placeholder="$t('register.inputCaptcha')"
-            :rules="[{ required: true, message: $t('register.inputCaptcha') }]"
+            :name="$t('login.captcha')"
+            :label="$t('login.captcha')"
+            :placeholder="$t('login.enterCaptcha')"
+            :rules="[{ required: true, message: $t('login.captchaRequired') }]"
           >
             <template #button>
               <van-image
@@ -162,10 +162,12 @@ import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast, type PickerConfirmEventParams } from 'vant'
 import { useAppStore } from '@/stores/app'
+import { useI18n } from 'vue-i18n'
 import api from '@/api'
 
 defineOptions({ name: 'RegisterVue' })
 
+const { t } = useI18n()
 const store = useAppStore()
 const router = useRouter()
 const route = useRoute()
@@ -209,7 +211,7 @@ const frm = ref({
 // 密码确认验证器
 function validatePasswordConfirmation(value: string) {
   if (value !== frm.value.password) {
-    return '两次输入的密码不一致'
+    return t('mine.newPwdDiff')
   }
   return true
 }
@@ -229,7 +231,6 @@ function onConfirm({
   frm.value.currency = `${selectedOptions[0]?.text}`
   currencyIndex.value = selectedIndexes[0]
   frm.value.lang = columns.value[currencyIndex.value].value
-  console.log('选择货币:', frm.value.currency, currencyIndex.value)
   showPicker.value = false
 }
 
@@ -252,12 +253,8 @@ function submitRegisterHandler() {
           currency: columns.value[currencyIndex.value].code, // 使用货币代码而不是显示文本
         }
 
-        console.log('注册数据:', registerData)
-
         // 调用正确的API方法名称
         const resp = await api.register(registerData)
-
-        console.log('register resp:', resp, resp?.message)
 
         if (resp && resp.code === 200) {
           // 如果返回了token，保存它
@@ -267,20 +264,20 @@ function submitRegisterHandler() {
           }
 
           showToast({
-            message: resp.message || '注册成功',
+            message: resp.message || t('login.loginSuccess'),
             onClose: () => {
               router.replace({ name: 'main' })
             },
           })
         } else {
           showToast({
-            message: resp?.message || '注册失败',
+            message: resp?.message || t('login.loginFailed'),
           })
         }
       } catch (err: any) {
         console.error('注册错误:', err)
         showToast({
-          message: err?.message || err?.error?.message || '注册失败，请重试',
+          message: err?.message || err?.error?.message || t('login.loginError'),
         })
       } finally {
         isSubmitting.value = false
@@ -301,16 +298,15 @@ async function refreshCaptcha() {
       return
     }
     const resp = await api.authCaptcha()
-    console.log('authCaptcha resp:', resp)
     if (resp && resp.code === 200 && resp.data) {
       captchaImg.value = resp.data?.img ?? ''
       frm.value.key = resp.data?.key
     }
   } catch (err) {
     console.log('获取验证码失败:', err)
+    showToast(t('login.captchaError'))
   }
 }
-
 
 // 返回
 function onClickLeft() {
@@ -320,9 +316,7 @@ function onClickLeft() {
 // 初始化
 async function init() {
   store.loading()
-
   await refreshCaptcha()
-
   store.stopLoad()
 }
 

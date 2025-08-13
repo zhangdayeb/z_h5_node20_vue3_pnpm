@@ -1,105 +1,167 @@
 <template>
-  <div class="m-person">
-    <van-nav-bar
-      left-arrow
-      :title="$t('mine.baseInfo')"
-      @click-left="onClickLeft"
-      class="m-nav"
-    />
+  <div class="pc-person">
+    <el-page-header @back="onClickLeft" class="pc-header">
+      <template #title>
+        <span class="pc-header-title">{{ $t('mine.baseInfo') }}</span>
+      </template>
+    </el-page-header>
 
-    <!-- 基础信息 -->
-    <van-cell-group>
-      <van-cell
-        :title="$t('register.username')"
-        :value="userInfo?.name ?? ''"
-      />
-    </van-cell-group>
+    <div class="pc-content">
+      <!-- 基础信息 -->
+      <el-card class="pc-info-card">
+        <template #header>
+          <div class="card-header">
+            <el-icon><User /></el-icon>
+            <span>{{ $t('mine.baseInfo') }}</span>
+          </div>
+        </template>
+        <div class="pc-info-item">
+          <span class="pc-info-label">{{ $t('login.username') }}</span>
+          <span class="pc-info-value">{{ userInfo?.name ?? '' }}</span>
+        </div>
+      </el-card>
 
-    <!-- 资金信息 -->
-    <van-cell-group class="m-top10">
-      <van-cell class="money-cell">
-        <template #title>
-          <span class="money-title">{{ $t('mine.balance') }}</span>
+      <!-- 资金信息 -->
+      <el-card class="pc-info-card">
+        <template #header>
+          <div class="card-header">
+            <el-icon><Wallet /></el-icon>
+            <span>{{ $t('user.wallet') }}</span>
+          </div>
         </template>
-        <template #value>
-          <span class="money-value">{{ formatMoney(userInfo?.money) }}</span>
-        </template>
-      </van-cell>
 
-      <!-- 条件渲染：只有当配置允许时才显示返水金额 -->
-      <van-cell class="money-cell" v-if="shouldShowFanshui">
-        <template #title>
-          <span class="money-title">{{ $t('rebateAmount') }}</span>
-        </template>
-        <template #value>
-          <span class="money-value rebate">{{ formatMoney(userInfo?.money_rebate) }}</span>
-        </template>
-      </van-cell>
+        <div class="pc-money-item">
+          <span class="pc-money-label">
+            <el-icon color="#67C23A"><Money /></el-icon>
+            {{ $t('user.balance') }}
+          </span>
+          <span class="pc-money-value primary">¥ {{ formatMoney(userInfo?.money) }}</span>
+        </div>
 
-      <van-cell class="money-cell">
-        <template #title>
-          <span class="money-title">{{ $t('commissionAmount') }}</span>
-        </template>
-        <template #value>
-          <span class="money-value commission">{{ formatMoney(userInfo?.money_fanyong) }}</span>
-        </template>
-      </van-cell>
+        <!-- 条件渲染：只有当配置允许时才显示返水金额 -->
+        <div class="pc-money-item" v-if="shouldShowFanshui">
+          <span class="pc-money-label">
+            <el-icon color="#409EFF"><Coin /></el-icon>
+            {{ $t('rebateAmount') }}
+          </span>
+          <span class="pc-money-value rebate">¥ {{ formatMoney(userInfo?.money_rebate) }}</span>
+        </div>
 
-      <van-cell
-        :title="$t('currencyType')"
-        :value="formatCurrency(userInfo?.currency)"
-      />
-    </van-cell-group>
+        <div class="pc-money-item">
+          <span class="pc-money-label">
+            <el-icon color="#E6A23C"><Present /></el-icon>
+            {{ $t('commissionAmount') }}
+          </span>
+          <span class="pc-money-value commission">¥ {{ formatMoney(userInfo?.money_fanyong) }}</span>
+        </div>
 
-    <!-- 个人资料 -->
-    <van-cell-group class="m-top10">
-      <van-cell
-        :title="$t('register.realName')"
-        :value="userInfo?.realname ?? userInfo?.real_name ?? ''"
-      />
-      <van-cell
-        :title="$t('register.phone')"
-        :value="userInfo?.phone ?? ''"
-        :is-link="true"
-        @click="editUserInfo('phone')"
-      />
-      <van-cell
-        :title="$t('mine.nickname')"
-        :value="userInfo?.nick_name ?? userInfo?.nickname ?? ''"
-        :is-link="true"
-        @click="editUserInfo('nick_name')"
-      />
-    </van-cell-group>
+        <el-divider />
+
+        <div class="pc-info-item">
+          <span class="pc-info-label">{{ $t('currencyType') }}</span>
+          <span class="pc-info-value">
+            <el-tag type="info" size="large">{{ formatCurrency(userInfo?.currency) }}</el-tag>
+          </span>
+        </div>
+      </el-card>
+
+      <!-- 个人资料 -->
+      <el-card class="pc-info-card">
+        <template #header>
+          <div class="card-header">
+            <el-icon><UserFilled /></el-icon>
+            <span>{{ $t('mine.persionalInfo') }}</span>
+          </div>
+        </template>
+
+        <div class="pc-info-item">
+          <span class="pc-info-label">
+            <el-icon><UserFilled /></el-icon>
+            {{ $t('register.realName') }}
+          </span>
+          <span class="pc-info-value">{{ userInfo?.realname ?? userInfo?.real_name ?? '--' }}</span>
+        </div>
+
+        <div class="pc-info-item pc-clickable" @click="editUserInfo('phone')">
+          <span class="pc-info-label">
+            <el-icon><Phone /></el-icon>
+            {{ $t('register.phone') }}
+          </span>
+          <span class="pc-info-value">
+            <span>{{ userInfo?.phone ?? '--' }}</span>
+            <el-button type="primary" link>
+              <el-icon><Edit /></el-icon>
+              {{ $t('mine.edit') }}
+            </el-button>
+          </span>
+        </div>
+
+        <div class="pc-info-item pc-clickable" @click="editUserInfo('nick_name')">
+          <span class="pc-info-label">
+            <el-icon><Avatar /></el-icon>
+            {{ $t('nickname') }}
+          </span>
+          <span class="pc-info-value">
+            <span>{{ userInfo?.nick_name ?? userInfo?.nickname ?? '--' }}</span>
+            <el-button type="primary" link>
+              <el-icon><Edit /></el-icon>
+              {{ $t('mine.edit') }}
+            </el-button>
+          </span>
+        </div>
+      </el-card>
+    </div>
 
     <!-- 编辑基础信息弹窗 -->
-    <van-popup
-      v-model:show="showEditBasic"
-      position="bottom"
-      closeable
-      :style="{ height: '50%' }"
+    <el-dialog
+      v-model="showEditBasic"
+      :title="editField === 'nick_name' ? $t('nickname') : $t('register.phone')"
+      width="500px"
+      class="pc-edit-dialog"
     >
-      <van-cell-group inset class="m-pop-frm">
-        <van-field
-          v-model="basicForm.nick_name"
-          :label="$t('mine.nickname')"
-          :rules="[{ required: true, message: $t('mine.inputNickname') }]"
-          :placeholder="$t('mine.inputNickname')"
+      <el-form :model="basicForm" label-width="100px">
+        <el-form-item
+          :label="$t('nickname')"
           v-if="editField === 'nick_name'"
-        />
-        <van-field
-          v-model="basicForm.phone"
+          :rules="[{ required: true, message: $t('inputNickname'), trigger: 'blur' }]"
+        >
+          <el-input
+            v-model="basicForm.nick_name"
+            :placeholder="$t('inputNickname')"
+            clearable
+          >
+            <template #prefix>
+              <el-icon><Avatar /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item
           :label="$t('register.phone')"
-          :rules="[{ required: true, message: $t('mine.inputPhoneNumber') }]"
-          :placeholder="$t('mine.inputPhoneNumber')"
           v-if="editField === 'phone'"
-        />
-      </van-cell-group>
-      <div style="margin: 16px">
-        <van-button round block type="primary" @click="updateBasicInfo">
-          {{ $t('submit') }}
-        </van-button>
-      </div>
-    </van-popup>
+          :rules="[{ required: true, message: $t('register.inputPhone'), trigger: 'blur' }]"
+        >
+          <el-input
+            v-model="basicForm.phone"
+            :placeholder="$t('register.inputPhone')"
+            clearable
+          >
+            <template #prefix>
+              <el-icon><Phone /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showEditBasic = false">{{ $t('common.cancel') }}</el-button>
+          <el-button type="primary" @click="updateBasicInfo">
+            {{ $t('submit') }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -110,7 +172,18 @@ import { useConfigStore } from '@/stores/config'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { userApi } from '@/api/index'
-import { showToast } from 'vant'
+import { ElMessage } from 'element-plus'
+import {
+  User,
+  UserFilled,
+  Wallet,
+  Money,
+  Coin,
+  Present,
+  Phone,
+  Avatar,
+  Edit
+} from '@element-plus/icons-vue'
 
 defineOptions({ name: 'PersonalVue' })
 
@@ -135,10 +208,7 @@ const userInfo = computed(() => store.getUser())
 // 计算属性：判断是否显示返水金额
 const shouldShowFanshui = computed(() => {
   const fanshuiConfig = configStore.getConfigValue('default_user_fanshui', '0')
-
-  // 兼容字符串和数字，只要是0就不显示
   const value = typeof fanshuiConfig === 'string' ? parseFloat(fanshuiConfig) : fanshuiConfig
-
   return value > 0
 })
 
@@ -169,7 +239,7 @@ function formatCurrency(currency: string | undefined): string {
   }
 
   const currencyKey = currency || 'CNY'
-  return currencyMap[currencyKey] || `${currencyKey}`
+  return currencyMap[currencyKey] || currencyKey
 }
 
 // 返回
@@ -197,40 +267,36 @@ async function updateBasicInfo() {
 
     if (editField.value === 'nick_name') {
       if (!basicForm.value.nick_name.trim()) {
-        showToast(t('mine.inputNickname'))
+        ElMessage.warning(t('inputNickname'))
         return
       }
       updateData.nick_name = basicForm.value.nick_name.trim()
     } else if (editField.value === 'phone') {
       if (!basicForm.value.phone.trim()) {
-        showToast(t('mine.inputPhoneNumber'))
+        ElMessage.warning(t('register.inputPhone'))
         return
       }
       updateData.phone = basicForm.value.phone.trim()
     }
 
-    // 调用后端 updateUserInfo 接口
     const response = await userApi.updateUserInfo(updateData)
 
     if (response && response.code === 200) {
-      showToast(t('mine.updateSuccess'))
+      ElMessage.success(t('mine.updateSuccess'))
 
-      // 更新本地存储的用户信息
       const currentUser = store.getUser()
       if (currentUser) {
         store.setUser({ ...currentUser, ...updateData })
       }
 
       showEditBasic.value = false
-
-      // 重新获取用户信息确保数据同步
       await refreshUserInfo()
     } else {
-      showToast(response?.message || t('mine.updateFailed'))
+      ElMessage.error(response?.message || t('mine.updateFailed'))
     }
   } catch (error: any) {
     console.error('更新基础信息失败:', error)
-    showToast(error?.message || t('mine.updateFailed'))
+    ElMessage.error(error?.message || t('mine.updateFailed'))
   }
 }
 
@@ -254,53 +320,149 @@ onMounted(() => {
 </script>
 
 <style lang="less" scoped>
-.m-person {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+.pc-person {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+  background: #f5f7fa;
 
-  .m-top10 {
-    margin-top: 10px;
-  }
+  .pc-header {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 
-  .m-pop-frm {
-    margin-top: 46px;
-  }
-
-  .money-cell {
-    .money-title {
-      font-size: 14px;
-      color: #323233;
-      font-weight: 500;
-    }
-
-    .money-value {
-      font-size: 16px;
+    .pc-header-title {
+      font-size: 20px;
       font-weight: 600;
-      color: #07c160;
+      color: #303133;
+    }
+  }
 
-      &.rebate {
-        color: #1989fa;
+  .pc-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+
+    .pc-info-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #303133;
+
+        .el-icon {
+          font-size: 20px;
+          color: #409eff;
+        }
       }
 
-      &.commission {
-        color: #ff976a;
+      .pc-info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid #ebeef5;
+        transition: all 0.3s;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &.pc-clickable {
+          cursor: pointer;
+
+          &:hover {
+            background-color: #f5f7fa;
+            margin: 0 -20px;
+            padding: 16px 20px;
+          }
+        }
+
+        .pc-info-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          color: #606266;
+          font-weight: 500;
+
+          .el-icon {
+            font-size: 18px;
+            color: #909399;
+          }
+        }
+
+        .pc-info-value {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 14px;
+          color: #303133;
+        }
+      }
+
+      .pc-money-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 0;
+        border-bottom: 1px solid #ebeef5;
+
+        &:last-of-type {
+          border-bottom: none;
+        }
+
+        .pc-money-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 15px;
+          color: #606266;
+          font-weight: 500;
+
+          .el-icon {
+            font-size: 20px;
+          }
+        }
+
+        .pc-money-value {
+          font-size: 24px;
+          font-weight: 700;
+
+          &.primary {
+            color: #67c23a;
+          }
+
+          &.rebate {
+            color: #409eff;
+          }
+
+          &.commission {
+            color: #e6a23c;
+          }
+        }
+      }
+
+      .el-divider {
+        margin: 20px 0;
       }
     }
   }
 }
 
-.m-person :deep(.van-cell__title) {
-  font-size: 14px;
-  color: #323233;
+.pc-edit-dialog {
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
 }
-
-.m-person :deep(.van-cell__value) {
-  font-size: 14px;
-  color: #646566;
-}
-</style>
-
-<style lang="less">
-@import url('@/views/mobile/common.less');
 </style>
