@@ -902,4 +902,341 @@ onMounted(() => {
     width: 0 !important;
   }
 }
+
+// PC端样式适配
+@media (min-width: 768px) {
+  .m-deposit {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+
+    // 导航栏PC端优化
+    .van-nav-bar {
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      margin-bottom: 30px;
+
+      :deep(.van-nav-bar__content) {
+        padding: 0 30px;
+        height: 60px;
+      }
+
+      :deep(.van-nav-bar__title) {
+        font-size: 20px;
+        font-weight: 600;
+        color: #303133;
+      }
+
+      :deep(.van-nav-bar__left) {
+        .van-icon {
+          font-size: 20px;
+          color: #606266;
+        }
+      }
+    }
+
+    .mg-top-10 {
+      margin-top: 20px;
+    }
+
+    .m-cell {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      padding: 30px;
+      border: 1px solid #f0f2f5;
+
+      .m-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #303133;
+        height: auto;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f0f2f5;
+
+        span {
+          color: #409eff;
+          font-weight: 700;
+        }
+      }
+
+      // 支付方式选择区域PC端优化
+      .m-cell-bd {
+        height: auto;
+        min-height: 120px;
+        padding: 20px 0;
+
+        .m-scroll {
+          flex-wrap: wrap;
+          gap: 16px;
+          justify-content: flex-start;
+
+          .m-cell-bd-item {
+            height: 90px;
+            width: 120px;
+            min-width: 120px;
+            gap: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            &:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+
+            .m-img {
+              width: 40px;
+              height: 40px;
+            }
+
+            .m-label {
+              font-size: 14px;
+              font-weight: 500;
+              color: #333;
+            }
+
+            .m-border {
+              width: 24px;
+              height: 24px;
+            }
+          }
+
+          .m-activie {
+            border-color: #409eff;
+            background-color: #f0f9ff;
+            box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+          }
+        }
+      }
+
+      // 账户列表PC端优化
+      .m-account-list {
+        padding: 20px 0;
+
+        .m-account-item {
+          margin-bottom: 16px;
+          padding: 20px;
+          border-radius: 12px;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          }
+
+          &.m-activie {
+            border-color: #409eff;
+            background-color: #f0f9ff;
+            box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+          }
+
+          .m-account-header {
+            gap: 16px;
+
+            .m-method-icon {
+              width: 50px;
+              height: 50px;
+            }
+
+            .m-account-info {
+              .m-account-name {
+                font-size: 16px;
+                font-weight: 600;
+                margin-bottom: 6px;
+              }
+
+              .m-account-desc {
+                font-size: 14px;
+                color: #909399;
+              }
+            }
+
+            .m-check-icon {
+              width: 24px;
+              height: 24px;
+            }
+          }
+        }
+      }
+
+      // 二维码容器PC端优化
+      .m-qrcode-container {
+        padding: 30px;
+        margin-bottom: 20px;
+        border-radius: 12px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+
+        .m-qrcode-label {
+          font-size: 16px;
+          font-weight: 600;
+          margin-bottom: 20px;
+        }
+
+        .m-qrcode-wrapper {
+          padding: 20px;
+          border-radius: 12px;
+
+          .m-qrcode {
+            width: 240px;
+            height: 240px;
+            max-width: 240px;
+            max-height: 240px;
+          }
+        }
+      }
+
+      // 表单字段PC端优化
+      .m-account-field {
+        margin-bottom: 12px;
+
+        :deep(.van-field__control) {
+          font-size: 14px;
+        }
+
+        :deep(.van-field__label) {
+          font-size: 14px;
+          font-weight: 500;
+          color: #606266;
+        }
+
+        :deep(.van-button) {
+          padding: 8px 16px;
+          font-size: 13px;
+        }
+      }
+    }
+
+    // 表单区域PC端优化
+    .m-3f {
+      .m-input {
+        font-size: 16px;
+        margin-bottom: 20px;
+
+        :deep(.van-field__control) {
+          padding: 12px 16px;
+          border-radius: 8px;
+        }
+      }
+
+      .m-sub-btn {
+        height: 50px;
+        margin: 30px 0;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 25px;
+        box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(64, 158, 255, 0.4);
+        }
+      }
+    }
+
+    // 提示信息PC端优化
+    .m-tips {
+      background: #fef0f0;
+      border: 1px solid #fbc4c4;
+      border-radius: 12px;
+      padding: 25px;
+
+      .m-f12 {
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 10px;
+        color: #606266;
+      }
+
+      .m-c-red {
+        color: #f56c6c;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .m-b10 {
+        margin-bottom: 15px;
+      }
+    }
+
+    .m-f14 {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+  }
+}
+
+// 大屏幕优化 (1200px+)
+@media (min-width: 1200px) {
+  .m-deposit {
+    max-width: 1400px;
+    padding: 60px;
+
+    .m-cell {
+      padding: 40px;
+
+      // 支付方式采用网格布局
+      .m-cell-bd {
+        .m-scroll {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 20px;
+
+          .m-cell-bd-item {
+            width: 100%;
+            min-width: 140px;
+            height: 100px;
+          }
+        }
+      }
+
+      // 账户列表采用两列布局
+      .m-account-list {
+        .m-account-item {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+
+          &:nth-child(even) {
+            margin-left: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 超大屏幕优化 (1600px+)
+@media (min-width: 1600px) {
+  .m-deposit {
+    .m-cell {
+      // 支付方式更大的网格
+      .m-cell-bd {
+        .m-scroll {
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+
+          .m-cell-bd-item {
+            min-width: 160px;
+            height: 110px;
+
+            .m-img {
+              width: 48px;
+              height: 48px;
+            }
+
+            .m-label {
+              font-size: 15px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
 </style>
