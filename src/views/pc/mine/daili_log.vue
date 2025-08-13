@@ -2,7 +2,7 @@
   <div class="daili-record">
     <van-nav-bar
       left-arrow
-      title="代理记录"
+      :title="$t('agentRecord')"
       @click-left="onClickLeft"
       class="nav-bar"
     />
@@ -12,7 +12,7 @@
       <van-list
         v-model:loading="loading"
         :finished="finished"
-        finished-text="没有更多了"
+        :finished-text="$t('noMore')"
         @load="onLoad"
         class="record-list"
       >
@@ -23,7 +23,7 @@
         >
           <div class="record-info">
             <div class="record-title">{{ item.name }}</div>
-            <div class="record-time">余额:{{ item.money }}</div>
+            <div class="record-time">{{ $t('balance') }}:{{ item.money }}</div>
             <div class="record-time">{{ item.created_at }}</div>
           </div>
           <div class="record-action">
@@ -35,7 +35,7 @@
                 @click="handleEdit(item)"
                 class="edit-btn"
               >
-                调整比例
+                {{ $t('adjustProportion') }}
               </van-button>
               <van-button
                 type="warning"
@@ -43,7 +43,7 @@
                 @click="handleAddMoney(item)"
                 class="add-money-btn"
               >
-                上分
+                {{ $t('addCredits') }}
               </van-button>
             </div>
           </div>
@@ -54,30 +54,30 @@
     <!-- 空状态 -->
     <van-empty
       v-if="!loading && !refreshing && list.length === 0"
-      description="暂无代理记录"
+      :description="$t('noAgentRecord')"
       image="https://img.yzcdn.cn/vant/custom-empty-image.png"
     />
 
     <!-- 编辑比例弹窗 -->
     <van-dialog
       v-model:show="showEditDialog"
-      title="调整返佣比例"
+      :title="$t('adjustCommissionRate')"
       show-cancel-button
-      confirm-button-text="确认"
-      cancel-button-text="取消"
+      :confirm-button-text="$t('confirm')"
+      :cancel-button-text="$t('cancel')"
       :before-close="handleEditConfirm"
     >
       <div class="edit-content">
         <div class="edit-info">
-          <p>代理：{{ currentEditItem?.name || '' }}</p>
-          <p>当前比例：{{ currentEditItem?.fanyong_proportion || '0.00' }}</p>
-          <p>您的比例：{{ currentUserInfo?.fanyong_proportion || '0.00' }}</p>
+          <p>{{ $t('agent') }}：{{ currentEditItem?.name || '' }}</p>
+          <p>{{ $t('currentRate') }}：{{ currentEditItem?.fanyong_proportion || '0.00' }}</p>
+          <p>{{ $t('yourRate') }}：{{ currentUserInfo?.fanyong_proportion || '0.00' }}</p>
         </div>
         <van-field
           v-model="editProportion"
           type="number"
-          label="新比例"
-          placeholder="请输入小数，如：0.05"
+          :label="$t('newRate')"
+          :placeholder="$t('enterDecimal')"
           step="0.01"
         />
       </div>
@@ -86,28 +86,28 @@
     <!-- 上分弹窗 -->
     <van-dialog
       v-model:show="showAddMoneyDialog"
-      title="会员上分"
+      :title="$t('memberAddCredits')"
       show-cancel-button
-      confirm-button-text="确认转账"
-      cancel-button-text="取消"
+      :confirm-button-text="$t('confirmTransfer')"
+      :cancel-button-text="$t('cancel')"
       :before-close="handleAddMoneyConfirm"
     >
       <div class="add-money-content">
         <div class="add-money-info">
-          <p>会员：{{ currentAddMoneyItem?.name || '' }}</p>
-          <p>您的余额：{{ currentUserInfo?.money || '0.00' }}</p>
+          <p>{{ $t('member') }}：{{ currentAddMoneyItem?.name || '' }}</p>
+          <p>{{ $t('yourBalance') }}：{{ currentUserInfo?.money || '0.00' }}</p>
         </div>
         <van-field
           v-model="addMoneyAmount"
           type="number"
-          label="转账金额"
-          placeholder="请输入转账金额"
+          :label="$t('transferAmount')"
+          :placeholder="$t('enterTransferAmount')"
           step="0.01"
         />
         <div class="add-money-tips">
-          <p class="tip-text">• 转账金额将从您的余额中扣除</p>
-          <p class="tip-text">• 转账后立即到账，无法撤回</p>
-          <p class="tip-text">• 请仔细核对会员信息和金额</p>
+          <p class="tip-text">• {{ $t('transferAmountTip1') }}</p>
+          <p class="tip-text">• {{ $t('transferAmountTip2') }}</p>
+          <p class="tip-text">• {{ $t('transferAmountTip3') }}</p>
         </div>
       </div>
     </van-dialog>
@@ -119,6 +119,7 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import { invokeApi } from '@/utils/tools'
 import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 
 defineOptions({ name: 'DailiRecord' })
 
@@ -136,6 +137,7 @@ interface UserInfo {
 }
 
 const router = useRouter()
+const { t } = useI18n()
 
 // === 数据状态 ===
 const list = ref<DailiRecordItem[]>([])
@@ -261,7 +263,7 @@ async function handleEditConfirm(action: string) {
   }
 
   if (!currentEditItem.value || !editProportion.value) {
-    showToast('请输入返佣比例')
+    showToast(t('enterCommissionRate'))
     return false
   }
 
@@ -269,7 +271,7 @@ async function handleEditConfirm(action: string) {
   const userProportion = parseFloat(currentUserInfo.value?.fanyong_proportion || '0')
 
   if (isNaN(inputValue) || inputValue < 0 || inputValue > userProportion) {
-    showToast(`比例必须在0到${userProportion}之间`)
+    showToast(t('rateMustBeBetween', { max: userProportion }))
     return false
   }
 
@@ -280,7 +282,7 @@ async function handleEditConfirm(action: string) {
     })
 
     if (resp && resp.code === 200) {
-      showToast('修改成功')
+      showToast(t('modifySuccess'))
 
       // 更新列表中的数据
       const index = list.value.findIndex(item => item.id === currentEditItem.value?.id)
@@ -291,12 +293,12 @@ async function handleEditConfirm(action: string) {
       showEditDialog.value = false
       return true
     } else {
-      showToast(resp?.message || '修改失败')
+      showToast(resp?.message || t('modifyFailed'))
       return false
     }
   } catch (error) {
     console.error('修改失败:', error)
-    showToast('修改失败')
+    showToast(t('modifyFailed'))
     return false
   }
 }
@@ -316,7 +318,7 @@ async function handleAddMoneyConfirm(action: string) {
   }
 
   if (!currentAddMoneyItem.value || !addMoneyAmount.value) {
-    showToast('请输入转账金额')
+    showToast(t('enterTransferAmount'))
     return false
   }
 
@@ -324,12 +326,12 @@ async function handleAddMoneyConfirm(action: string) {
   const userMoney = parseFloat(currentUserInfo.value?.money || '0')
 
   if (isNaN(inputValue) || inputValue <= 0) {
-    showToast('请输入有效的转账金额')
+    showToast(t('enterValidAmount'))
     return false
   }
 
   if (inputValue > userMoney) {
-    showToast(`转账金额不能超过您的余额 ${userMoney.toFixed(2)}`)
+    showToast(t('amountExceedsBalance', { balance: userMoney.toFixed(2) }))
     return false
   }
 
@@ -355,7 +357,7 @@ async function handleAddMoneyConfirm(action: string) {
 
       // 延时提示和刷新
       setTimeout(() => {
-        showToast('转账成功')
+        showToast(t('transferSuccess'))
       }, 200)
 
       setTimeout(() => {
@@ -365,12 +367,12 @@ async function handleAddMoneyConfirm(action: string) {
 
       return true
     } else {
-      showToast(resp?.message || '转账失败')
+      showToast(resp?.message || t('transferFailed'))
       return false
     }
   } catch (error) {
     console.error('转账失败:', error)
-    showToast('转账失败')
+    showToast(t('transferFailed'))
     return false
   }
 }
