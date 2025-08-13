@@ -22,11 +22,11 @@ export function mobileFunc(): boolean {
   }
 
   // 2. Telegram Web App 检测（第二优先级）
-  // 如果检测到是 Telegram 环境，直接使用移动端模板
-  // if (isTelegramMiniApp()) {
-  //   console.log('✅ Telegram 环境检测到，使用移动端模板')
-  //   return true
-  // }
+  const tgUserData = getTelegramUserData();
+  if (tgUserData?.tg_id) {
+    console.log('✅ Telegram 环境检测到，使用移动端模板')
+    return true
+  }
 
   // 3. 简化的设备检测
   const userAgent = navigator.userAgent
@@ -62,24 +62,6 @@ export function mobileFunc(): boolean {
   return isSmallScreen && isTouchDevice
 }
 
-// 返回主页类型 - 仅供组件内使用，不在路由配置中调用
-export function getMainTypeFromConfig(): string {
-  try {
-    console.log('🔍 getMainTypeFromConfig: 开始获取配置')
-
-    // 使用 ES6 动态导入避免初始化问题
-    const configModule = import('@/stores/config')
-    console.log(configModule)
-    console.warn('⚠️ getMainTypeFromConfig: 异步导入暂不支持，请在组件中直接调用 configStore')
-
-    // 暂时返回默认值，实际逻辑移到组件中
-    return 'main_game'
-  } catch (error) {
-    console.error('❌ getMainTypeFromConfig: 获取配置失败，使用默认值:', error)
-    return 'main_game' // 默认值
-  }
-}
-
 // ==================== 图片和域名相关 ====================
 
 export function getImgUrl(url: string): string {
@@ -93,28 +75,6 @@ export function getDomain(): string {
   return domain
 }
 
-// ==================== 时间相关功能 ====================
-
-export function getCurrentTime(): string {
-  return dayjs().format('YYYY-MM-DD HH:mm:ss')
-}
-
-export function getDateRange(days: number): [string, string] {
-  const start = dayjs().endOf('day')
-  const end = dayjs().subtract(days, 'day').startOf('day')
-  return [
-    start.format('YYYY-MM-DD HH:mm:ss'),
-    end.format('YYYY-MM-DD HH:mm:ss'),
-  ]
-}
-
-export function getYestodayRange(): [string, string] {
-  const curr = dayjs().subtract(1, 'day')
-  return [
-    curr.startOf('day').format('YYYY-MM-DD HH:mm:ss'),
-    curr.endOf('day').format('YYYY-MM-DD HH:mm:ss'),
-  ]
-}
 
 // ==================== API 调用相关 ====================
 
@@ -210,55 +170,8 @@ export function getTelegramUserData() {
     console.log('🔄 获取 Telegram 用户数据...');
     console.log('🔍 当前完整URL:', window.location.href);
 
-    // 方法1: 从 URL fragment (hash) 获取 - 你要的主要方案
-    const hash = window.location.hash;
-    console.log('🔍 URL fragment:', hash);
 
-    if (hash && hash.length > 1) {
-      try {
-        // 移除开头的 #
-        const hashContent = hash.substring(1);
-        console.log('🔍 处理 hash 内容:', hashContent);
-
-        const hashParams = new URLSearchParams(hashContent);
-
-        // 直接获取 tg_id
-        const fragmentTgId = hashParams.get('tg_id');
-        if (fragmentTgId) {
-          console.log('📱 从 URL fragment 获取 tg_id:', fragmentTgId);
-          alert(`✅ 从 URL fragment 获取到 tg_id: ${fragmentTgId}`);
-          return { tg_id: fragmentTgId };
-        }
-
-        // 解析 Telegram initData 格式中的 user 字段
-        const userStr = hashParams.get('user');
-        if (userStr) {
-          const user = JSON.parse(decodeURIComponent(userStr));
-          if (user.id) {
-            console.log('📱 从 fragment initData 解析 tg_id:', user.id);
-            alert(`✅ 从 fragment initData 解析到 tg_id: ${user.id}`);
-            return { tg_id: user.id.toString() };
-          }
-        }
-
-        // 如果不是标准格式，尝试直接在 hash 中查找 tg_id
-        const tgIdMatch = hashContent.match(/tg_id[=:](\d+)/);
-        if (tgIdMatch) {
-          const tg_id = tgIdMatch[1];
-          console.log('📱 从 fragment 正则匹配 tg_id:', tg_id);
-          alert(`✅ 从 fragment 正则匹配到 tg_id: ${tg_id}`);
-          return { tg_id };
-        }
-
-        console.log('🔍 fragment 存在但未找到有效的 tg_id 数据');
-      } catch (error) {
-        console.log('❌ 解析 URL fragment 失败:', error);
-      }
-    } else {
-      console.log('🔍 URL fragment 为空');
-    }
-
-    // 方法2: 标准 Telegram WebApp API (官方推荐)
+    // 方法1: 标准 Telegram WebApp API (官方推荐)
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
       const tg = (window as any).Telegram.WebApp;
 
@@ -298,53 +211,9 @@ export function getTelegramUserData() {
       return null;
     }
 
-    // 方法3: 从 URL 参数获取 (测试用)
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlTgId = urlParams.get('tg_id');
-    if (urlTgId) {
-      console.log('📱 从 URL 参数获取 tg_id:', urlTgId);
-      return { tg_id: urlTgId };
-    }
-
-    console.log('❌ 未找到 tg_id');
-    return null;
-
   } catch (error) {
     console.error('❌ 获取 Telegram 用户数据出错:', error);
     return null;
-  }
-}
-
-/**
- * 检测是否在 Telegram 环境中
- */
-export function isTelegramMiniApp(): boolean {
-  try {
-    // 检查 Telegram WebApp 对象
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
-      console.log('✅ Telegram WebApp 对象存在');
-      return true;
-    }
-
-    // 检查 URL 参数
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('is_tg') === '1') {
-      console.log('✅ 通过 URL 参数判断为 Telegram 环境');
-      return true;
-    }
-
-    // 检查 URL fragment 中是否有 Telegram 相关数据
-    const hash = window.location.hash;
-    if (hash && (hash.includes('tg_id') || hash.includes('user='))) {
-      console.log('✅ 通过 URL fragment 判断为 Telegram 环境');
-      return true;
-    }
-
-    console.log('❌ 不是 Telegram 环境');
-    return false;
-  } catch (error) {
-    console.log('❌ 检测 Telegram 环境出错:', error);
-    return false;
   }
 }
 
