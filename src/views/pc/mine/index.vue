@@ -130,7 +130,7 @@
               </template>
             </van-cell>
             <van-cell
-              :title="$t('moneyLog')"
+              :title="$t('mine.moneyLog')"
               is-link
               @click.stop="menuHandler(4)"
             >
@@ -168,7 +168,7 @@
               </template>
             </van-cell>
             <van-cell
-              :title="$t('mine.logout')"
+              :title="$t('user.logout')"
               is-link
               @click.stop="logoutHandler"
             >
@@ -204,7 +204,7 @@
         </van-cell-group>
 
         <van-button class="pc-mt10 pc-btn-txt" @click="logoutHandler">{{
-          $t('mine.logout')
+          $t('user.logout')
         }}</van-button>
       </div>
     </van-dialog>
