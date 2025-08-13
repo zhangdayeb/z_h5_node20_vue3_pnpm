@@ -37,10 +37,10 @@
         <van-list
           :immediate-check="false"
           v-else
-          v-model:loading="unread.loading"
-          :finished="unread.finished"
+          v-model:loading="read.loading"
+          :finished="read.finished"
           :finished-text="$t('noMore')"
-          @load="unreadOnLoad"
+          @load="readOnLoad"
         >
           <van-cell
             v-for="(item, idx) in read.data"
@@ -90,109 +90,44 @@ const unread = ref<ListData>({
 })
 
 async function unreadOnLoad() {
-  await getMessage(unread.value.page + 1)
+  await getMessage(unread.value.page + 1, 'unread')
+}
+
+async function readOnLoad() {
+  await getMessage(read.value.page + 1, 'read')
 }
 
 function onClickLeft() {
   router.back()
 }
 
-async function getMessage(p: number) {
-  await invokeApi('message', { page: p })
-  const resp = {
-    status: 'success',
-    code: 200,
-    message: '',
-    data: {
-      current_page: 1,
-      data: [
-        {
-          id: 6,
-          title: '晋级礼金发放通知',
-          url: '',
-          content:
-            '恭喜您升级到【 VIP1】，升级奖励为金额【1.00 元】，信用额度奖励【50.00 元】',
-          created_at: '2024-11-02 05:08:25',
-          is_read: 1,
-          pid: 0,
-          user_id: 1,
-          deleted_at: null,
-          format_created_at: '1天前',
-          parent: null,
-        },
-        {
-          id: 7,
-          title: '每日礼金发放通知',
-          url: '',
-          content: '恭喜您领取【 1 级】每日礼金【 0.50 元】',
-          created_at: '2024-11-02 05:08:25',
-          is_read: 0,
-          pid: 0,
-          user_id: 1,
-          deleted_at: null,
-          format_created_at: '1天前',
-          parent: null,
-        },
-        {
-          id: 8,
-          title: '每周礼金发放通知',
-          url: '',
-          content: '恭喜您领取【 1 级】每周礼金【 1.50 元】',
-          created_at: '2024-11-02 05:08:25',
-          is_read: 0,
-          pid: 0,
-          user_id: 1,
-          deleted_at: null,
-          format_created_at: '1天前',
-          parent: null,
-        },
-        {
-          id: 9,
-          title: '每月礼金发放通知',
-          url: '',
-          content: '恭喜您领取【 1 级】每月礼金【 8.00 元】',
-          created_at: '2024-11-02 05:08:25',
-          is_read: 0,
-          pid: 0,
-          user_id: 1,
-          deleted_at: null,
-          format_created_at: '1天前',
-          parent: null,
-        },
-        {
-          id: 10,
-          title: '每年礼金发放通知',
-          url: '',
-          content: '恭喜您领取【 1 级】每年礼金【 88.00 元】',
-          created_at: '2024-11-02 05:08:25',
-          is_read: 0,
-          pid: 0,
-          user_id: 1,
-          deleted_at: null,
-          format_created_at: '1天前',
-          parent: null,
-        },
-      ],
-    },
-    unread: 4,
-    notice: 0,
-  }
-  //const resp = await invokeApi('message')
-  if (resp) {
+async function getMessage(p: number, type: 'unread' | 'read' = 'unread') {
+  const resp = await invokeApi('message', { page: p })
+
+  if (resp && resp.data) {
     const data = resp.data.data as ApiRead[]
 
     data.forEach(it => {
-      if (it.is_read === 0) {
+      if (it.is_read === 0 && type === 'unread') {
         unread.value.data.push(it)
       }
-      if (it.is_read === 1) {
+      if (it.is_read === 1 && type === 'read') {
         read.value.data.push(it)
       }
     })
-    unread.value.finished = read.value.finished = true
+
+    if (type === 'unread') {
+      unread.value.finished = true
+      unread.value.page = p
+    } else {
+      read.value.finished = true
+      read.value.page = p
+    }
+
     console.log('unread', unread.value, read.value)
   }
 }
+
 onMounted(async () => {
   unread.value.data = []
   unread.value.page = 0
@@ -220,7 +155,10 @@ onMounted(async () => {
     align-items: center;
   }
   .m-green {
-    color: green;
+    color: #07c160;
+  }
+  .m-c-red {
+    color: #ee0a24;
   }
   .m-f12 {
     font-size: 12px;
