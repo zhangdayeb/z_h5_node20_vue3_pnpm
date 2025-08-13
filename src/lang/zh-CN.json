@@ -523,5 +523,15 @@
   "noGameRecord": "暂无游戏记录",
   "getGameRecordFailed": "获取游戏记录失败",
   "noMoneyRecord": "暂无交易记录",
-  "getMoneyRecordFailed": "获取交易记录失败"
+  "getMoneyRecordFailed": "获取交易记录失败",
+  "withdrawRecord": "提现记录",
+  "withdrawDetail": "提现详情", 
+  "withdrawAmount": "提现金额",
+  "withdrawMethod": "提现方式",
+  "actualAmount": "实际到账",
+  "handlingFee": "手续费",
+  "bankName": "银行名称",
+  "receivingAccount": "收款账户",
+  "remark": "备注",
+  "getWithdrawRecordFailed": "获取提现记录失败"
 }

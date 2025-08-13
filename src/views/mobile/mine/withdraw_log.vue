@@ -2,7 +2,7 @@
   <div class="withdraw-record">
     <van-nav-bar
       left-arrow
-      title="提现记录"
+      :title="$t('withdrawRecord')"
       @click-left="onClickLeft"
       class="nav-bar"
     />
@@ -10,10 +10,10 @@
     <!-- 状态筛选 -->
     <div class="filter-bar">
       <van-tabs v-model:active="activeStatus" @click-tab="onTabChange" sticky>
-        <van-tab title="全部" name=""></van-tab>
-        <van-tab title="待审核" name="0"></van-tab>
-        <van-tab title="已通过" name="1"></van-tab>
-        <van-tab title="已拒绝" name="2"></van-tab>
+        <van-tab :title="$t('all')" name=""></van-tab>
+        <van-tab :title="$t('pending')" name="0"></van-tab>
+        <van-tab :title="$t('approved')" name="1"></van-tab>
+        <van-tab :title="$t('rejected')" name="2"></van-tab>
       </van-tabs>
     </div>
 
@@ -22,7 +22,7 @@
       <van-list
         v-model:loading="loading"
         :finished="finished"
-        finished-text="没有更多了"
+        :finished-text="$t('noMore')"
         @load="onLoad"
         class="record-list"
       >
@@ -48,19 +48,19 @@
           </div>
           <div class="record-info">
             <div class="info-row">
-              <span class="label">申请时间：</span>
+              <span class="label">{{ $t('applyTime') }}：</span>
               <span class="value">{{ formatTime(item.create_time) }}</span>
             </div>
             <div class="info-row" v-if="item.success_time">
-              <span class="label">完成时间：</span>
+              <span class="label">{{ $t('completeTime') }}：</span>
               <span class="value">{{ formatTime(item.success_time) }}</span>
             </div>
             <div class="info-row">
-              <span class="label">实际到账：</span>
+              <span class="label">{{ $t('actualAmount') }}：</span>
               <span class="value">¥{{ item.actual_amount }}</span>
             </div>
             <div class="info-row" v-if="item.bank_name">
-              <span class="label">提现方式：</span>
+              <span class="label">{{ $t('withdrawMethod') }}：</span>
               <span class="value">{{ item.pay_type_text }}</span>
             </div>
           </div>
@@ -78,13 +78,13 @@
     >
       <div class="detail-content" v-if="selectedRecord">
         <div class="detail-header">
-          <h3>提现详情</h3>
+          <h3>{{ $t('withdrawDetail') }}</h3>
           <van-icon name="cross" @click="showDetail = false" />
         </div>
 
         <div class="detail-body">
           <div class="detail-amount">
-            <span class="amount-label">提现金额</span>
+            <span class="amount-label">{{ $t('withdrawAmount') }}</span>
             <span class="amount-value" :class="getAmountClass(selectedRecord.status)">
               ¥{{ selectedRecord.amount }}
             </span>
@@ -100,35 +100,35 @@
           </div>
 
           <van-cell-group class="detail-info">
-            <van-cell title="订单号" :value="selectedRecord.id" />
-            <van-cell title="申请时间" :value="formatTime(selectedRecord.create_time)" />
+            <van-cell :title="$t('orderNumber')" :value="selectedRecord.id" />
+            <van-cell :title="$t('applyTime')" :value="formatTime(selectedRecord.create_time)" />
             <van-cell
               v-if="selectedRecord.success_time"
-              title="完成时间"
+              :title="$t('completeTime')"
               :value="formatTime(selectedRecord.success_time)"
             />
-            <van-cell title="提现金额" :value="`¥${selectedRecord.amount}`" />
-            <van-cell title="手续费" :value="`¥${selectedRecord.fee}`" />
-            <van-cell title="实际到账" :value="`¥${selectedRecord.actual_amount}`" />
-            <van-cell title="提现方式" :value="selectedRecord.pay_type_text" />
+            <van-cell :title="$t('withdrawAmount')" :value="`¥${selectedRecord.amount}`" />
+            <van-cell :title="$t('handlingFee')" :value="`¥${selectedRecord.fee}`" />
+            <van-cell :title="$t('actualAmount')" :value="`¥${selectedRecord.actual_amount}`" />
+            <van-cell :title="$t('withdrawMethod')" :value="selectedRecord.pay_type_text" />
             <van-cell
               v-if="selectedRecord.bank_name"
-              title="银行名称"
+              :title="$t('bankName')"
               :value="selectedRecord.bank_name"
             />
             <van-cell
               v-if="selectedRecord.account"
-              title="收款账户"
+              :title="$t('receivingAccount')"
               :value="selectedRecord.account"
             />
             <van-cell
               v-if="selectedRecord.account_name"
-              title="户名"
+              :title="$t('accountHolder')"
               :value="selectedRecord.account_name"
             />
             <van-cell
               v-if="selectedRecord.remark"
-              title="备注"
+              :title="$t('remark')"
               :value="selectedRecord.remark"
               class="remark-cell"
             />
@@ -144,6 +144,7 @@ import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
 import { invokeApi } from '@/utils/tools'
 import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 
 defineOptions({ name: 'WithdrawRecord' })
 
@@ -166,6 +167,7 @@ interface WithdrawRecordItem {
 }
 
 const router = useRouter()
+const { t, locale } = useI18n()
 
 const page = ref(0)
 const list = ref<WithdrawRecordItem[]>([])
@@ -208,7 +210,34 @@ function formatTime(timeStr: string): string {
 
   try {
     const date = new Date(timeStr)
-    return date.toLocaleString('zh-CN', {
+    const currentLocale = locale.value || 'zh-CN'
+
+    // 将 vue-i18n 的 locale 格式转换为标准的 locale 格式
+    let dateLocale = currentLocale
+    switch (currentLocale) {
+      case 'zh-CN':
+        dateLocale = 'zh-CN'
+        break
+      case 'zh-TW':
+        dateLocale = 'zh-TW'
+        break
+      case 'en-US':
+        dateLocale = 'en-US'
+        break
+      case 'ko-KR':
+        dateLocale = 'ko-KR'
+        break
+      case 'th-TH':
+        dateLocale = 'th-TH'
+        break
+      case 'vi-VN':
+        dateLocale = 'vi-VN'
+        break
+      default:
+        dateLocale = 'zh-CN'
+    }
+
+    return date.toLocaleString(dateLocale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -289,7 +318,7 @@ async function getWithdrawRecords() {
     }
   } catch (error) {
     console.error('获取提现记录失败:', error)
-    showToast('获取提现记录失败')
+    showToast(t('getWithdrawRecordFailed'))
   }
 
   loading.value = false
