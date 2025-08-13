@@ -53,6 +53,12 @@ export function mobileFunc(): boolean {
   }
 
   // 只有在小屏幕+触摸设备的情况下才判断为移动端
+  console.log('🔍 设备检测结果:', {
+    isMobileDevice,
+    isSmallScreen,
+    isTouchDevice,
+    isLargeScreen,
+  })
   return isSmallScreen && isTouchDevice
 }
 
