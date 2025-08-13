@@ -497,5 +497,12 @@
   "member": "会员",
   "balance": "余额",
   "noRebateRecord": "暂无返水记录",
-  "getRebateRecordFailed": "获取返水记录失败"
+  "getRebateRecordFailed": "获取返水记录失败",
+  "noCommissionRecord": "暂无返佣记录",
+  "getCommissionRecordFailed": "获取返佣记录失败",
+  "timeUnknown": "时间未知",
+  "noGameRecord": "暂无游戏记录",
+  "getGameRecordFailed": "获取游戏记录失败",
+  "noMoneyRecord": "暂无交易记录",
+  "getMoneyRecordFailed": "获取交易记录失败"
 }

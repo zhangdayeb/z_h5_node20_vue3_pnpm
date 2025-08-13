@@ -2,7 +2,7 @@
   <div class="game-record">
     <van-nav-bar
       left-arrow
-      title="游戏记录"
+      :title="$t('mine.gameLog')"
       @click-left="onClickLeft"
       class="nav-bar"
     />
@@ -12,7 +12,7 @@
       <van-list
         v-model:loading="loading"
         :finished="finished"
-        finished-text="没有更多了"
+        :finished-text="$t('noMore')"
         @load="onLoad"
         class="record-list"
       >
@@ -20,18 +20,27 @@
           v-for="item in list"
           :key="item.id"
           :title="item.operate_type_text"
-          :label="item.created_at || '时间未知'"
+          :label="item.created_at || $t('timeUnknown')"
           :value="item.amount_display"
           :value-class="getAmountClass(item.money)"
         />
       </van-list>
     </van-pull-refresh>
+
+    <!-- 空状态 -->
+    <van-empty
+      v-if="!loading && !refreshing && list.length === 0"
+      :description="$t('noGameRecord')"
+      image="https://img.yzcdn.cn/vant/custom-empty-image.png"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
+import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { invokeApi } from '@/utils/tools'
 
 defineOptions({ name: 'GameRecord' })
@@ -59,6 +68,7 @@ interface GameRecordItem {
 }
 
 const router = useRouter()
+const { t } = useI18n()
 
 const page = ref(0)
 const list = ref<GameRecordItem[]>([])
@@ -121,6 +131,7 @@ async function getGameRecords() {
     }
   } catch (error) {
     console.error('获取游戏记录失败:', error)
+    showToast(t('getGameRecordFailed'))
   }
 
   loading.value = false
@@ -157,5 +168,9 @@ onMounted(async () => {
 
 .amount-negative {
   color: #fa5151 !important;
+}
+
+.game-record :deep(.van-empty) {
+  padding: 100px 0;
 }
 </style>

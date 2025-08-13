@@ -2,7 +2,7 @@
   <div class="money-record">
     <van-nav-bar
       left-arrow
-      title="交易记录"
+      :title="$t('mine.moneyLog')"
       @click-left="onClickLeft"
       class="nav-bar"
     />
@@ -12,7 +12,7 @@
       <van-list
         v-model:loading="loading"
         :finished="finished"
-        finished-text="没有更多了"
+        :finished-text="$t('noMore')"
         @load="onLoad"
         class="record-list"
       >
@@ -26,12 +26,21 @@
         />
       </van-list>
     </van-pull-refresh>
+
+    <!-- 空状态 -->
+    <van-empty
+      v-if="!loading && !refreshing && list.length === 0"
+      :description="$t('noMoneyRecord')"
+      image="https://img.yzcdn.cn/vant/custom-empty-image.png"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
+import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { invokeApi } from '@/utils/tools'
 
 defineOptions({ name: 'MoneyRecord' })
@@ -50,6 +59,7 @@ interface RecordItem {
 }
 
 const router = useRouter()
+const { t } = useI18n()
 
 const page = ref(0)
 const list = ref<RecordItem[]>([])
@@ -111,6 +121,7 @@ async function getMoneyRecords() {
     }
   } catch (error) {
     console.error('获取资金记录失败:', error)
+    showToast(t('getMoneyRecordFailed'))
   }
 
   loading.value = false
@@ -147,5 +158,9 @@ onMounted(async () => {
 
 .amount-negative {
   color: #fa5151 !important;
+}
+
+.money-record :deep(.van-empty) {
+  padding: 100px 0;
 }
 </style>
