@@ -13,16 +13,25 @@
   "user": {
     "register": "注册",
     "settings": "设置",
-    "conactUs": "联系我们"
+    "conactUs": "联系我们",
+    "balance": "余额",
+    "profile": "个人中心",
+    "wallet": "我的钱包",
+    "history": "历史记录",
+    "logout": "退出登录"
   },
   "game": {
     "myCollection": "我的收藏",
     "start": "开始",
-    "venues": "场馆"
+    "venues": "场馆",
+    "loginRequired": "请先登录才能开始游戏"
   },
   "common": {
     "viewMore": "查看更多",
-    "viewDetails": "查看详情"
+    "viewDetails": "查看详情",
+    "tip": "提示",
+    "confirm": "确认",
+    "cancel": "取消"
   },
   "footer": {
     "brandInfo1": "ATB 中国由MI平台 (台湾)",
@@ -204,7 +213,42 @@
     "forgetPwd": "忘记密码？",
     "register": "注册",
     "resetpwdForCustomer": "请联系客服重置密码",
-    "loginSuccess": "登录成功"
+    "loginSuccess": "登录成功",
+    "loginTitle": "用户登录",
+    "username": "用户名",
+    "enterUsername": "请输入用户名",
+    "password": "密码",
+    "enterPassword": "请输入密码",
+    "captcha": "验证码",
+    "enterCaptcha": "请输入验证码",
+    "clickRefresh": "点击刷新",
+    "rememberMe": "记住我",
+    "forgotPassword": "忘记密码？",
+    "loggingIn": "登录中...",
+    "loginFailed": "登录失败",
+    "loginError": "登录异常，请稍后重试",
+    "noAccount": "还没有账号？",
+    "registerNow": "立即注册",
+    "confirmLogout": "确定要退出登录吗？",
+    "logoutSuccess": "退出成功",
+    "usernameRequired": "请输入用户名",
+    "usernameLength": "用户名长度为3-20个字符",
+    "passwordRequired": "请输入密码",
+    "passwordLength": "密码长度为6-20个字符",
+    "captchaRequired": "请输入验证码",
+    "captchaLength": "验证码长度为4位",
+    "accountLocked": "账号已被锁定，请联系客服",
+    "accountNotExist": "账号不存在",
+    "passwordError": "密码错误",
+    "captchaError": "验证码错误",
+    "loginTimeout": "登录超时，请重新登录",
+    "sessionExpired": "会话已过期，请重新登录",
+    "loginRestricted": "登录受限，请稍后再试",
+    "tooManyAttempts": "登录尝试次数过多，请稍后再试",
+    "accountDisabled": "账号已被禁用",
+    "loginFromNewDevice": "检测到新设备登录",
+    "verificationRequired": "需要进行身份验证",
+    "loginSuccessWelcome": "登录成功，欢迎回来！"
   },
   "rememberMe": "记住密码",
   "weiHuZhong": "平台游戏维护中...",
