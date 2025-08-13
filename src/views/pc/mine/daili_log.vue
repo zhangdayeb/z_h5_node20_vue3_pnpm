@@ -20,7 +20,7 @@
         v-loading="loading"
         :data="list"
         class="record-table"
-        empty-text=""
+        :empty-text="$t('noAgentRecord')"
         v-infinite-scroll="onLoad"
         :infinite-scroll-disabled="finished"
         :infinite-scroll-delay="200"
@@ -84,6 +84,7 @@
         :loading="refreshing"
         @click="onRefresh"
         class="refresh-btn"
+        :icon="Refresh"
       >
         {{ $t('refresh') }}
       </el-button>
@@ -126,13 +127,13 @@
       </div>
 
       <template #footer>
-        <el-button @click="showEditDialog = false">{{ $t('cancel') }}</el-button>
+        <el-button @click="showEditDialog = false">{{ $t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           @click="handleEditConfirm('confirm')"
           :loading="editLoading"
         >
-          {{ $t('confirm') }}
+          {{ $t('common.confirm') }}
         </el-button>
       </template>
     </el-dialog>
@@ -183,7 +184,7 @@
       </div>
 
       <template #footer>
-        <el-button @click="showAddMoneyDialog = false">{{ $t('cancel') }}</el-button>
+        <el-button @click="showAddMoneyDialog = false">{{ $t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           @click="handleAddMoneyConfirm('confirm')"
@@ -201,7 +202,7 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import { invokeApi } from '@/utils/tools'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Loading } from '@element-plus/icons-vue'
+import { ArrowLeft, Loading, Refresh } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 
 defineOptions({ name: 'PcDailiRecord' })
@@ -250,8 +251,6 @@ onMounted(() => {
 // === 核心数据加载函数 ===
 async function loadData(page: number, isRefresh: boolean = false) {
   try {
-    console.log(`开始加载第${page}页数据，是否刷新:${isRefresh}`)
-
     if (isRefresh) {
       loading.value = false
       finished.value = false
@@ -267,39 +266,31 @@ async function loadData(page: number, isRefresh: boolean = false) {
     })
 
     if (!resp || !resp.message) {
-      console.error('API响应异常')
       finished.value = true
       return
     }
 
     const data = resp.message
-    console.log('API响应数据:', data)
 
     // 更新用户信息
     if (data.user_info) {
       currentUserInfo.value = data.user_info
       updateLocalStorage(data.user_info.money)
-      console.log('更新用户信息:', currentUserInfo.value)
     }
 
     // 处理列表数据
     const newList = data.list || []
     if (page === 1) {
       list.value = newList
-      console.log('设置第一页数据，共:', newList.length, '条')
     } else {
       list.value = [...list.value, ...newList]
-      console.log('追加第', page, '页数据，新增:', newList.length, '条，总计:', list.value.length, '条')
     }
 
     // 更新分页状态
     currentPage.value = page
     finished.value = !data.pagination?.has_more
 
-    console.log('数据加载完成，当前页:', currentPage.value, '是否还有更多:', !finished.value)
-
   } catch (error) {
-    console.error('加载数据失败:', error)
     finished.value = true
   } finally {
     loading.value = false
@@ -309,16 +300,15 @@ async function loadData(page: number, isRefresh: boolean = false) {
 
 // === 下拉刷新 ===
 async function onRefresh() {
-  console.log('=== 开始下拉刷新 ===')
+  refreshing.value = true
   await loadData(1, true)
-  console.log('=== 下拉刷新完成 ===')
 }
 
 // === 上拉加载更多 ===
 async function onLoad() {
-  console.log('=== 开始加载更多 ===')
-  await loadData(currentPage.value + 1, false)
-  console.log('=== 加载更多完成 ===')
+  if (!finished.value && !loading.value) {
+    await loadData(currentPage.value + 1, false)
+  }
 }
 
 // === 更新本地存储 ===
@@ -327,15 +317,13 @@ function updateLocalStorage(money: string) {
     const currentUser = JSON.parse(localStorage.getItem('current_user') || '{}')
     currentUser.money = money
     localStorage.setItem('current_user', JSON.stringify(currentUser))
-    console.log('localStorage已更新，余额:', money)
   } catch (error) {
-    console.error('更新localStorage失败:', error)
+    // 忽略错误
   }
 }
 
 // === 编辑比例 ===
 function handleEdit(item: DailiRecordItem) {
-  console.log('打开编辑弹窗:', item.name)
   currentEditItem.value = item
   editProportion.value = item.fanyong_proportion
   showEditDialog.value = true
@@ -388,7 +376,6 @@ async function handleEditConfirm(action: string) {
       return false
     }
   } catch (error) {
-    console.error('修改失败:', error)
     ElMessage.error(t('modifyFailed'))
     return false
   } finally {
@@ -398,7 +385,6 @@ async function handleEditConfirm(action: string) {
 
 // === 上分功能 ===
 function handleAddMoney(item: DailiRecordItem) {
-  console.log('打开上分弹窗:', item.name)
   currentAddMoneyItem.value = item
   addMoneyAmount.value = ''
   showAddMoneyDialog.value = true
@@ -435,17 +421,10 @@ async function handleAddMoneyConfirm(action: string) {
   transferLoading.value = true
 
   try {
-    console.log('发送转账请求:', {
-      user_id: currentAddMoneyItem.value.id,
-      amount: inputValue.toFixed(2)
-    })
-
     const resp = await invokeApi('dailiAddMemberMoney', {
       user_id: currentAddMoneyItem.value.id,
       amount: inputValue.toFixed(2)
     })
-
-    console.log('转账响应:', resp)
 
     // 检查成功条件
     const isSuccess = (resp && resp.code === 200) ||
@@ -460,7 +439,6 @@ async function handleAddMoneyConfirm(action: string) {
       }, 200)
 
       setTimeout(() => {
-        console.log('转账成功，开始刷新列表')
         onRefresh()
       }, 400)
 
@@ -470,7 +448,6 @@ async function handleAddMoneyConfirm(action: string) {
       return false
     }
   } catch (error) {
-    console.error('转账失败:', error)
     ElMessage.error(t('transferFailed'))
     return false
   } finally {

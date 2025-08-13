@@ -1,348 +1,269 @@
 <template>
-  <div class="m-deposit">
-    <van-nav-bar
-      left-arrow
-      :title="$t('mine.quickDeposit')"
-      @click-left="onClickLeft"
-    />
+  <div class="pc-deposit">
+    <div class="pc-header">
+      <el-button
+        type="text"
+        :icon="ArrowLeft"
+        @click="onClickLeft"
+        class="back-btn"
+      >
+        {{ $t('common.back') }}
+      </el-button>
+      <h2 class="page-title">{{ $t('mine.quickDeposit') }}</h2>
+    </div>
 
-    <!-- 支付方式选择 -->
-    <div class="mg-top-10 m-cell">
-      <div class="m-title">
-        <span>1、</span>{{ $t('pay_type') }}
-      </div>
-      <div class="m-cell-bd">
-        <div class="m-scroll">
+    <div class="pc-content">
+      <!-- 支付方式选择 -->
+      <el-card class="pay-method-card">
+        <template #header>
+          <div class="card-header">
+            <span class="step-number">1</span>
+            <span class="step-title">{{ $t('pay_type') }}</span>
+          </div>
+        </template>
+        <div class="pay-method-list">
           <div
             v-for="(method, idx) in payMethods"
             :key="method.method_code"
-            class="m-cell-bd-item"
-            :class="{ 'm-activie': selectedMethodIdx === idx }"
-            @click.stop="selectPayMethod(idx)"
+            class="pay-method-item"
+            :class="{ 'active': selectedMethodIdx === idx }"
+            @click="selectPayMethod(idx)"
           >
-            <van-image
-              :src="getMethodIcon(method.method_code)"
+            <div class="method-icon" :class="`icon-${method.method_code}`"></div>
+            <div class="method-name">{{ method.method_name }}</div>
+            <div v-if="selectedMethodIdx === idx" class="check-mark">
+              <el-icon><Check /></el-icon>
+            </div>
+          </div>
+        </div>
+      </el-card>
+
+      <!-- 收款账户选择 -->
+      <el-card v-if="selectedMethod && payAccounts.length > 0" class="account-card">
+        <template #header>
+          <div class="card-header">
+            <span class="step-number">2</span>
+            <span class="step-title">{{ $t('pay_channel') }}</span>
+          </div>
+        </template>
+        <div class="account-list">
+          <div
+            v-for="(account, idx) in payAccounts"
+            :key="account.id"
+            class="account-item"
+            :class="{ 'active': selectedAccountIdx === idx }"
+            @click="selectPayAccount(idx)"
+          >
+            <div class="account-icon" :class="`icon-${selectedMethod.method_code}`"></div>
+            <div class="account-info">
+              <div class="account-name">{{ account.account_name }}</div>
+              <div class="account-desc">{{ getAccountDesc(account) }}</div>
+            </div>
+            <div v-if="selectedAccountIdx === idx" class="check-mark">
+              <el-icon><Check /></el-icon>
+            </div>
+          </div>
+        </div>
+      </el-card>
+
+      <!-- 收款信息展示 -->
+      <el-card v-if="selectedAccount" class="payment-info-card">
+        <template #header>
+          <div class="card-header">
+            <span class="step-number">3</span>
+            <span class="step-title">{{ $t('recharge_account') }}</span>
+          </div>
+        </template>
+
+        <!-- 银行转账信息 -->
+        <div v-if="selectedMethod.method_code === 'bank'" class="payment-details">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item :label="$t('account')">
+              <div class="copy-field">
+                <span>{{ selectedAccount.account_number }}</span>
+                <el-button type="primary" size="small" @click="copyHandler(selectedAccount.account_number)">
+                  {{ $t('copy') }}
+                </el-button>
+              </div>
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('recharge_username')">
+              <div class="copy-field">
+                <span>{{ selectedAccount.account_name }}</span>
+                <el-button type="primary" size="small" @click="copyHandler(selectedAccount.account_name)">
+                  {{ $t('copy') }}
+                </el-button>
+              </div>
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('open_bank')">
+              <div class="copy-field">
+                <span>{{ selectedAccount.bank_name }}</span>
+                <el-button type="primary" size="small" @click="copyHandler(selectedAccount.bank_name)">
+                  {{ $t('copy') }}
+                </el-button>
+              </div>
+            </el-descriptions-item>
+          </el-descriptions>
+
+          <!-- 二维码 -->
+          <div v-if="selectedAccount.qr_code_url" class="qrcode-container">
+            <h4>{{ $t('recharge_qrcode') }}</h4>
+            <el-image
+              :src="getImgUrl(selectedAccount.qr_code_url)"
               fit="contain"
-              class="m-img"
-            />
-            <div class="m-label">{{ method.method_name }}</div>
-            <van-image
-              v-if="selectedMethodIdx === idx"
-              class="m-border m-bor"
-              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABSElEQVRYR8XXP07DMBQG8O9VvUKvwMItMjMgVe0J2JCqRIwM5QS0LGyMLHQBdW99CRbmzsxdmoccqVVa4vg58Z/Mkd8vn/1sh7IFPyHhQ7p2tuQPAJPYDgZUBUiFOAOkQPwDxEY0AgIivgFc19eZEeAbwcDjYIBPLqEX+wnRCvCFYMbDtqDnqt0Jc3ECHbpjddnKDNxvc3ptKq7HtybggFhtcprW95MSuFM5vZmKOwGs00HYgzDdzGitESXjSxX0nr3wHAzjTitOQJjEb8kYq4JUBbYUd05AiNjxATc0xG3blx/Hck5AhGD8gHAlOVc6A6xrQlLdpQtM4/U9RXslIJoOSxJeAH2mwxugK8IroAvCO8AVEQTggggGkCKCAiSI4AAbIgqgDRENYEJEBTQhogMuEUkAdUQywBHBwOj0cyq8Q3h9Td8n/gCgr8muR5XnggAAAABJRU5ErkJggg=="
-              fit="contain"
+              class="qrcode-image"
             />
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- 收款账户选择 -->
-    <div v-if="selectedMethod && payAccounts.length > 0" class="mg-top-10 m-cell">
-      <div class="m-title">
-        <span>2、</span>{{ $t('pay_channel') }}
-      </div>
-      <div class="m-cell-bd m-account-list">
-        <div
-          v-for="(account, idx) in payAccounts"
-          :key="account.id"
-          class="m-account-item"
-          :class="{ 'm-activie': selectedAccountIdx === idx }"
-          @click.stop="selectPayAccount(idx)"
+        <!-- 汇旺支付信息 -->
+        <div v-else-if="selectedMethod.method_code === 'huiwang'" class="payment-details">
+          <!-- 二维码 -->
+          <div v-if="selectedAccount.qr_code_url" class="qrcode-container">
+            <h4>{{ $t('recharge_qrcode') }}</h4>
+            <el-image
+              :src="getImgUrl(selectedAccount.qr_code_url)"
+              fit="contain"
+              class="qrcode-image"
+            />
+          </div>
+
+          <el-descriptions :column="1" border>
+            <el-descriptions-item :label="$t('recharge_account')">
+              <div class="copy-field">
+                <span>{{ selectedAccount.account_number }}</span>
+                <el-button type="primary" size="small" @click="copyHandler(selectedAccount.account_number)">
+                  {{ $t('copy') }}
+                </el-button>
+              </div>
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('recharge_username')">
+              <div class="copy-field">
+                <span>{{ selectedAccount.account_name }}</span>
+                <el-button type="primary" size="small" @click="copyHandler(selectedAccount.account_name)">
+                  {{ $t('copy') }}
+                </el-button>
+              </div>
+            </el-descriptions-item>
+            <el-descriptions-item v-if="selectedAccount.phone_number" :label="$t('mine.phoneNumber')">
+              <div class="copy-field">
+                <span>{{ selectedAccount.phone_number }}</span>
+                <el-button type="primary" size="small" @click="copyHandler(selectedAccount.phone_number)">
+                  {{ $t('copy') }}
+                </el-button>
+              </div>
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- USDT支付信息 -->
+        <div v-else-if="selectedMethod.method_code === 'usdt'" class="payment-details">
+          <!-- 二维码 -->
+          <div v-if="selectedAccount.qr_code_url" class="qrcode-container">
+            <h4>{{ $t('recharge_qrcode') }}</h4>
+            <el-image
+              :src="getImgUrl(selectedAccount.qr_code_url)"
+              fit="contain"
+              class="qrcode-image"
+            />
+          </div>
+
+          <el-descriptions :column="1" border>
+            <el-descriptions-item :label="$t('rechate_address')">
+              <div class="copy-field">
+                <span>{{ selectedAccount.wallet_address }}</span>
+                <el-button type="primary" size="small" @click="copyHandler(selectedAccount.wallet_address)">
+                  {{ $t('copy') }}
+                </el-button>
+              </div>
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('mine.networkType')">
+              <div class="copy-field">
+                <span>{{ selectedAccount.network_type }}</span>
+                <el-button type="primary" size="small" @click="copyHandler(selectedAccount.network_type)">
+                  {{ $t('copy') }}
+                </el-button>
+              </div>
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </el-card>
+
+      <!-- 充值表单 -->
+      <el-card v-if="selectedAccount" class="recharge-form-card">
+        <template #header>
+          <div class="card-header">
+            <span class="step-number">4</span>
+            <span class="step-title">{{ $t('transfer_amount') }}</span>
+            <span class="amount-range">
+              ({{ selectedMethod?.min_amount }}~{{ selectedMethod?.max_amount }})
+            </span>
+          </div>
+        </template>
+
+        <el-form
+          :model="form"
+          label-position="top"
+          class="recharge-form"
         >
-          <div class="m-account-header">
-            <van-image
-              :src="getMethodIcon(selectedMethod.method_code)"
-              fit="contain"
-              class="m-method-icon"
+          <el-form-item :label="$t('transfer_amount')" required>
+            <el-input
+              v-model="form.amount"
+              type="number"
+              :placeholder="$t('input_transfer_amount')"
+              size="large"
             />
-            <div class="m-account-info">
-              <div class="m-account-name">{{ account.account_name }}</div>
-              <div class="m-account-desc">{{ getAccountDesc(account) }}</div>
-            </div>
-            <van-image
-              v-if="selectedAccountIdx === idx"
-              class="m-check-icon"
-              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABSElEQVRYR8XXP07DMBQG8O9VvUKvwMItMjMgVe0J2JCqRIwM5QS0LGyMLHQBdW99CRbmzsxdmoccqVVa4vg58Z/Mkd8vn/1sh7IFPyHhQ7p2tuQPAJPYDgZUBUiFOAOkQPwDxEY0AgIivgFc19eZEeAbwcDjYIBPLqEX+wnRCvCFYMbDtqDnqt0Jc3ECHbpjddnKDNxvc3ptKq7HtybggFhtcprW95MSuFM5vZmKOwGs00HYgzDdzGitESXjSxX0nr3wHAzjTitOQJjEb8kYq4JUBbYUd05AiNjxATc0xG3blx/Hck5AhGD8gHAlOVc6A6xrQlLdpQtM4/U9RXslIJoOSxJeAH2mwxugK8IroAvCO8AVEQTggggGkCKCAiSI4AAbIgqgDRENYEJEBTQhogMuEUkAdUQywBHBwOj0cyq8Q3h9Td8n/gCgr8muR5XnggAAAABJRU5ErkJggg=="
-              fit="contain"
+          </el-form-item>
+
+          <el-form-item :label="$t('transfer_user')" required>
+            <el-input
+              v-model="form.transferUser"
+              :placeholder="$t('iput_transfer_amount')"
+              size="large"
             />
-          </div>
-        </div>
-      </div>
-    </div>
+          </el-form-item>
 
-    <!-- 当没有选择支付方式时显示提示 -->
-    <!-- 收款信息展示 -->
-    <div v-if="selectedAccount" class="mg-top-10 m-cell w-100">
-      <!-- 银行转账信息 -->
-      <div v-if="selectedMethod.method_code === 'bank'">
-        <van-cell-group inset style="margin: 0px">
-          <van-field
-            :model-value="selectedAccount.account_number"
-            :label="$t('account')"
-            readonly
-            class="m-account-field"
-          >
-            <template #button>
-              <van-button
-                size="small"
-                plain
-                hairline
-                type="primary"
-                @click="copyHandler(selectedAccount.account_number)"
-              >
-                {{ $t('copy') }}
-              </van-button>
-            </template>
-          </van-field>
-
-          <van-field
-            :model-value="selectedAccount.account_name"
-            :label="$t('recharge_username')"
-            readonly
-            class="m-account-field"
-          >
-            <template #button>
-              <van-button
-                size="small"
-                plain
-                hairline
-                type="primary"
-                @click="copyHandler(selectedAccount.account_name)"
-              >
-                {{ $t('copy') }}
-              </van-button>
-            </template>
-          </van-field>
-
-          <van-field
-            :model-value="selectedAccount.bank_name"
-            :label="$t('open_bank')"
-            readonly
-            class="m-account-field"
-          >
-            <template #button>
-              <van-button
-                size="small"
-                plain
-                hairline
-                type="primary"
-                @click="copyHandler(selectedAccount.bank_name)"
-              >
-                {{ $t('copy') }}
-              </van-button>
-            </template>
-          </van-field>
-
-          <!-- 银行二维码（如果有） -->
-          <div v-if="selectedAccount.qr_code_url" class="m-qrcode-container">
-            <div class="m-qrcode-label">{{ $t('recharge_qrcode') }}</div>
-            <div class="m-qrcode-wrapper">
-              <van-image
-                :src="getImgUrl(selectedAccount.qr_code_url)"
-                fit="contain"
-                class="m-qrcode"
-                :show-loading="false"
-                :show-error="false"
-              />
-            </div>
-          </div>
-        </van-cell-group>
-      </div>
-
-      <!-- 汇旺支付信息 -->
-      <div v-else-if="selectedMethod.method_code === 'huiwang'">
-        <van-cell-group inset style="margin: 0px">
-          <!-- 二维码显示 -->
-          <div v-if="selectedAccount.qr_code_url" class="m-qrcode-container">
-            <div class="m-qrcode-label">{{ $t('recharge_qrcode') }}</div>
-            <div class="m-qrcode-wrapper">
-              <van-image
-                :src="getImgUrl(selectedAccount.qr_code_url)"
-                fit="contain"
-                class="m-qrcode"
-                :show-loading="false"
-                :show-error="false"
-              />
-            </div>
-          </div>
-
-          <van-field
-            :model-value="selectedAccount.account_number"
-            :label="$t('recharge_account')"
-            readonly
-            class="m-account-field"
-          >
-            <template #button>
-              <van-button
-                size="small"
-                plain
-                hairline
-                type="primary"
-                @click="copyHandler(selectedAccount.account_number)"
-              >
-                {{ $t('copy') }}
-              </van-button>
-            </template>
-          </van-field>
-
-          <van-field
-            :model-value="selectedAccount.account_name"
-            :label="$t('recharge_username')"
-            readonly
-            class="m-account-field"
-          >
-            <template #button>
-              <van-button
-                size="small"
-                plain
-                hairline
-                type="primary"
-                @click="copyHandler(selectedAccount.account_name)"
-              >
-                {{ $t('copy') }}
-              </van-button>
-            </template>
-          </van-field>
-
-          <van-field
-            v-if="selectedAccount.phone_number"
-            :model-value="selectedAccount.phone_number"
-            label="手机号码"
-            readonly
-            class="m-account-field"
-          >
-            <template #button>
-              <van-button
-                size="small"
-                plain
-                hairline
-                type="primary"
-                @click="copyHandler(selectedAccount.phone_number)"
-              >
-                {{ $t('copy') }}
-              </van-button>
-            </template>
-          </van-field>
-        </van-cell-group>
-      </div>
-
-      <!-- USDT支付信息 -->
-      <div v-else-if="selectedMethod.method_code === 'usdt'">
-        <van-cell-group inset style="margin: 0px">
-          <!-- 二维码显示 -->
-          <div v-if="selectedAccount.qr_code_url" class="m-qrcode-container">
-            <div class="m-qrcode-label">{{ $t('recharge_qrcode') }}</div>
-            <div class="m-qrcode-wrapper">
-              <van-image
-                :src="getImgUrl(selectedAccount.qr_code_url)"
-                fit="contain"
-                class="m-qrcode"
-                :show-loading="false"
-                :show-error="false"
-              />
-            </div>
-          </div>
-
-          <van-field
-            :model-value="selectedAccount.wallet_address"
-            :label="$t('rechate_address')"
-            readonly
-            class="m-account-field"
-          >
-            <template #button>
-              <van-button
-                size="small"
-                plain
-                hairline
-                type="primary"
-                @click="copyHandler(selectedAccount.wallet_address)"
-              >
-                {{ $t('copy') }}
-              </van-button>
-            </template>
-          </van-field>
-
-          <van-field
-            :model-value="selectedAccount.network_type"
-            label="网络类型"
-            readonly
-            class="m-account-field"
-          >
-            <template #button>
-              <van-button
-                size="small"
-                plain
-                hairline
-                type="primary"
-                @click="copyHandler(selectedAccount.network_type)"
-              >
-                {{ $t('copy') }}
-              </van-button>
-            </template>
-          </van-field>
-        </van-cell-group>
-      </div>
-    </div>
-
-    <!-- 充值表单 -->
-    <div v-if="selectedAccount" class="mg-top-10 m-cell m-3f" style="height: auto">
-      <van-cell-group inset style="margin: 0px">
-        <div class="m-title m-f14">
-          {{ $t('transfer_amount') }}
-          <span class="m-c-red">
-            ({{ selectedMethod?.min_amount }}~{{ selectedMethod?.max_amount }})
-          </span>
-        </div>
-        <van-field
-          v-model="form.amount"
-          type="digit"
-          :placeholder="$t('input_transfer_amount')"
-          class="m-input"
-        />
-
-        <div class="m-title m-f14 mg-top-10">
-          {{ $t('transfer_user') }}
-        </div>
-        <van-field
-          v-model="form.transferUser"
-          :placeholder="$t('iput_transfer_amount')"
-          class="m-input"
-        />
-
-        <div class="m-title m-f14 mg-top-10">
-          {{ $t('upload_cert') }}
-        </div>
-        <van-field v-model="form.certImage" class="m-input">
-          <template #input>
-            <van-uploader
-              v-model="fileList"
-              :max-count="1"
+          <el-form-item :label="$t('upload_cert')" required>
+            <el-upload
+              v-model:file-list="fileList"
+              class="upload-cert"
+              :limit="1"
               accept="image/*"
-              :after-read="uploadHandler"
-            />
-          </template>
-        </van-field>
-      </van-cell-group>
+              :on-success="uploadSuccess"
+              :on-error="uploadError"
+              :before-upload="beforeUpload"
+              list-type="picture-card"
+            >
+              <el-icon><Plus /></el-icon>
+            </el-upload>
+          </el-form-item>
 
-      <van-button
-        type="primary"
-        round
-        size="large"
-        class="m-sub-btn"
-        :loading="submitting"
-        @click="submitHandler"
+          <el-button
+            type="primary"
+            size="large"
+            :loading="submitting"
+            @click="submitHandler"
+            class="submit-btn"
+          >
+            {{ $t('common.confirm') }}
+          </el-button>
+        </el-form>
+      </el-card>
+
+      <!-- 温馨提示 -->
+      <el-alert
+        type="warning"
+        :closable="false"
+        class="tips-alert"
       >
-        {{ $t('confirm') }}
-      </van-button>
-    </div>
-
-    <!-- 温馨提示 -->
-    <div class="mg-top-10 m-cell m-tips m-c-red2">
-      <div class="m-c-red m-b10">{{ $t('sweetWarning') }}：</div>
-      <p class="m-f12">{{ $t('deposit.detail1') }}</p>
-      <p class="m-f12">{{ $t('deposit.detail2') }}</p>
-      <p class="m-f12">{{ $t('deposit.detail3') }}</p>
+        <template #title>
+          <strong>{{ $t('sweetWarning') }}：</strong>
+        </template>
+        <div class="tips-content">
+          <p>{{ $t('deposit.detail1') }}</p>
+          <p>{{ $t('deposit.detail2') }}</p>
+          <p>{{ $t('deposit.detail3') }}</p>
+        </div>
+      </el-alert>
     </div>
   </div>
 </template>
@@ -353,17 +274,11 @@ import { useAppStore } from '@/stores/app'
 import { ref, onMounted, computed } from 'vue'
 import { getImgUrl } from '@/utils/tools'
 import api from '@/api'
-import useClipboard from 'vue-clipboard3'
-import { showToast } from 'vant'
+import { ElMessage } from 'element-plus'
+import { ArrowLeft, Check, Plus } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 
-// 引入图片资源
-import alipayImg from '@/assets/mobile/pay_alipay.png'
-import wechactImg from '@/assets/mobile/pay_wechat.png'
-import bankImg from '@/assets/mobile/pay_bank.png'
-import usdtImg from '@/assets/mobile/usdt.jpg'
-
-defineOptions({ name: 'DepositVue' })
+defineOptions({ name: 'PcDepositVue' })
 
 // 类型定义
 interface PayAccount {
@@ -395,12 +310,11 @@ interface PayMethod {
 
 const router = useRouter()
 const store = useAppStore()
-const { toClipboard } = useClipboard()
 const { t } = useI18n()
 
 // 响应式数据
 const payMethods = ref<PayMethod[]>([])
-const selectedMethodIdx = ref(-1) // 初始为-1，表示未选择
+const selectedMethodIdx = ref(-1)
 const selectedAccountIdx = ref(0)
 const submitting = ref(false)
 const fileList = ref([])
@@ -425,20 +339,9 @@ const selectedAccount = computed(() => {
   return payAccounts.value[selectedAccountIdx.value] || null
 })
 
-// 图标映射
-const iconMap: { [key: string]: string } = {
-  bank: bankImg,
-  huiwang: wechactImg, // 汇旺使用微信图标
-  usdt: usdtImg
-}
-
 // 方法
 function onClickLeft() {
   router.back()
-}
-
-function getMethodIcon(methodCode: string) {
-  return iconMap[methodCode] || bankImg
 }
 
 function getAccountDesc(account: PayAccount) {
@@ -448,7 +351,7 @@ function getAccountDesc(account: PayAccount) {
     case 'bank':
       return `${account.bank_name || ''} ${account.account_number || ''}`.trim()
     case 'huiwang':
-      return `账号: ${account.account_number || ''}`
+      return `${t('mine.accountNumber')}: ${account.account_number || ''}`
     case 'usdt':
       const address = account.wallet_address || ''
       const shortAddress = address.length > 16 ?
@@ -461,42 +364,79 @@ function getAccountDesc(account: PayAccount) {
 
 function selectPayMethod(idx: number) {
   if (selectedMethodIdx.value === idx) return
-
   selectedMethodIdx.value = idx
-  selectedAccountIdx.value = 0 // 重置账户选择
+  selectedAccountIdx.value = 0
 }
 
 function selectPayAccount(idx: number) {
   selectedAccountIdx.value = idx
 }
 
-function copyHandler(text?: string) {
+async function copyHandler(text?: string) {
   if (text && text.trim().length > 0) {
-    toClipboard(text)
-    showToast('复制成功')
+    try {
+      await navigator.clipboard.writeText(text)
+      ElMessage.success(t('mine.copySuccess'))
+    } catch {
+      // 兼容处理
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      ElMessage.success(t('mine.copySuccess'))
+    }
   }
+}
+
+function beforeUpload(file: any) {
+  const isImage = file.type.startsWith('image/')
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件！')
+    return false
+  }
+  const isLt5M = file.size / 1024 / 1024 < 5
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!')
+    return false
+  }
+
+  // 手动上传
+  uploadHandler(file)
+  return false
 }
 
 async function uploadHandler(file: any) {
   store.loading()
   try {
     const formData = new FormData()
-    formData.append('image', file.file)  // 使用 'image' 字段名
+    formData.append('image', file)
 
     const resp = await api.uploadImg(formData)
 
-    if (resp && resp.code === 200 && resp.data?.image_url) {  // 使用 image_url
+    if (resp && resp.code === 200 && resp.data?.image_url) {
       form.value.certImage = resp.data.image_url
-      showToast('上传成功')
+      ElMessage.success('上传成功')
     } else {
       throw new Error(resp.message || '上传失败')
     }
   } catch (err) {
-    console.error('上传失败:', err)
-    showToast((err as Error).message || '上传失败')
+    ElMessage.error((err as Error).message || '上传失败')
   } finally {
     store.stopLoad()
   }
+}
+
+function uploadSuccess(response: any) {
+  if (response && response.data?.image_url) {
+    form.value.certImage = response.data.image_url
+    ElMessage.success('上传成功')
+  }
+}
+
+function uploadError() {
+  ElMessage.error('上传失败')
 }
 
 function getTransferBankName() {
@@ -530,28 +470,28 @@ function getTransferAccount() {
 async function submitHandler() {
   // 表单验证
   if (!selectedAccount.value) {
-    showToast('请选择收款账户')
+    ElMessage.warning('请选择收款账户')
     return
   }
 
   if (!form.value.amount || Number(form.value.amount) <= 0) {
-    showToast(t('input_transfer_amount'))
+    ElMessage.warning(t('input_transfer_amount'))
     return
   }
 
   const amount = Number(form.value.amount)
   if (selectedMethod.value && (amount < selectedMethod.value.min_amount || amount > selectedMethod.value.max_amount)) {
-    showToast(`充值金额须在 ${selectedMethod.value.min_amount}-${selectedMethod.value.max_amount} 之间`)
+    ElMessage.warning(`充值金额须在 ${selectedMethod.value.min_amount}-${selectedMethod.value.max_amount} 之间`)
     return
   }
 
   if (!form.value.transferUser.trim()) {
-    showToast(t('iput_transfer_amount'))
+    ElMessage.warning(t('iput_transfer_amount'))
     return
   }
 
   if (!form.value.certImage) {
-    showToast('请上传转账凭证')
+    ElMessage.warning('请上传转账凭证')
     return
   }
 
@@ -564,17 +504,14 @@ async function submitHandler() {
       user_bank_user_name: form.value.transferUser,
       pay_account_id: selectedAccount.value.id,
       cert_image: form.value.certImage,
-      // 根据支付方式添加对应字段
       user_bank_name: getTransferBankName(),
       user_bank_card: getTransferAccount()
     }
 
     const resp = await api.topUp(submitData)
-    console.log('充值提交响应:', resp)
 
     if (resp && resp.code === 200) {
-      // 显示成功提示
-      showToast('充值成功！请按照收款信息进行转账')
+      ElMessage.success(t('rechargeSubmitSuccess'))
 
       // 重置表单
       form.value = {
@@ -584,7 +521,7 @@ async function submitHandler() {
       }
       fileList.value = []
 
-      // 延迟跳转到 mine 页面，让用户看到成功提示
+      // 延迟跳转
       setTimeout(() => {
         router.push('/mine')
       }, 1500)
@@ -593,8 +530,7 @@ async function submitHandler() {
       throw new Error(resp.message || '提交失败')
     }
   } catch (err) {
-    console.error('充值提交失败:', err)
-    showToast((err as Error).message || '提交失败，请重试')
+    ElMessage.error((err as Error).message || '提交失败，请重试')
   } finally {
     submitting.value = false
   }
@@ -603,7 +539,6 @@ async function submitHandler() {
 async function loadPayMethods() {
   try {
     const resp = await api.topUpInfo()
-    console.log('充值信息响应:', resp)
 
     if (resp && resp.code === 200 && resp.data) {
       if (resp.data.pay_methods && Array.isArray(resp.data.pay_methods)) {
@@ -619,8 +554,7 @@ async function loadPayMethods() {
       throw new Error(resp.message || '获取充值信息失败')
     }
   } catch (err) {
-    console.error('获取充值信息失败:', err)
-    showToast((err as Error).message || '获取充值信息失败')
+    ElMessage.error((err as Error).message || '获取充值信息失败')
   }
 }
 
@@ -639,601 +573,349 @@ onMounted(() => {
 </script>
 
 <style lang="less" scoped>
-.mg-top(@n: 10px) {
-  margin-top: @n;
-}
+.pc-deposit {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 20px;
 
-.flex(@r: row, @j: flex-start, @a: center) {
-  display: flex;
-  flex-direction: @r;
-  justify-content: @j;
-  align-items: @a;
-}
+  .pc-header {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 
-.m-deposit {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background-color: var(--color-m-background);
-
-  .mg-top-10 {
-    .mg-top();
-  }
-
-  .m-cell {
-    .flex(column, flex-start, flex-start);
-    background-color: var(--m-item-background);
-    padding: 10px 16px;
-
-    .m-title {
-      height: 22px;
+    .back-btn {
       font-size: 14px;
-      color: var(--m-mine-label-color);
     }
 
-    .m-cell-bd {
-      height: 104px;
-      width: 100%;
-      overflow-x: auto;
-      padding: 15px 10px;
+    .page-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: #303133;
+    }
+  }
 
-      .m-scroll {
-        .flex(row, flex-start, center);
-        gap: 10px;
+  .pc-content {
+    max-width: 1200px;
+    margin: 0 auto;
 
-        .m-cell-bd-item {
-          height: 74px;
-          min-width: 66px;
-          width: 66px;
-          .flex(column, center, center);
-          gap: 5px;
-          background-color: #f9f9f9;
-          border: 1px solid #eee;
-          border-radius: 4px;
-          padding: 0 3px;
-          position: relative;
+    .el-card {
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
 
-          .m-label {
-            font-size: 12px;
-            height: 17px;
-            white-space: nowrap;
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 600;
+
+      .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: #409eff;
+        color: #fff;
+        border-radius: 50%;
+        font-size: 14px;
+      }
+
+      .amount-range {
+        margin-left: auto;
+        color: #f56c6c;
+        font-size: 14px;
+        font-weight: normal;
+      }
+    }
+
+    // 支付方式样式
+    .pay-method-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+
+      .pay-method-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        border: 2px solid #e4e7ed;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+
+        &:hover {
+          border-color: #409eff;
+          background: #f0f9ff;
+        }
+
+        &.active {
+          border-color: #409eff;
+          background: #f0f9ff;
+        }
+
+        .method-icon {
+          width: 50px;
+          height: 50px;
+          margin-bottom: 10px;
+          border-radius: 8px;
+
+          &.icon-bank {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+
+            &::before {
+              content: '';
+              position: absolute;
+              width: 30px;
+              height: 20px;
+              background: #fff;
+              border-radius: 4px;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+            }
           }
 
-          .m-border {
-            width: 21px;
-            height: 21px;
-            position: absolute;
-            top: 0px;
-            right: 0px;
-            display: none;
+          &.icon-huiwang {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            position: relative;
+
+            &::before {
+              content: 'W';
+              position: absolute;
+              color: #fff;
+              font-size: 24px;
+              font-weight: bold;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+            }
+          }
+
+          &.icon-usdt {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            position: relative;
+
+            &::before {
+              content: '₮';
+              position: absolute;
+              color: #fff;
+              font-size: 24px;
+              font-weight: bold;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+            }
           }
         }
 
-        .m-activie {
-          border: 1px solid #4290ff;
-          background-color: #fff;
-
-          .m-bor {
-            display: inherit;
-          }
+        .method-name {
+          font-size: 14px;
+          color: #303133;
+          font-weight: 500;
         }
 
-        .m-img {
-          width: 30px;
-          height: 30px;
+        .check-mark {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          width: 24px;
+          height: 24px;
+          background: #67c23a;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
         }
       }
     }
 
     // 账户列表样式
-    .m-account-list {
-      padding: 10px 0;
-      height: auto;
-      min-height: 80px;
-
-      .m-account-item {
-        margin-bottom: 10px;
-        padding: 12px;
-        background-color: #f9f9f9;
-        border: 1px solid #eee;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-
-        &.m-activie {
-          border-color: #4290ff;
-          background-color: #fff;
-          box-shadow: 0 2px 8px rgba(66, 144, 255, 0.2);
-        }
-
-        .m-account-header {
-          .flex(row, flex-start, center);
-          gap: 12px;
-          position: relative;
-
-          .m-method-icon {
-            width: 40px;
-            height: 40px;
-            flex-shrink: 0;
-          }
-
-          .m-account-info {
-            flex: 1;
-            min-width: 0;
-
-            .m-account-name {
-              font-size: 14px;
-              font-weight: 500;
-              color: #333;
-              margin-bottom: 4px;
-            }
-
-            .m-account-desc {
-              font-size: 12px;
-              color: #666;
-              word-break: break-all;
-              line-height: 1.4;
-            }
-          }
-
-          .m-check-icon {
-            width: 20px;
-            height: 20px;
-            position: absolute;
-            top: -2px;
-            right: -2px;
-            flex-shrink: 0;
-          }
-        }
-      }
-    }
-
-    // 占位符样式
-    .m-placeholder {
+    .account-list {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-      color: #999;
+      gap: 12px;
 
-      .m-placeholder-icon {
-        width: 64px;
-        height: 64px;
-        margin-bottom: 12px;
-        opacity: 0.6;
-      }
-
-      .m-placeholder-text {
-        font-size: 14px;
-        color: #999;
-      }
-    }
-
-    // 二维码容器样式
-    .m-qrcode-container {
-      padding: 16px;
-      text-align: center;
-      background-color: #fff;
-      margin-bottom: 10px;
-      border-radius: 8px;
-
-      .m-qrcode-label {
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 12px;
-        font-weight: 500;
-      }
-
-      .m-qrcode-wrapper {
-        display: inline-block;
+      .account-item {
+        display: flex;
+        align-items: center;
         padding: 16px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #e9ecef;
+        border: 2px solid #e4e7ed;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
 
-        .m-qrcode {
-          width: 200px;
-          height: 200px;
-          max-width: 200px;
-          max-height: 200px;
+        &:hover {
+          border-color: #409eff;
+          background: #f0f9ff;
+        }
+
+        &.active {
+          border-color: #409eff;
+          background: #f0f9ff;
+        }
+
+        .account-icon {
+          width: 50px;
+          height: 50px;
+          margin-right: 16px;
+          border-radius: 8px;
+          flex-shrink: 0;
+
+          &.icon-bank {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+
+            &::before {
+              content: '';
+              position: absolute;
+              width: 30px;
+              height: 20px;
+              background: #fff;
+              border-radius: 4px;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+            }
+          }
+
+          &.icon-huiwang {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            position: relative;
+
+            &::before {
+              content: 'W';
+              position: absolute;
+              color: #fff;
+              font-size: 24px;
+              font-weight: bold;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+            }
+          }
+
+          &.icon-usdt {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            position: relative;
+
+            &::before {
+              content: '₮';
+              position: absolute;
+              color: #fff;
+              font-size: 24px;
+              font-weight: bold;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+            }
+          }
+        }
+
+        .account-info {
+          flex: 1;
+
+          .account-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #303133;
+            margin-bottom: 4px;
+          }
+
+          .account-desc {
+            font-size: 14px;
+            color: #909399;
+          }
+        }
+
+        .check-mark {
+          width: 24px;
+          height: 24px;
+          background: #67c23a;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
         }
       }
     }
 
-    // 账户字段样式
-    .m-account-field {
-      word-break: break-all;
-
-      :deep(.van-field__control) {
-        font-family: 'Courier New', monospace;
-        font-size: 13px;
-        line-height: 1.4;
-      }
-    }
-  }
-
-  .w-100 > div {
-    width: 100%;
-  }
-
-  .m-3f {
-    .m-input {
-      font-size: 16px;
-    }
-
-    .m-sub-btn {
-      height: 50px;
-      margin: 20px 0px;
-    }
-  }
-
-  .m-tips {
-    .m-f12 {
-      font-size: 12px;
-      line-height: 1.5;
-      margin-bottom: 8px;
-    }
-
-    .m-c-red {
-      color: #ff4444;
-      font-weight: bold;
-    }
-
-    .m-c-red2 {
-      color: #666;
-    }
-
-    .m-b10 {
-      margin-bottom: 10px;
-    }
-  }
-
-  .m-f14 {
-    font-size: 14px;
-  }
-
-  .m-c-red {
-    color: #ff4444;
-  }
-
-  ::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-  }
-}
-
-// PC端样式适配
-@media (min-width: 768px) {
-  .m-deposit {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px;
-    background-color: #f8f9fa;
-    min-height: 100vh;
-
-    // 导航栏PC端优化
-    .van-nav-bar {
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-      border-radius: 12px;
-      margin-bottom: 30px;
-
-      :deep(.van-nav-bar__content) {
-        padding: 0 30px;
-        height: 60px;
-      }
-
-      :deep(.van-nav-bar__title) {
-        font-size: 20px;
-        font-weight: 600;
-        color: #303133;
-      }
-
-      :deep(.van-nav-bar__left) {
-        .van-icon {
-          font-size: 20px;
-          color: #606266;
-        }
-      }
-    }
-
-    .mg-top-10 {
-      margin-top: 20px;
-    }
-
-    .m-cell {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-      padding: 30px;
-      border: 1px solid #f0f2f5;
-
-      .m-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #303133;
-        height: auto;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #f0f2f5;
+    // 支付详情样式
+    .payment-details {
+      .copy-field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
 
         span {
-          color: #409eff;
-          font-weight: 700;
+          font-family: monospace;
+          font-size: 14px;
         }
       }
 
-      // 支付方式选择区域PC端优化
-      .m-cell-bd {
-        height: auto;
-        min-height: 120px;
-        padding: 20px 0;
+      .qrcode-container {
+        text-align: center;
+        padding: 20px;
+        margin-bottom: 20px;
 
-        .m-scroll {
-          flex-wrap: wrap;
-          gap: 16px;
-          justify-content: flex-start;
-
-          .m-cell-bd-item {
-            height: 90px;
-            width: 120px;
-            min-width: 120px;
-            gap: 8px;
-            padding: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-
-            &:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            }
-
-            .m-img {
-              width: 40px;
-              height: 40px;
-            }
-
-            .m-label {
-              font-size: 14px;
-              font-weight: 500;
-              color: #333;
-            }
-
-            .m-border {
-              width: 24px;
-              height: 24px;
-            }
-          }
-
-          .m-activie {
-            border-color: #409eff;
-            background-color: #f0f9ff;
-            box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
-          }
-        }
-      }
-
-      // 账户列表PC端优化
-      .m-account-list {
-        padding: 20px 0;
-
-        .m-account-item {
+        h4 {
           margin-bottom: 16px;
-          padding: 20px;
-          border-radius: 12px;
-
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-          }
-
-          &.m-activie {
-            border-color: #409eff;
-            background-color: #f0f9ff;
-            box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
-          }
-
-          .m-account-header {
-            gap: 16px;
-
-            .m-method-icon {
-              width: 50px;
-              height: 50px;
-            }
-
-            .m-account-info {
-              .m-account-name {
-                font-size: 16px;
-                font-weight: 600;
-                margin-bottom: 6px;
-              }
-
-              .m-account-desc {
-                font-size: 14px;
-                color: #909399;
-              }
-            }
-
-            .m-check-icon {
-              width: 24px;
-              height: 24px;
-            }
-          }
-        }
-      }
-
-      // 二维码容器PC端优化
-      .m-qrcode-container {
-        padding: 30px;
-        margin-bottom: 20px;
-        border-radius: 12px;
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
-
-        .m-qrcode-label {
-          font-size: 16px;
-          font-weight: 600;
-          margin-bottom: 20px;
+          color: #303133;
         }
 
-        .m-qrcode-wrapper {
-          padding: 20px;
-          border-radius: 12px;
-
-          .m-qrcode {
-            width: 240px;
-            height: 240px;
-            max-width: 240px;
-            max-height: 240px;
-          }
-        }
-      }
-
-      // 表单字段PC端优化
-      .m-account-field {
-        margin-bottom: 12px;
-
-        :deep(.van-field__control) {
-          font-size: 14px;
-        }
-
-        :deep(.van-field__label) {
-          font-size: 14px;
-          font-weight: 500;
-          color: #606266;
-        }
-
-        :deep(.van-button) {
-          padding: 8px 16px;
-          font-size: 13px;
-        }
-      }
-    }
-
-    // 表单区域PC端优化
-    .m-3f {
-      .m-input {
-        font-size: 16px;
-        margin-bottom: 20px;
-
-        :deep(.van-field__control) {
-          padding: 12px 16px;
+        .qrcode-image {
+          width: 200px;
+          height: 200px;
+          border: 1px solid #e4e7ed;
+          padding: 10px;
+          background: #fff;
           border-radius: 8px;
         }
       }
+    }
 
-      .m-sub-btn {
-        height: 50px;
-        margin: 30px 0;
+    // 充值表单样式
+    .recharge-form {
+      max-width: 600px;
+      margin: 0 auto;
+
+      .submit-btn {
+        width: 100%;
+        height: 48px;
         font-size: 16px;
-        font-weight: 600;
-        border-radius: 25px;
-        box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
-        transition: all 0.3s ease;
+        margin-top: 20px;
+      }
 
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(64, 158, 255, 0.4);
-        }
+      :deep(.el-upload-list__item) {
+        width: 148px;
+        height: 148px;
       }
     }
 
-    // 提示信息PC端优化
-    .m-tips {
-      background: #fef0f0;
-      border: 1px solid #fbc4c4;
-      border-radius: 12px;
-      padding: 25px;
+    // 提示信息样式
+    .tips-alert {
+      .tips-content {
+        margin-top: 10px;
 
-      .m-f12 {
-        font-size: 14px;
-        line-height: 1.6;
-        margin-bottom: 10px;
-        color: #606266;
-      }
-
-      .m-c-red {
-        color: #f56c6c;
-        font-size: 16px;
-        font-weight: 600;
-      }
-
-      .m-b10 {
-        margin-bottom: 15px;
-      }
-    }
-
-    .m-f14 {
-      font-size: 16px;
-      font-weight: 500;
-      margin-bottom: 12px;
-    }
-  }
-}
-
-// 大屏幕优化 (1200px+)
-@media (min-width: 1200px) {
-  .m-deposit {
-    max-width: 1400px;
-    padding: 60px;
-
-    .m-cell {
-      padding: 40px;
-
-      // 支付方式采用网格布局
-      .m-cell-bd {
-        .m-scroll {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-          gap: 20px;
-
-          .m-cell-bd-item {
-            width: 100%;
-            min-width: 140px;
-            height: 100px;
-          }
-        }
-      }
-
-      // 账户列表采用两列布局
-      .m-account-list {
-        .m-account-item {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 16px;
-
-          &:nth-child(even) {
-            margin-left: 0;
-          }
-        }
-      }
-    }
-  }
-}
-
-// 超大屏幕优化 (1600px+)
-@media (min-width: 1600px) {
-  .m-deposit {
-    .m-cell {
-      // 支付方式更大的网格
-      .m-cell-bd {
-        .m-scroll {
-          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-
-          .m-cell-bd-item {
-            min-width: 160px;
-            height: 110px;
-
-            .m-img {
-              width: 48px;
-              height: 48px;
-            }
-
-            .m-label {
-              font-size: 15px;
-            }
-          }
+        p {
+          margin: 8px 0;
+          line-height: 1.6;
+          color: #e6a23c;
         }
       }
     }

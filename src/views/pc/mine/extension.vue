@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, User, Ticket, Link, Share, DocumentCopy } from '@element-plus/icons-vue'
@@ -104,7 +104,7 @@ import { userApi } from '@/api'
 
 defineOptions({ name: 'PcExtensionVue' })
 
-// 假设的用户信息类型
+// 用户信息类型
 interface UserInfo {
   id: string | number
   username?: string
@@ -192,7 +192,6 @@ function sharePromotion() {
       text: t('extension.comeToRegister'),
       url: promotionLink.value
     }).catch(err => {
-      console.log('分享取消或失败:', err)
       // 降级到复制链接
       copyPromotionLink()
     })
@@ -219,7 +218,6 @@ async function fetchUserInfo() {
       throw new Error(t('extension.getUserInfoFailed'))
     }
   } catch (error) {
-    console.error('获取用户信息失败:', error)
     ElMessage.error(t('extension.getUserInfoFailed'))
   }
 }
@@ -387,29 +385,5 @@ onMounted(() => {
   border-radius: 8px;
   width: 100%;
   max-width: 300px;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .pc-extension {
-    padding: 16px;
-  }
-
-  .content-wrapper {
-    gap: 16px;
-  }
-
-  .user-info-card,
-  .invite-code-card,
-  .promotion-link-card,
-  .share-action-card {
-    padding: 20px;
-  }
-
-  .invite-code {
-    font-size: 24px;
-    letter-spacing: 2px;
-    padding: 16px 20px;
-  }
 }
 </style>

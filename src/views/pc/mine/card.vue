@@ -46,7 +46,7 @@
           </div>
           <div class="pc-bank-card">{{ getFullAccountNumber(item) }}</div>
           <div class="pc-bank-extra-info">
-            <span class="pc-account-holder">{{ $t('mine.accountHolder') }}{{ item.account_name }}</span>
+            <span class="pc-account-holder">{{ $t('mine.accountHolder') }}：{{ item.account_name }}</span>
             <span class="pc-account-date">{{ formatDate(item.created_at) }}</span>
           </div>
         </div>
@@ -56,7 +56,9 @@
       <div class="pc-empty-state" v-else>
         <el-empty :description="$t('mine.noAccount')">
           <template #image>
-            <div class="pc-empty-icon">🏦</div>
+            <div class="pc-empty-icon">
+              <span class="icon-bank-empty"></span>
+            </div>
           </template>
           <div class="pc-empty-desc">{{ $t('mine.addAccountTip') }}</div>
         </el-empty>
@@ -124,7 +126,7 @@
               />
             </el-form-item>
             <el-form-item :label="$t('mine.huiwangAccount')" required>
-              <el-input v-model="frm.account_number" :placeholder="$t('mine.inputAccountNumber')" />
+              <el-input v-model="frm.account_number" :placeholder="$t('mine.fillHuiwangAccount')" />
             </el-form-item>
             <el-form-item :label="$t('mine.phoneNumber')" required>
               <el-input v-model="frm.phone_number" :placeholder="$t('mine.inputHuiwangPhone')" />
@@ -162,7 +164,7 @@
       </el-tabs>
 
       <template #footer>
-        <el-button @click="showBottom = false">{{ $t('cancel') }}</el-button>
+        <el-button @click="showBottom = false">{{ $t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           :loading="submitLoading"
@@ -193,6 +195,7 @@ interface UserAccount {
   account_name: string
   account_number?: string
   bank_branch?: string
+  bank_name?: string
   phone_number?: string
   wallet_address?: string
   network_type?: string
@@ -262,11 +265,11 @@ async function setDefaultHandler(item: UserAccount) {
 
   try {
     await ElMessageBox.confirm(
-      `${t('confirm')}将 ${getDisplayName(item)} 设为默认账户？`,
+      `${t('common.confirm')}将 ${getDisplayName(item)} 设为默认账户？`,
       t('mine.confirmSetDefault'),
       {
-        confirmButtonText: t('confirm'),
-        cancelButtonText: t('cancel'),
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
@@ -274,17 +277,15 @@ async function setDefaultHandler(item: UserAccount) {
     setDefaultLoading.value = item.id
 
     const resp = await invokeApi('setDefaultAccount', { account_id: item.id })
-    console.log('设置默认账户响应:', resp)
 
     if (resp && resp.code === 200) {
       ElMessage.success(t('mine.switchSuccess'))
       await loadAccountList()
     } else {
-      throw new Error(resp.message || t('mine.switchFailed'))
+      throw new Error(t('mine.switchFailed'))
     }
   } catch (err) {
     if (err !== 'cancel') {
-      console.error('设置默认账户错误:', err)
       const msg = (err as Error).message
       ElMessage.error(msg || t('mine.switchFailed'))
     }
@@ -297,7 +298,7 @@ async function setDefaultHandler(item: UserAccount) {
 function getDisplayName(item: UserAccount): string {
   switch (item.account_type) {
     case 'bank':
-      return item.remark_name || item.bank_branch || t('mine.bankCard')
+      return item.bank_name || item.remark_name || t('mine.bankCard')
     case 'huiwang':
       return t('mine.huiwang')
     case 'usdt':
@@ -311,11 +312,11 @@ function getDisplayName(item: UserAccount): string {
 function getAccountDetails(item: UserAccount): string {
   switch (item.account_type) {
     case 'bank':
-      return `开户网点：${item.bank_branch || '未设置'}`
+      return `${t('mine.bankBranch')}：${item.bank_branch || '未设置'}`
     case 'huiwang':
-      return `手机号：${item.phone_number_masked || '未设置'}`
+      return `${t('mine.phoneNumber')}：${item.phone_number_masked || '未设置'}`
     case 'usdt':
-      return `网络：${item.network_type || 'TRC20'}`
+      return `${t('mine.networkType')}：${item.network_type || 'TRC20'}`
     default:
       return ''
   }
@@ -327,9 +328,9 @@ function getFullAccountNumber(item: UserAccount): string {
     case 'bank':
       return item.account_number_masked || maskBankCardForDisplay(item.account_number || '')
     case 'huiwang':
-      return `账号：${item.account_number_masked || maskAccount(item.account_number || '')}`
+      return `${t('mine.accountNumber')}：${item.account_number_masked || maskAccount(item.account_number || '')}`
     case 'usdt':
-      return `地址：${item.wallet_address_masked || maskWalletAddressForDisplay(item.wallet_address || '')}`
+      return `${t('mine.walletAddress')}：${item.wallet_address_masked || maskWalletAddressForDisplay(item.wallet_address || '')}`
     default:
       return item.account_number || ''
   }
@@ -391,7 +392,6 @@ function onClickTab(tab: any) {
 
 // 修改按钮事件
 async function editCardHandler(item: UserAccount) {
-  console.log('编辑账户:', item)
   editId.value = item.id
 
   frm.value.account_name = item.account_name || store.getUser()?.realname || ''
@@ -401,7 +401,7 @@ async function editCardHandler(item: UserAccount) {
     case 'bank':
       activeTab.value = 'bank'
       frm.value.account_type = 'bank'
-      frm.value.bank_name = item.remark_name || ''
+      frm.value.bank_name = item.bank_name || item.remark_name || ''
       frm.value.account_number = item.account_number || ''
       frm.value.bank_branch = item.bank_branch || ''
       frm.value.phone_number = item.phone_number || ''
@@ -462,6 +462,7 @@ async function submitBankHandler() {
     account_type: 'bank',
     account_name: frm.value.account_name,
     remark_name: frm.value.bank_name,
+    bank_name: frm.value.bank_name,
     account_number: frm.value.account_number,
     bank_branch: frm.value.bank_branch,
     phone_number: frm.value.phone_number,
@@ -541,7 +542,6 @@ async function addAccount(data: object) {
   submitLoading.value = true
   try {
     const resp = await invokeApi('addAccount', data)
-    console.log('添加账户响应:', resp)
     if (resp && resp.code === 200) {
       showBottom.value = false
       ElMessage.success(t('mine.addSuccess'))
@@ -551,7 +551,6 @@ async function addAccount(data: object) {
       throw new Error(resp.message || t('mine.addFailed'))
     }
   } catch (err) {
-    console.error('添加账户错误:', err)
     const msg = (err as Error).message
     ElMessage.error(msg || t('mine.addFailed'))
   } finally {
@@ -568,7 +567,6 @@ async function editAccount(id: number, data: object) {
       ...data
     }
     const resp = await invokeApi('editAccount', editData)
-    console.log('编辑账户响应:', resp)
     if (resp && resp.code === 200) {
       showBottom.value = false
       ElMessage.success(t('mine.updateSuccess'))
@@ -578,7 +576,6 @@ async function editAccount(id: number, data: object) {
       throw new Error(resp.message || t('mine.updateFailed'))
     }
   } catch (err) {
-    console.error('编辑账户错误:', err)
     const msg = (err as Error).message
     ElMessage.error(msg || t('mine.updateFailed'))
   } finally {
@@ -590,15 +587,12 @@ async function editAccount(id: number, data: object) {
 async function loadAccountList() {
   try {
     const resp = await invokeApi('accountList')
-    console.log('账户列表响应:', resp)
     if (resp && resp.code === 200) {
       list.value = resp.data?.list || []
     } else {
-      console.warn('获取账户列表失败:', resp?.message)
       list.value = []
     }
   } catch (err) {
-    console.error('获取账户列表错误:', err)
     list.value = []
     ElMessage.error(t('mine.loadFailed'))
   }
@@ -747,6 +741,36 @@ onMounted(() => {
       .pc-empty-icon {
         font-size: 80px;
         margin-bottom: 20px;
+
+        .icon-bank-empty {
+          display: inline-block;
+          width: 80px;
+          height: 80px;
+          position: relative;
+
+          &::before {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            top: 10px;
+            opacity: 0.3;
+          }
+
+          &::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            background: #fff;
+            border-radius: 4px;
+            top: 20px;
+            left: 10px;
+            box-shadow: inset 0 0 0 2px #667eea;
+          }
+        }
       }
 
       .pc-empty-desc {
