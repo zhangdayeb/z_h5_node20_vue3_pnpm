@@ -7,7 +7,7 @@
         @click="onClickLeft"
         class="pc-back-btn"
       >
-        返回
+        {{ $t('common.back') }}
       </el-button>
       <h2 class="pc-title">{{ $t('mine.bankManage') }}</h2>
     </div>
@@ -20,7 +20,9 @@
             <div class="pc-bank-left">
               <div class="pc-bank-name">
                 {{ getDisplayName(item) }}
-                <el-tag v-if="item.is_default" type="danger" size="small" effect="dark">默认</el-tag>
+                <el-tag v-if="item.is_default" type="danger" size="small" effect="dark">
+                  {{ $t('mine.currentDefault') }}
+                </el-tag>
               </div>
               <div class="pc-bank-details">{{ getAccountDetails(item) }}</div>
             </div>
@@ -31,7 +33,7 @@
                 :loading="setDefaultLoading === item.id"
                 :type="(item.is_default === 1 || item.is_default === '1') ? 'success' : 'default'"
               >
-                {{ (item.is_default === 1 || item.is_default === '1') ? '当前默认' : '设为默认' }}
+                {{ (item.is_default === 1 || item.is_default === '1') ? $t('mine.currentDefault') : $t('mine.setDefault') }}
               </el-button>
               <el-button
                 size="small"
@@ -44,7 +46,7 @@
           </div>
           <div class="pc-bank-card">{{ getFullAccountNumber(item) }}</div>
           <div class="pc-bank-extra-info">
-            <span class="pc-account-holder">持卡人：{{ item.account_name }}</span>
+            <span class="pc-account-holder">{{ $t('mine.accountHolder') }}{{ item.account_name }}</span>
             <span class="pc-account-date">{{ formatDate(item.created_at) }}</span>
           </div>
         </div>
@@ -52,11 +54,11 @@
 
       <!-- 无数据提示 -->
       <div class="pc-empty-state" v-else>
-        <el-empty description="暂无收款账户">
+        <el-empty :description="$t('mine.noAccount')">
           <template #image>
             <div class="pc-empty-icon">🏦</div>
           </template>
-          <div class="pc-empty-desc">请添加银行卡、汇旺或USDT账户</div>
+          <div class="pc-empty-desc">{{ $t('mine.addAccountTip') }}</div>
         </el-empty>
       </div>
 
@@ -74,85 +76,85 @@
     <!-- 编辑弹窗 -->
     <el-dialog
       v-model="showBottom"
-      :title="isEditMode ? '编辑账户' : '添加账户'"
+      :title="isEditMode ? $t('mine.editAccount') : $t('mine.addAccount')"
       width="600px"
       @close="onPopupClose"
       class="pc-card-dialog"
     >
       <el-tabs v-model="activeTab" @tab-click="onClickTab">
         <!-- 银行卡 -->
-        <el-tab-pane label="银行卡" name="bank">
+        <el-tab-pane :label="$t('mine.bankCard')" name="bank">
           <el-form :model="frm" label-position="right" label-width="120px">
-            <el-form-item label="开户银行" required>
-              <el-input v-model="frm.bank_name" placeholder="请输入开户银行名称" />
+            <el-form-item :label="$t('mine.openingBank')" required>
+              <el-input v-model="frm.bank_name" :placeholder="$t('mine.inputBankName')" />
             </el-form-item>
-            <el-form-item label="开户人姓名" required>
+            <el-form-item :label="$t('mine.accountName')" required>
               <el-input
                 v-model="frm.account_name"
                 :readonly="isEditMode && frm.account_name.length > 0"
-                placeholder="请输入开户人姓名(仅可修改一次)"
+                :placeholder="$t('mine.inputAccountName')"
               />
             </el-form-item>
-            <el-form-item label="银行账号" required>
-              <el-input v-model="frm.account_number" placeholder="请输入开户银行账号" />
+            <el-form-item :label="$t('mine.accountNumber')" required>
+              <el-input v-model="frm.account_number" :placeholder="$t('mine.inputAccountNumber')" />
             </el-form-item>
-            <el-form-item label="开户网点" required>
-              <el-input v-model="frm.bank_branch" placeholder="请输入开户网点" />
+            <el-form-item :label="$t('mine.bankBranch')" required>
+              <el-input v-model="frm.bank_branch" :placeholder="$t('mine.inputBankBranch')" />
             </el-form-item>
-            <el-form-item label="身份证号">
-              <el-input v-model="frm.id_number" placeholder="请输入身份证号(可选)" />
+            <el-form-item :label="$t('mine.idNumber')">
+              <el-input v-model="frm.id_number" :placeholder="$t('mine.inputIdNumber')" />
             </el-form-item>
-            <el-form-item label="手机号码">
-              <el-input v-model="frm.phone_number" placeholder="请输入手机号码(可选)" />
+            <el-form-item :label="$t('mine.phoneNumber')">
+              <el-input v-model="frm.phone_number" :placeholder="$t('mine.inputPhoneNumber')" />
             </el-form-item>
-            <el-form-item label="设为默认账户">
+            <el-form-item :label="$t('mine.setAsDefault')">
               <el-checkbox v-model="frm.is_default" />
             </el-form-item>
           </el-form>
         </el-tab-pane>
 
         <!-- 汇旺 -->
-        <el-tab-pane label="汇旺" name="huiwang">
+        <el-tab-pane :label="$t('mine.huiwang')" name="huiwang">
           <el-form :model="frm" label-position="right" label-width="120px">
-            <el-form-item label="开户人姓名" required>
+            <el-form-item :label="$t('mine.accountName')" required>
               <el-input
                 v-model="frm.account_name"
                 :readonly="isEditMode && frm.account_name.length > 0"
-                placeholder="请输入开户人姓名(仅可修改一次)"
+                :placeholder="$t('mine.inputAccountName')"
               />
             </el-form-item>
-            <el-form-item label="汇旺账号" required>
-              <el-input v-model="frm.account_number" placeholder="请输入汇旺账号" />
+            <el-form-item :label="$t('mine.huiwangAccount')" required>
+              <el-input v-model="frm.account_number" :placeholder="$t('mine.inputAccountNumber')" />
             </el-form-item>
-            <el-form-item label="手机号码" required>
-              <el-input v-model="frm.phone_number" placeholder="请输入手机号码" />
+            <el-form-item :label="$t('mine.phoneNumber')" required>
+              <el-input v-model="frm.phone_number" :placeholder="$t('mine.inputHuiwangPhone')" />
             </el-form-item>
-            <el-form-item label="设为默认账户">
+            <el-form-item :label="$t('mine.setAsDefault')">
               <el-checkbox v-model="frm.is_default" />
             </el-form-item>
           </el-form>
         </el-tab-pane>
 
         <!-- USDT -->
-        <el-tab-pane label="USDT" name="usdt">
+        <el-tab-pane :label="$t('mine.usdt')" name="usdt">
           <el-form :model="frm" label-position="right" label-width="120px">
-            <el-form-item label="网络类型" required>
-              <el-select v-model="frm.network_type" placeholder="请选择">
+            <el-form-item :label="$t('mine.networkType')" required>
+              <el-select v-model="frm.network_type" :placeholder="$t('mine.selectNetworkType')">
                 <el-option label="TRC20" value="TRC20" />
                 <el-option label="ERC20" value="ERC20" />
               </el-select>
             </el-form-item>
-            <el-form-item label="开户人姓名" required>
+            <el-form-item :label="$t('mine.accountName')" required>
               <el-input
                 v-model="frm.account_name"
                 :readonly="isEditMode && frm.account_name.length > 0"
-                placeholder="请输入开户人姓名(仅可修改一次)"
+                :placeholder="$t('mine.inputAccountName')"
               />
             </el-form-item>
-            <el-form-item label="钱包地址" required>
-              <el-input v-model="frm.wallet_address" placeholder="请输入USDT钱包地址" />
+            <el-form-item :label="$t('mine.walletAddress')" required>
+              <el-input v-model="frm.wallet_address" :placeholder="$t('mine.inputWalletAddress')" />
             </el-form-item>
-            <el-form-item label="设为默认账户">
+            <el-form-item :label="$t('mine.setAsDefault')">
               <el-checkbox v-model="frm.is_default" />
             </el-form-item>
           </el-form>
@@ -160,13 +162,13 @@
       </el-tabs>
 
       <template #footer>
-        <el-button @click="showBottom = false">取消</el-button>
+        <el-button @click="showBottom = false">{{ $t('cancel') }}</el-button>
         <el-button
           type="primary"
           :loading="submitLoading"
           @click="handleSubmit"
         >
-          {{ isEditMode ? '更新' : '提交' }}
+          {{ isEditMode ? $t('mine.updateAccount') : $t('submit') }}
         </el-button>
       </template>
     </el-dialog>
@@ -177,6 +179,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useI18n } from 'vue-i18n'
 import { invokeApi } from '@/utils/tools'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -205,6 +208,7 @@ interface UserAccount {
 
 const router = useRouter()
 const store = useAppStore()
+const { t } = useI18n()
 
 // 响应式数据
 const list = ref<UserAccount[]>([])
@@ -252,17 +256,17 @@ function resetForm() {
 // 设为默认处理函数
 async function setDefaultHandler(item: UserAccount) {
   if (item.is_default === 1 || item.is_default === '1') {
-    ElMessage.warning('该账户已经是默认账户')
+    ElMessage.warning(t('mine.alreadyDefault'))
     return
   }
 
   try {
     await ElMessageBox.confirm(
-      `确定要将 ${getDisplayName(item)} 设为默认账户吗？`,
-      '设为默认账户',
+      `${t('confirm')}将 ${getDisplayName(item)} 设为默认账户？`,
+      t('mine.confirmSetDefault'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('confirm'),
+        cancelButtonText: t('cancel'),
         type: 'warning'
       }
     )
@@ -273,16 +277,16 @@ async function setDefaultHandler(item: UserAccount) {
     console.log('设置默认账户响应:', resp)
 
     if (resp && resp.code === 200) {
-      ElMessage.success('设置成功')
+      ElMessage.success(t('mine.switchSuccess'))
       await loadAccountList()
     } else {
-      throw new Error(resp.message || '设置失败')
+      throw new Error(resp.message || t('mine.switchFailed'))
     }
   } catch (err) {
     if (err !== 'cancel') {
       console.error('设置默认账户错误:', err)
       const msg = (err as Error).message
-      ElMessage.error(msg || '设置失败，请重试')
+      ElMessage.error(msg || t('mine.switchFailed'))
     }
   } finally {
     setDefaultLoading.value = 0
@@ -293,13 +297,13 @@ async function setDefaultHandler(item: UserAccount) {
 function getDisplayName(item: UserAccount): string {
   switch (item.account_type) {
     case 'bank':
-      return item.remark_name || item.bank_branch || '银行卡'
+      return item.remark_name || item.bank_branch || t('mine.bankCard')
     case 'huiwang':
-      return '汇旺'
+      return t('mine.huiwang')
     case 'usdt':
-      return `USDT-${item.network_type || 'TRC20'}`
+      return `${t('mine.usdt')}-${item.network_type || 'TRC20'}`
     default:
-      return item.account_name || '未知类型'
+      return item.account_name || t('mine.accountType')
   }
 }
 
@@ -307,7 +311,7 @@ function getDisplayName(item: UserAccount): string {
 function getAccountDetails(item: UserAccount): string {
   switch (item.account_type) {
     case 'bank':
-      return `${item.bank_branch || '开户网点'}`
+      return `开户网点：${item.bank_branch || '未设置'}`
     case 'huiwang':
       return `手机号：${item.phone_number_masked || '未设置'}`
     case 'usdt':
@@ -438,19 +442,19 @@ function handleSubmit() {
 // 提交银行卡信息
 async function submitBankHandler() {
   if (frm.value.bank_name.trim().length <= 0) {
-    ElMessage.warning('请输入开户银行名称')
+    ElMessage.warning(t('mine.fillBankName'))
     return
   }
   if (frm.value.account_name.trim().length <= 0) {
-    ElMessage.warning('请填写开户人姓名')
+    ElMessage.warning(t('mine.fillAccountName'))
     return
   }
   if (frm.value.account_number.trim().length <= 0) {
-    ElMessage.warning('请填写银行账号')
+    ElMessage.warning(t('mine.fillAccountNumber'))
     return
   }
   if (frm.value.bank_branch.trim().length <= 0) {
-    ElMessage.warning('请填写开户网点')
+    ElMessage.warning(t('mine.fillBankBranch'))
     return
   }
 
@@ -475,15 +479,15 @@ async function submitBankHandler() {
 // 提交汇旺信息
 async function submitHuiwangHandler() {
   if (frm.value.account_name.trim().length <= 0) {
-    ElMessage.warning('请填写开户人姓名')
+    ElMessage.warning(t('mine.fillAccountName'))
     return
   }
   if (frm.value.account_number.trim().length <= 0) {
-    ElMessage.warning('请填写汇旺账号')
+    ElMessage.warning(t('mine.fillHuiwangAccount'))
     return
   }
   if (frm.value.phone_number.trim().length <= 0) {
-    ElMessage.warning('请填写手机号码')
+    ElMessage.warning(t('mine.fillPhoneNumber'))
     return
   }
 
@@ -505,15 +509,15 @@ async function submitHuiwangHandler() {
 // 提交USDT信息
 async function submitUsdtHandler() {
   if (frm.value.network_type.trim().length <= 0) {
-    ElMessage.warning('请选择网络类型')
+    ElMessage.warning(t('mine.selectNetwork'))
     return
   }
   if (frm.value.account_name.trim().length <= 0) {
-    ElMessage.warning('请填写开户人姓名')
+    ElMessage.warning(t('mine.fillAccountName'))
     return
   }
   if (frm.value.wallet_address.trim().length <= 0) {
-    ElMessage.warning('请填写钱包地址')
+    ElMessage.warning(t('mine.fillWalletAddress'))
     return
   }
 
@@ -540,16 +544,16 @@ async function addAccount(data: object) {
     console.log('添加账户响应:', resp)
     if (resp && resp.code === 200) {
       showBottom.value = false
-      ElMessage.success('添加成功')
+      ElMessage.success(t('mine.addSuccess'))
       await loadAccountList()
       resetForm()
     } else {
-      throw new Error(resp.message || '添加失败')
+      throw new Error(resp.message || t('mine.addFailed'))
     }
   } catch (err) {
     console.error('添加账户错误:', err)
     const msg = (err as Error).message
-    ElMessage.error(msg || '添加失败，请重试')
+    ElMessage.error(msg || t('mine.addFailed'))
   } finally {
     submitLoading.value = false
   }
@@ -567,16 +571,16 @@ async function editAccount(id: number, data: object) {
     console.log('编辑账户响应:', resp)
     if (resp && resp.code === 200) {
       showBottom.value = false
-      ElMessage.success('修改成功')
+      ElMessage.success(t('mine.updateSuccess'))
       await loadAccountList()
       resetForm()
     } else {
-      throw new Error(resp.message || '修改失败')
+      throw new Error(resp.message || t('mine.updateFailed'))
     }
   } catch (err) {
     console.error('编辑账户错误:', err)
     const msg = (err as Error).message
-    ElMessage.error(msg || '修改失败，请重试')
+    ElMessage.error(msg || t('mine.updateFailed'))
   } finally {
     submitLoading.value = false
   }
@@ -596,7 +600,7 @@ async function loadAccountList() {
   } catch (err) {
     console.error('获取账户列表错误:', err)
     list.value = []
-    ElMessage.error('获取账户列表失败')
+    ElMessage.error(t('mine.loadFailed'))
   }
 }
 

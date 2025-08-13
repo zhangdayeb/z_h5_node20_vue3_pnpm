@@ -9,7 +9,7 @@ const domain = location.origin
 // ==================== 设备检测功能 ====================
 
 export function mobileFunc(): boolean {
-  return false
+  // return false
   const urlParams = new URLSearchParams(window.location.search)
 
   // 1. URL 参数强制设置（最高优先级）
@@ -28,12 +28,17 @@ export function mobileFunc(): boolean {
     return true
   }
 
-  // 3. 通用设备检测（最后执行）
+  // 3. 简化的设备检测
   const userAgent = navigator.userAgent
 
-  // 增强的移动设备检测，包含更多 Telegram 相关的 UA
-  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Telegram/i
+  // 明确的移动设备检测（移除 Telegram，因为已经在上面单独处理）
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i
   const isMobileDevice = mobileRegex.test(userAgent)
+
+  // 如果明确检测到移动设备，直接返回 true
+  if (isMobileDevice) {
+    return true
+  }
 
   // 屏幕尺寸检测
   const isSmallScreen = window.innerWidth < 768
@@ -41,18 +46,14 @@ export function mobileFunc(): boolean {
   // 检测触摸设备
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
-  // 综合判断
-  const result = (isMobileDevice && isSmallScreen) || (isTouchDevice && isSmallScreen)
+  // PC端检测：如果不是移动设备且屏幕足够大，就是PC端
+  const isLargeScreen = window.innerWidth >= 768
+  if (!isMobileDevice && isLargeScreen) {
+    return false
+  }
 
-  console.log('🔍 设备检测结果:', {
-    userAgent: userAgent.substring(0, 50) + '...',
-    isMobileDevice,
-    isSmallScreen,
-    isTouchDevice,
-    finalResult: result
-  })
-
-  return result
+  // 只有在小屏幕+触摸设备的情况下才判断为移动端
+  return isSmallScreen && isTouchDevice
 }
 
 // 返回主页类型 - 仅供组件内使用，不在路由配置中调用

@@ -13,7 +13,7 @@
             <div class="m-bank-left">
               <div class="m-bank-name">
                 {{ getDisplayName(item) }}
-                <span v-if="item.is_default" class="m-default-badge">默认</span>
+                <span v-if="item.is_default" class="m-default-badge">{{ $t('mine.currentDefault') }}</span>
               </div>
               <div class="m-bank-details">{{ getAccountDetails(item) }}</div>
             </div>
@@ -27,7 +27,7 @@
                   'is-current-default': item.is_default === 1 || item.is_default === '1'
                 }"
               >
-                {{ (item.is_default === 1 || item.is_default === '1') ? '当前默认' : '设为默认' }}
+                {{ (item.is_default === 1 || item.is_default === '1') ? $t('mine.currentDefault') : $t('mine.setDefault') }}
               </div>
               <div class="m-btn-edit" @click="editCardHandler(item)">
                 {{ $t('mine.edit') }}
@@ -36,7 +36,7 @@
           </div>
           <div class="m-bank-card">{{ getFullAccountNumber(item) }}</div>
           <div class="m-bank-extra-info">
-            <span class="m-account-holder">持卡人：{{ item.account_name }}</span>
+            <span class="m-account-holder">{{ $t('mine.accountHolder') }}{{ item.account_name }}</span>
             <span class="m-account-date">{{ formatDate(item.created_at) }}</span>
           </div>
         </div>
@@ -45,8 +45,8 @@
       <!-- 无数据提示 -->
       <div class="m-empty-state" v-else>
         <div class="m-empty-icon">🏦</div>
-        <div class="m-empty-text">暂无收款账户</div>
-        <div class="m-empty-desc">请添加银行卡、汇旺或USDT账户</div>
+        <div class="m-empty-text">{{ $t('mine.noAccount') }}</div>
+        <div class="m-empty-desc">{{ $t('mine.addAccountTip') }}</div>
       </div>
 
       <van-button
@@ -68,58 +68,58 @@
     >
       <van-tabs v-model:active="active" @click-tab="onClickTab">
         <!-- 银行卡 -->
-        <van-tab title="银行卡">
+        <van-tab :title="$t('mine.bankCard')">
           <div class="m-tab-contain">
             <van-cell-group inset style="margin-left: 0px; margin-right: 0">
               <van-field
                 v-model="frm.bank_name"
                 type="text"
-                label="开户银行"
+                :label="$t('mine.openingBank')"
                 input-align="right"
                 required
-                placeholder="请输入开户银行名称"
+                :placeholder="$t('mine.inputBankName')"
               />
               <van-field
                 v-model="frm.account_name"
                 type="text"
-                label="开户人姓名"
+                :label="$t('mine.accountName')"
                 input-align="right"
                 required
                 :readonly="isEditMode && frm.account_name.length > 0"
-                placeholder="请输入开户人姓名(仅可修改一次)"
+                :placeholder="$t('mine.inputAccountName')"
               />
               <van-field
                 v-model="frm.account_number"
                 type="digit"
                 input-align="right"
-                label="银行账号"
+                :label="$t('mine.accountNumber')"
                 required
-                placeholder="请输入开户银行账号"
+                :placeholder="$t('mine.inputAccountNumber')"
               />
               <van-field
                 v-model="frm.bank_branch"
                 type="text"
                 input-align="right"
-                label="开户网点"
+                :label="$t('mine.bankBranch')"
                 required
-                placeholder="请输入开户网点"
+                :placeholder="$t('mine.inputBankBranch')"
               />
               <van-field
                 v-model="frm.id_number"
                 type="text"
                 input-align="right"
-                label="身份证号"
-                placeholder="请输入身份证号(可选)"
+                :label="$t('mine.idNumber')"
+                :placeholder="$t('mine.inputIdNumber')"
               />
               <van-field
                 v-model="frm.phone_number"
                 type="tel"
                 input-align="right"
-                label="手机号码"
-                placeholder="请输入手机号码(可选)"
+                :label="$t('mine.phoneNumber')"
+                :placeholder="$t('mine.inputPhoneNumber')"
               />
               <!-- 添加设为默认选项 -->
-              <van-cell title="设为默认账户" center>
+              <van-cell :title="$t('mine.setAsDefault')" center>
                 <template #right-icon>
                   <van-checkbox v-model="frm.is_default" />
                 </template>
@@ -135,43 +135,43 @@
                 block
                 :loading="submitLoading"
                 @click="submitBankHandler"
-                >{{ isEditMode ? '更新' : '提交' }}</van-button
+                >{{ isEditMode ? $t('mine.updateAccount') : $t('submit') }}</van-button
               >
             </div>
           </div>
         </van-tab>
 
         <!-- 汇旺 -->
-        <van-tab title="汇旺">
+        <van-tab :title="$t('mine.huiwang')">
           <div class="m-tab-contain">
             <van-cell-group inset style="margin-left: 0px; margin-right: 0">
               <van-field
                 v-model="frm.account_name"
                 type="text"
-                label="开户人姓名"
+                :label="$t('mine.accountName')"
                 input-align="right"
                 required
                 :readonly="isEditMode && frm.account_name.length > 0"
-                placeholder="请输入开户人姓名(仅可修改一次)"
+                :placeholder="$t('mine.inputAccountName')"
               />
               <van-field
                 v-model="frm.account_number"
                 type="text"
                 input-align="right"
-                label="汇旺账号"
+                :label="$t('mine.huiwangAccount')"
                 required
-                placeholder="请输入汇旺账号"
+                :placeholder="$t('mine.inputAccountNumber')"
               />
               <van-field
                 v-model="frm.phone_number"
                 type="tel"
                 input-align="right"
-                label="手机号码"
+                :label="$t('mine.phoneNumber')"
                 required
-                placeholder="请输入手机号码"
+                :placeholder="$t('mine.inputHuiwangPhone')"
               />
               <!-- 添加设为默认选项 -->
-              <van-cell title="设为默认账户" center>
+              <van-cell :title="$t('mine.setAsDefault')" center>
                 <template #right-icon>
                   <van-checkbox v-model="frm.is_default" />
                 </template>
@@ -187,17 +187,17 @@
                 block
                 :loading="submitLoading"
                 @click="submitHuiwangHandler"
-                >{{ isEditMode ? '更新' : '提交' }}</van-button
+                >{{ isEditMode ? $t('mine.updateAccount') : $t('submit') }}</van-button
               >
             </div>
           </div>
         </van-tab>
 
         <!-- USDT -->
-        <van-tab title="USDT">
+        <van-tab :title="$t('mine.usdt')">
           <div class="m-tab-contain">
             <van-cell-group inset style="margin-left: 0px; margin-right: 0">
-              <van-field label="网络类型" :required="true" input-align="right">
+              <van-field :label="$t('mine.networkType')" :required="true" input-align="right">
                 <template #input>
                   <van-dropdown-menu>
                     <van-dropdown-item
@@ -210,22 +210,22 @@
               <van-field
                 v-model="frm.account_name"
                 type="text"
-                label="开户人姓名"
+                :label="$t('mine.accountName')"
                 input-align="right"
                 required
                 :readonly="isEditMode && frm.account_name.length > 0"
-                placeholder="请输入开户人姓名(仅可修改一次)"
+                :placeholder="$t('mine.inputAccountName')"
               />
               <van-field
                 v-model="frm.wallet_address"
                 type="text"
-                label="钱包地址"
+                :label="$t('mine.walletAddress')"
                 :required="true"
                 input-align="right"
-                placeholder="请输入USDT钱包地址"
+                :placeholder="$t('mine.inputWalletAddress')"
               />
               <!-- 添加设为默认选项 -->
-              <van-cell title="设为默认账户" center>
+              <van-cell :title="$t('mine.setAsDefault')" center>
                 <template #right-icon>
                   <van-checkbox v-model="frm.is_default" />
                 </template>
@@ -241,7 +241,7 @@
                 block
                 :loading="submitLoading"
                 @click="submitUsdtHandler"
-                >{{ isEditMode ? '更新' : '提交' }}</van-button
+                >{{ isEditMode ? $t('mine.updateAccount') : $t('submit') }}</van-button
               >
             </div>
           </div>
@@ -255,6 +255,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useI18n } from 'vue-i18n'
 import api from '@/api'
 import { showToast, showConfirmDialog, type DropdownItemOption } from 'vant'
 
@@ -283,6 +284,7 @@ interface UserAccount {
 
 const router = useRouter()
 const store = useAppStore()
+const { t } = useI18n()
 
 // 响应式数据
 const list = ref<UserAccount[]>([])  // 确保初始化为空数组
@@ -337,17 +339,17 @@ function resetForm() {
 async function setDefaultHandler(item: UserAccount) {
   // 如果点击的是当前默认账户，则提示用户
   if (item.is_default === 1 || item.is_default === '1') {
-    showToast('该账户已经是默认账户')
+    showToast(t('mine.alreadyDefault'))
     return
   }
 
   try {
     // 显示确认对话框
     await showConfirmDialog({
-      title: '设为默认账户',
-      message: `确定要将 ${getDisplayName(item)} 设为默认账户吗？`,
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
+      title: t('mine.confirmSetDefault'),
+      message: `${t('confirm')}将 ${getDisplayName(item)} 设为默认账户？`,
+      confirmButtonText: t('confirm'),
+      cancelButtonText: t('cancel')
     })
 
     // 设置加载状态
@@ -358,18 +360,18 @@ async function setDefaultHandler(item: UserAccount) {
     console.log('设置默认账户响应:', resp)
 
     if (resp && resp.code === 200) {
-      showToast('设置成功')
+      showToast(t('mine.switchSuccess'))
       // 重新加载账户列表
       await loadAccountList()
     } else {
-      throw new Error(resp.message || '设置失败')
+      throw new Error(resp.message || t('mine.switchFailed'))
     }
   } catch (err) {
     // 用户取消操作时不显示错误
     if (err !== 'cancel') {
       console.error('设置默认账户错误:', err)
       const msg = (err as Error).message
-      showToast(msg || '设置失败，请重试')
+      showToast(msg || t('mine.switchFailed'))
     }
   } finally {
     // 清除加载状态
@@ -381,13 +383,13 @@ async function setDefaultHandler(item: UserAccount) {
 function getDisplayName(item: UserAccount): string {
   switch (item.account_type) {
     case 'bank':
-      return item.remark_name || item.bank_branch || '银行卡'
+      return item.remark_name || item.bank_branch || t('mine.bankCard')
     case 'huiwang':
-      return '汇旺'
+      return t('mine.huiwang')
     case 'usdt':
-      return `USDT-${item.network_type || 'TRC20'}`
+      return `${t('mine.usdt')}-${item.network_type || 'TRC20'}`
     default:
-      return item.account_name || '未知类型'
+      return item.account_name || t('mine.accountType')
   }
 }
 
@@ -395,7 +397,7 @@ function getDisplayName(item: UserAccount): string {
 function getAccountDetails(item: UserAccount): string {
   switch (item.account_type) {
     case 'bank':
-      return `${item.bank_branch || '开户网点'}`
+      return `开户网点：${item.bank_branch || '未设置'}`
     case 'huiwang':
       return `手机号：${item.phone_number_masked || '未设置'}`
     case 'usdt':
@@ -541,19 +543,19 @@ async function editCardHandler(item: UserAccount) {
 // 提交银行卡信息
 async function submitBankHandler() {
   if (frm.value.bank_name.trim().length <= 0) {
-    showToast('请输入开户银行名称')
+    showToast(t('mine.fillBankName'))
     return
   }
   if (frm.value.account_name.trim().length <= 0) {
-    showToast('请填写开户人姓名')
+    showToast(t('mine.fillAccountName'))
     return
   }
   if (frm.value.account_number.trim().length <= 0) {
-    showToast('请填写银行账号')
+    showToast(t('mine.fillAccountNumber'))
     return
   }
   if (frm.value.bank_branch.trim().length <= 0) {
-    showToast('请填写开户网点')
+    showToast(t('mine.fillBankBranch'))
     return
   }
 
@@ -578,15 +580,15 @@ async function submitBankHandler() {
 // 提交汇旺信息
 async function submitHuiwangHandler() {
   if (frm.value.account_name.trim().length <= 0) {
-    showToast('请填写开户人姓名')
+    showToast(t('mine.fillAccountName'))
     return
   }
   if (frm.value.account_number.trim().length <= 0) {
-    showToast('请填写汇旺账号')
+    showToast(t('mine.fillHuiwangAccount'))
     return
   }
   if (frm.value.phone_number.trim().length <= 0) {
-    showToast('请填写手机号码')
+    showToast(t('mine.fillPhoneNumber'))
     return
   }
 
@@ -608,15 +610,15 @@ async function submitHuiwangHandler() {
 // 提交USDT信息
 async function submitUsdtHandler() {
   if (frm.value.network_type.trim().length <= 0) {
-    showToast('请选择网络类型')
+    showToast(t('mine.selectNetwork'))
     return
   }
   if (frm.value.account_name.trim().length <= 0) {
-    showToast('请填写开户人姓名')
+    showToast(t('mine.fillAccountName'))
     return
   }
   if (frm.value.wallet_address.trim().length <= 0) {
-    showToast('请填写钱包地址')
+    showToast(t('mine.fillWalletAddress'))
     return
   }
 
@@ -643,16 +645,16 @@ async function addAccount(data: object) {
     console.log('添加账户响应:', resp)
     if (resp && resp.code === 200) {
       showBottom.value = false
-      showToast('添加成功')
+      showToast(t('mine.addSuccess'))
       await loadAccountList()
       resetForm()
     } else {
-      throw new Error(resp.message || '添加失败')
+      throw new Error(resp.message || t('mine.addFailed'))
     }
   } catch (err) {
     console.error('添加账户错误:', err)
     const msg = (err as Error).message
-    showToast(msg || '添加失败，请重试')
+    showToast(msg || t('mine.addFailed'))
   } finally {
     submitLoading.value = false
   }
@@ -671,16 +673,16 @@ async function editAccount(id: number, data: object) {
     console.log('编辑账户响应:', resp)
     if (resp && resp.code === 200) {
       showBottom.value = false
-      showToast('修改成功')
+      showToast(t('mine.updateSuccess'))
       await loadAccountList()
       resetForm()
     } else {
-      throw new Error(resp.message || '修改失败')
+      throw new Error(resp.message || t('mine.updateFailed'))
     }
   } catch (err) {
     console.error('编辑账户错误:', err)
     const msg = (err as Error).message
-    showToast(msg || '修改失败，请重试')
+    showToast(msg || t('mine.updateFailed'))
   } finally {
     submitLoading.value = false
   }
@@ -701,7 +703,7 @@ async function loadAccountList() {
   } catch (err) {
     console.error('获取账户列表错误:', err)
     list.value = []  // 出错时也要清空数据，避免显示旧数据
-    showToast('获取账户列表失败')
+    showToast(t('mine.loadFailed'))
   }
 }
 
