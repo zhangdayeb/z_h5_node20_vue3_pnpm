@@ -142,7 +142,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { showDialog, showToast, type DropdownItemOption } from 'vant'
+import { showToast, type DropdownItemOption } from 'vant'
+import { ElMessageBox } from 'element-plus'
 import { moneyApi } from '@/api'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -324,12 +325,21 @@ async function loadAccountList() {
 function checkWithdrawConditions() {
   // 检查是否有账户
   if (accounts.value.length === 0) {
-    showDialog({
-      message: t('mine.bindDrawingAddress'),
-      beforeClose: () => {
-        return true
-      },
-    })
+    // 使用Element Plus的MessageBox
+    ElMessageBox.alert(
+      t('mine.bindDrawingAddress'),
+      t('common.tip'),
+      {
+        confirmButtonText: t('common.confirm'),
+        type: 'warning',
+        center: true,
+        showClose: false,
+        customClass: 'withdraw-alert-box',
+        callback: () => {
+          router.push({ name: 'card' })
+        }
+      }
+    )
     return false
   }
 
@@ -827,6 +837,94 @@ onMounted(() => {
     .van-dropdown-menu {
       .van-dropdown-menu__title {
         font-size: 18px;
+      }
+    }
+  }
+}
+
+/* Element Plus MessageBox 样式定制 */
+.withdraw-alert-box {
+  width: 420px;
+  border-radius: 12px;
+  padding: 0;
+
+  .el-message-box__header {
+    padding: 20px 20px 15px;
+    border-bottom: 1px solid #ebedf0;
+
+    .el-message-box__title {
+      font-size: 18px;
+      font-weight: 500;
+      color: #323233;
+    }
+  }
+
+  .el-message-box__content {
+    padding: 25px 20px;
+
+    .el-message-box__message {
+      font-size: 16px;
+      color: #646566;
+      line-height: 24px;
+      text-align: center;
+    }
+
+    .el-message-box__status {
+      font-size: 48px;
+
+      &.el-message-box__status--warning {
+        color: #ff976a;
+      }
+    }
+  }
+
+  .el-message-box__btns {
+    padding: 15px 20px 20px;
+
+    .el-button--primary {
+      width: 100%;
+      height: 44px;
+      font-size: 16px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #1989fa, #1570d6);
+      border: none;
+
+      &:hover {
+        background: linear-gradient(135deg, #1570d6, #1460b8);
+      }
+    }
+  }
+}
+
+/* 大屏优化 */
+@media (min-width: 1200px) {
+  .withdraw-alert-box {
+    width: 460px;
+
+    .el-message-box__header {
+      padding: 24px 24px 16px;
+
+      .el-message-box__title {
+        font-size: 20px;
+      }
+    }
+
+    .el-message-box__content {
+      padding: 30px 24px;
+
+      .el-message-box__message {
+        font-size: 17px;
+        line-height: 26px;
+      }
+    }
+
+    .el-message-box__btns {
+      padding: 16px 24px 24px;
+
+      .el-button--primary {
+        height: 48px;
+        font-size: 17px;
+        border-radius: 24px;
       }
     }
   }
