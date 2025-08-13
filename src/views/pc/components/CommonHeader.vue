@@ -46,7 +46,7 @@
           <!-- 右侧按钮区域 -->
           <div class="p-header-right">
             <!-- 未登录状态 -->
-            <template v-if="!isLoggedIn">
+            <template v-if="!store.isLogin()">
               <el-button type="primary" class="p-btn-login" @click="showLoginDialog">
                 {{ $t('login.login') }}
               </el-button>
@@ -58,13 +58,13 @@
             <!-- 已登录状态 -->
             <template v-else>
               <div class="p-user-logged">
-                <span class="p-username">
+                <span class="p-username" @click="goToPersonalCenter">
                   <el-icon style="margin-right: 5px;"><User /></el-icon>
-                  {{ displayUsername }}
+                  {{ store.getUser()?.nick_name || store.getUser()?.name || '' }}
                 </span>
                 <span class="p-balance">
                   <el-icon style="margin-right: 5px;"><Wallet /></el-icon>
-                  ¥{{ displayBalance }}
+                  ¥{{ Number(store.getUser()?.money || 0).toFixed(2) }}
                 </span>
                 <el-button type="danger" size="small" class="p-btn-logout" @click="handleLogout">
                   <el-icon style="margin-right: 5px;"><SwitchButton /></el-icon>
@@ -274,7 +274,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, reactive, computed } from 'vue'
+import { onMounted, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   CaretBottom,
@@ -320,26 +320,6 @@ const loginLoading = ref(false)
 const showCaptcha = ref(false)
 const captchaUrl = ref('')
 const captchaData = ref<{ key: string } | null>(null)
-
-// 计算属性：判断是否已登录
-const isLoggedIn = computed(() => {
-  return !!store.token
-})
-
-// 计算属性：显示的用户名
-const displayUsername = computed(() => {
-  const user = store.user
-  if (!user) return ''
-  return user.nick_name || user.name || ''
-})
-
-// 计算属性：显示的余额
-const displayBalance = computed(() => {
-  const user = store.user
-  if (!user) return '0.00'
-  const balance = user.money || 0
-  return typeof balance === 'number' ? balance.toFixed(2) : balance
-})
 
 // 登录表单
 const loginForm = reactive({
@@ -442,15 +422,17 @@ function resetLoginForm() {
   loginFormRef.value?.resetFields()
 }
 
-// 处理登录
+// 处理登录 - 完全按照移动端逻辑
 async function handleLogin() {
   if (!loginFormRef.value) return
 
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loginLoading.value = true
+      store.loading()
+
       try {
-        // 调用登录API（与移动端相同）
+        // 调用登录API
         const resp = await invokeApi('login', {
           name: loginForm.username,
           password: loginForm.password,
@@ -458,7 +440,7 @@ async function handleLogin() {
           captcha: showCaptcha.value ? loginForm.captcha : ''
         })
 
-        console.log('登录响应:', resp)
+        console.log('login resp', resp)
 
         if (resp && resp.code === 200) {
           const { access_token, user_info } = resp.data || {}
@@ -468,11 +450,11 @@ async function handleLogin() {
             return
           }
 
-          // 设置 token（与移动端相同）
+          // 设置 token - 使用store的方法
           store.setToken(access_token)
           console.log('Token 设置成功:', access_token)
 
-          // 设置用户信息（与移动端相同）
+          // 设置用户信息 - 直接使用登录返回的user_info
           if (user_info) {
             store.setUser(user_info)
             console.log('用户信息设置成功:', user_info)
@@ -498,9 +480,6 @@ async function handleLogin() {
           loginDialogVisible.value = false
 
           console.log('登录流程完成')
-          console.log('当前 Store Token:', store.token)
-          console.log('当前 Store User:', store.user)
-          console.log('isLoggedIn:', isLoggedIn.value)
 
         } else {
           // 登录失败
@@ -516,6 +495,7 @@ async function handleLogin() {
         console.error('Login error:', error)
         ElMessage.error(t('login.loginError'))
       } finally {
+        store.stopLoad()
         loginLoading.value = false
       }
     }
@@ -563,7 +543,7 @@ function goToForgotPassword() {
   router.push('/forgot-password')
 }
 
-// 处理退出登录
+// 处理退出登录 - 按照移动端逻辑
 async function handleLogout() {
   try {
     await ElMessageBox.confirm(
@@ -576,37 +556,44 @@ async function handleLogout() {
       }
     )
 
+    store.loading()
+
     // 调用退出登录API
     try {
-      await invokeApi('logout')
+      const resp = await invokeApi('logout')
+      console.log('logout resp:', resp)
+
+      if (resp && resp.code === 200) {
+        // 使用store的logout方法清除数据
+        store.logout()
+        store.stopLoad()
+
+        ElMessage.success(resp.message || t('login.logoutSuccess'))
+
+        // 跳转到首页
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 500)
+      }
     } catch (error) {
       console.error('Logout API error:', error)
+      // 即使API失败也清除本地数据
+      store.logout()
+      store.stopLoad()
+      ElMessage.success(t('login.logoutSuccess'))
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 500)
     }
-
-    // 清除store（与移动端相同的方法）
-    store.setToken('')
-    store.setUser(null)
-
-    // 清除记住我
-    localStorage.removeItem('rememberMe')
-
-    ElMessage.success(t('login.logoutSuccess'))
-
-    console.log('退出登录完成')
-    console.log('当前 Store Token:', store.token)
-    console.log('当前 Store User:', store.user)
-    console.log('isLoggedIn:', isLoggedIn.value)
-
-    // 跳转到首页
-    router.push('/')
   } catch (error) {
     // 用户取消退出
+    store.stopLoad()
   }
 }
 
 // 玩游戏
 function playGame(game: gameType) {
-  if (!isLoggedIn.value) {
+  if (!store.isLogin()) {
     ElMessage.warning(t('game.loginRequired'))
     showLoginDialog()
     return
@@ -623,6 +610,16 @@ function goToGift() {
 // 跳转到客服页面
 function goToSupport() {
   router.push('/support')
+}
+
+// 跳转到个人中心
+function goToPersonalCenter() {
+  if (!store.isLogin()) {
+    ElMessage.warning('请先登录')
+    showLoginDialog()
+    return
+  }
+  router.push('/mine')
 }
 
 // 获取系统配置
@@ -715,10 +712,10 @@ onMounted(async () => {
     }
   }
 
-  // 调试：检查初始状态
-  console.log('初始 Store Token:', store.token)
-  console.log('初始 Store User:', store.user)
-  console.log('初始 isLoggedIn:', isLoggedIn.value)
+  // 如果已登录，获取最新用户信息
+  if (store.isLogin()) {
+    await store.getMeForApi()
+  }
 })
 </script>
 
@@ -803,6 +800,12 @@ onMounted(async () => {
             font-size: 14px;
             display: flex;
             align-items: center;
+            cursor: pointer;
+            transition: opacity 0.3s;
+
+            &:hover {
+              opacity: 0.8;
+            }
           }
 
           .p-balance {
