@@ -16,15 +16,15 @@
       </div>
 
       <div class="invite-code-card">
-        <div class="card-title">我的邀请码</div>
-        <div class="invite-code">{{ userInfo?.inviteCode || 'LOADING...' }}</div>
+        <div class="card-title">{{ $t('extension.myInviteCode') }}</div>
+        <div class="invite-code">{{ userInfo?.inviteCode || $t('extension.loading') }}</div>
         <van-button
           type="primary"
           size="small"
           @click="copyInviteCode"
           :loading="copyingCode"
         >
-          复制邀请码
+          {{ $t('extension.copyInviteCode') }}
         </van-button>
       </div>
     </div>
@@ -32,7 +32,7 @@
     <!-- 推广链接区域 -->
     <div class="promotion-link-section">
       <div class="link-card">
-        <div class="card-title">推广链接</div>
+        <div class="card-title">{{ $t('extension.promotionLink') }}</div>
         <div class="link-content">
           <div class="link-text">{{ promotionLink }}</div>
           <van-button
@@ -41,7 +41,7 @@
             @click="copyPromotionLink"
             :loading="copyingLink"
           >
-            复制链接
+            {{ $t('extension.copyLink') }}
           </van-button>
         </div>
       </div>
@@ -56,7 +56,7 @@
         @click="sharePromotion"
         class="share-btn"
       >
-        分享推广链接
+        {{ $t('extension.sharePromotionLink') }}
       </van-button>
     </div>
   </div>
@@ -66,6 +66,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { userApi } from '@/api'
 
 defineOptions({ name: 'ExtensionVue' })
@@ -80,6 +81,7 @@ interface UserInfo {
 }
 
 const router = useRouter()
+const { t } = useI18n()
 
 // 响应式数据
 const userInfo = ref<UserInfo | null>(null)
@@ -102,14 +104,14 @@ function onClickLeft() {
 // 复制邀请码
 async function copyInviteCode() {
   if (!userInfo.value?.inviteCode) {
-    showToast('邀请码不存在')
+    showToast(t('extension.inviteCodeNotExist'))
     return
   }
 
   copyingCode.value = true
   try {
     await navigator.clipboard.writeText(userInfo.value.inviteCode)
-    showToast('邀请码已复制')
+    showToast(t('extension.inviteCodeCopied'))
   } catch (err) {
     // 兼容性处理
     const textArea = document.createElement('textarea')
@@ -118,7 +120,7 @@ async function copyInviteCode() {
     textArea.select()
     document.execCommand('copy')
     document.body.removeChild(textArea)
-    showToast('邀请码已复制')
+    showToast(t('extension.inviteCodeCopied'))
   } finally {
     copyingCode.value = false
   }
@@ -127,14 +129,14 @@ async function copyInviteCode() {
 // 复制推广链接
 async function copyPromotionLink() {
   if (!promotionLink.value) {
-    showToast('推广链接生成中...')
+    showToast(t('extension.promotionLinkGenerating'))
     return
   }
 
   copyingLink.value = true
   try {
     await navigator.clipboard.writeText(promotionLink.value)
-    showToast('推广链接已复制')
+    showToast(t('extension.promotionLinkCopied'))
   } catch (err) {
     // 兼容性处理
     const textArea = document.createElement('textarea')
@@ -143,7 +145,7 @@ async function copyPromotionLink() {
     textArea.select()
     document.execCommand('copy')
     document.body.removeChild(textArea)
-    showToast('推广链接已复制')
+    showToast(t('extension.promotionLinkCopied'))
   } finally {
     copyingLink.value = false
   }
@@ -153,8 +155,8 @@ async function copyPromotionLink() {
 function sharePromotion() {
   if (navigator.share) {
     navigator.share({
-      title: '邀请注册',
-      text: '快来注册吧！',
+      title: t('extension.inviteToRegister'),
+      text: t('extension.comeToRegister'),
       url: promotionLink.value
     }).catch(err => {
       console.log('分享取消或失败:', err)
@@ -181,11 +183,11 @@ async function fetchUserInfo() {
         inviteCode: response.data.invite_code || generateInviteCode(response.data.id)
       }
     } else {
-      throw new Error('获取用户信息失败')
+      throw new Error(t('extension.getUserInfoFailed'))
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
-    showToast('获取用户信息失败')
+    showToast(t('extension.userInfoLoadFailed'))
   }
 }
 
