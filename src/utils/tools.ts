@@ -23,10 +23,10 @@ export function mobileFunc(): boolean {
 
   // 2. Telegram Web App 检测（第二优先级）
   // 如果检测到是 Telegram 环境，直接使用移动端模板
-  if (isTelegramMiniApp()) {
-    console.log('✅ Telegram 环境检测到，使用移动端模板')
-    return true
-  }
+  // if (isTelegramMiniApp()) {
+  //   console.log('✅ Telegram 环境检测到，使用移动端模板')
+  //   return true
+  // }
 
   // 3. 简化的设备检测
   const userAgent = navigator.userAgent
