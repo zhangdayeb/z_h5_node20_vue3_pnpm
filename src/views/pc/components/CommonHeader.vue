@@ -46,7 +46,7 @@
           <!-- 右侧按钮区域 -->
           <div class="p-header-right">
             <!-- 未登录状态 -->
-            <template v-if="!userInfo">
+            <template v-if="!isLoggedIn">
               <el-button type="primary" class="p-btn-login" @click="showLoginDialog">
                 {{ $t('login.login') }}
               </el-button>
@@ -57,38 +57,20 @@
 
             <!-- 已登录状态 -->
             <template v-else>
-              <el-dropdown trigger="click" @command="handleUserCommand">
-                <div class="p-user-info">
-                  <el-avatar :size="32" class="p-avatar">
-                    {{ userInfo.username?.charAt(0)?.toUpperCase() }}
-                  </el-avatar>
-                  <span class="p-username">{{ userInfo.username }}</span>
-                  <span class="p-balance">{{ $t('user.balance') }}: ¥{{ userInfo.balance || '0.00' }}</span>
-                  <el-icon class="el-icon--right">
-                    <CaretBottom />
-                  </el-icon>
-                </div>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="profile">
-                      <el-icon><User /></el-icon>
-                      {{ $t('user.profile') }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="wallet">
-                      <el-icon><Wallet /></el-icon>
-                      {{ $t('user.wallet') }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="history">
-                      <el-icon><Clock /></el-icon>
-                      {{ $t('user.history') }}
-                    </el-dropdown-item>
-                    <el-dropdown-item divided command="logout">
-                      <el-icon><SwitchButton /></el-icon>
-                      {{ $t('user.logout') }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+              <div class="p-user-logged">
+                <span class="p-username">
+                  <el-icon style="margin-right: 5px;"><User /></el-icon>
+                  {{ displayUsername }}
+                </span>
+                <span class="p-balance">
+                  <el-icon style="margin-right: 5px;"><Wallet /></el-icon>
+                  ¥{{ displayBalance }}
+                </span>
+                <el-button type="danger" size="small" class="p-btn-logout" @click="handleLogout">
+                  <el-icon style="margin-right: 5px;"><SwitchButton /></el-icon>
+                  {{ $t('user.logout') }}
+                </el-button>
+              </div>
             </template>
           </div>
         </div>
@@ -304,7 +286,6 @@ import {
   Lock,
   Key,
   Wallet,
-  Clock,
   SwitchButton
 } from '@element-plus/icons-vue'
 import { getLanguage, setLanguage } from '@/lang'
@@ -342,23 +323,21 @@ const captchaData = ref<{ key: string } | null>(null)
 
 // 计算属性：判断是否已登录
 const isLoggedIn = computed(() => {
-  return !!(store.token && store.userInfo)
+  return !!store.token
 })
-
-// 计算属性：获取用户信息
-const userInfo = computed(() => store.userInfo)
 
 // 计算属性：显示的用户名
 const displayUsername = computed(() => {
-  if (!userInfo.value) return ''
-  return userInfo.value.nick_name || userInfo.value.nickname || userInfo.value.name || userInfo.value.username || ''
+  const user = store.user
+  if (!user) return ''
+  return user.nick_name || user.name || ''
 })
 
 // 计算属性：显示的余额
 const displayBalance = computed(() => {
-  if (!userInfo.value) return '0.00'
-  const balance = userInfo.value.money || userInfo.value.balance || 0
-  // 确保余额是数字格式
+  const user = store.user
+  if (!user) return '0.00'
+  const balance = user.money || 0
   return typeof balance === 'number' ? balance.toFixed(2) : balance
 })
 
@@ -386,7 +365,7 @@ const loginRules = reactive<FormRules>({
   ]
 })
 
-// 语言列表 - 添加韩语
+// 语言列表
 const langList = ref<
   {
     icon: string
@@ -432,8 +411,8 @@ function selectLanguage(lang: {
 // 显示登录弹窗
 function showLoginDialog() {
   loginDialogVisible.value = true
-  // 重置表单
   resetLoginForm()
+
   // 恢复记住的登录信息
   const rememberData = localStorage.getItem('rememberMe')
   if (rememberData) {
@@ -447,6 +426,7 @@ function showLoginDialog() {
       localStorage.removeItem('rememberMe')
     }
   }
+
   // 获取验证码
   getCaptcha()
 }
@@ -470,13 +450,15 @@ async function handleLogin() {
     if (valid) {
       loginLoading.value = true
       try {
-        // 使用与移动端相同的登录API格式
+        // 调用登录API（与移动端相同）
         const resp = await invokeApi('login', {
           name: loginForm.username,
           password: loginForm.password,
           key: captchaData.value?.key ?? '',
           captcha: showCaptcha.value ? loginForm.captcha : ''
         })
+
+        console.log('登录响应:', resp)
 
         if (resp && resp.code === 200) {
           const { access_token, user_info } = resp.data || {}
@@ -486,46 +468,39 @@ async function handleLogin() {
             return
           }
 
-          // 设置 token
+          // 设置 token（与移动端相同）
           store.setToken(access_token)
+          console.log('Token 设置成功:', access_token)
 
-          // 使用登录响应中的用户信息
+          // 设置用户信息（与移动端相同）
           if (user_info) {
-            // 转换用户信息格式
-            const userForStore = {
-              id: user_info.id,
-              name: user_info.name,
-              username: user_info.name,
-              nick_name: user_info.nick_name,
-              nickname: user_info.nick_name,
-              money: user_info.money,
-              balance: user_info.money,
-              level: user_info.vip_grade,
-              vip_grade: user_info.vip_grade
-            }
-
-            store.setUser(userForStore)
-
-            // 保存到本地存储
-            if (loginForm.remember) {
-              localStorage.setItem('token', access_token)
-              localStorage.setItem('userInfo', JSON.stringify(userForStore))
-              localStorage.setItem('rememberMe', JSON.stringify({
-                name: loginForm.username,
-                password: loginForm.password
-              }))
-            } else {
-              sessionStorage.setItem('token', access_token)
-              sessionStorage.setItem('userInfo', JSON.stringify(userForStore))
-              localStorage.removeItem('rememberMe')
-            }
+            store.setUser(user_info)
+            console.log('用户信息设置成功:', user_info)
           }
 
-          // 登录成功
+          // 保存记住我选项
+          if (loginForm.remember) {
+            localStorage.setItem(
+              'rememberMe',
+              JSON.stringify({
+                name: loginForm.username,
+                password: loginForm.password
+              })
+            )
+          } else {
+            localStorage.removeItem('rememberMe')
+          }
+
+          // 显示登录成功消息
           ElMessage.success(t('login.loginSuccess'))
 
-          // 关闭弹窗
+          // 关闭登录弹窗
           loginDialogVisible.value = false
+
+          console.log('登录流程完成')
+          console.log('当前 Store Token:', store.token)
+          console.log('当前 Store User:', store.user)
+          console.log('isLoggedIn:', isLoggedIn.value)
 
         } else {
           // 登录失败
@@ -545,13 +520,6 @@ async function handleLogin() {
       }
     }
   })
-}
-
-// 获取用户余额（这个函数现在可能不需要了，因为登录时已经返回了用户信息）
-async function getUserBalance() {
-  // 移动端登录时已经返回了完整的用户信息，包括余额
-  // 如果需要实时更新余额，可以调用专门的余额接口
-  console.log('用户余额已在登录时获取')
 }
 
 // 获取验证码
@@ -595,24 +563,6 @@ function goToForgotPassword() {
   router.push('/forgot-password')
 }
 
-// 处理用户下拉菜单命令
-async function handleUserCommand(command: string) {
-  switch (command) {
-    case 'profile':
-      router.push('/user/profile')
-      break
-    case 'wallet':
-      router.push('/user/wallet')
-      break
-    case 'history':
-      router.push('/user/history')
-      break
-    case 'logout':
-      await handleLogout()
-      break
-  }
-}
-
 // 处理退出登录
 async function handleLogout() {
   try {
@@ -626,27 +576,26 @@ async function handleLogout() {
       }
     )
 
-    // 使用现有的移动端退出登录API
+    // 调用退出登录API
     try {
       await invokeApi('logout')
     } catch (error) {
-      // 即使退出接口失败，也清除本地登录状态
       console.error('Logout API error:', error)
     }
 
-    // 清除用户信息
-    store.$patch({
-      userInfo: null,
-      token: null
-    })
+    // 清除store（与移动端相同的方法）
+    store.setToken('')
+    store.setUser(null)
 
-    // 清除存储的token和用户信息
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
-    sessionStorage.removeItem('token')
-    sessionStorage.removeItem('userInfo')
+    // 清除记住我
+    localStorage.removeItem('rememberMe')
 
     ElMessage.success(t('login.logoutSuccess'))
+
+    console.log('退出登录完成')
+    console.log('当前 Store Token:', store.token)
+    console.log('当前 Store User:', store.user)
+    console.log('isLoggedIn:', isLoggedIn.value)
 
     // 跳转到首页
     router.push('/')
@@ -753,55 +702,11 @@ const initLang = () => {
   return curr
 }
 
-// 检查是否已登录
-async function checkLoginStatus() {
-  // 先检查store中是否已有token（避免重复设置）
-  if (store.token) {
-    return
-  }
-
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
-  const storedUserInfo = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo')
-
-  if (token && storedUserInfo) {
-    try {
-      // 先使用存储的用户信息
-      const userInfo = JSON.parse(storedUserInfo)
-      store.setToken(token)
-      store.setUser(userInfo)
-
-      // 可选：获取最新的用户信息
-      // 注意：这里不再调用额外的API，因为登录时已经获取了用户信息
-
-    } catch (error) {
-      // Token无效或解析失败，清除登录状态
-      console.error('Check login status error:', error)
-      localStorage.removeItem('token')
-      localStorage.removeItem('userInfo')
-      localStorage.removeItem('rememberMe')
-      sessionStorage.removeItem('token')
-      sessionStorage.removeItem('userInfo')
-      store.$patch({
-        userInfo: null,
-        token: null
-      })
-    }
-  }
-}
-
 currLang.value = initLang()
 
 onMounted(async () => {
   await getSysConfig()
   await getGameTypesAsMenu()
-
-  // 检查登录状态必须在最后，确保store已经初始化
-  await checkLoginStatus()
-
-  // 调试信息
-  console.log('Mounted - Token:', store.token)
-  console.log('Mounted - UserInfo:', store.userInfo)
-  console.log('Mounted - IsLoggedIn:', isLoggedIn.value)
 
   // 根据菜单获取对应的游戏
   for (const menu of menuList.value) {
@@ -809,6 +714,11 @@ onMounted(async () => {
       await getGameByType(menu.game_type)
     }
   }
+
+  // 调试：检查初始状态
+  console.log('初始 Store Token:', store.token)
+  console.log('初始 Store User:', store.user)
+  console.log('初始 isLoggedIn:', isLoggedIn.value)
 })
 </script>
 
@@ -878,62 +788,37 @@ onMounted(async () => {
         justify-content: flex-end;
         gap: 20px;
 
-        // 用户信息样式
-        .p-user-info {
+        // 已登录用户信息样式
+        .p-user-logged {
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 5px 10px;
+          gap: 20px;
+          padding: 5px 15px;
           background: rgba(255, 255, 255, 0.1);
           border-radius: 20px;
-          cursor: pointer;
-          transition: all 0.3s;
-
-          &:hover {
-            background: rgba(255, 255, 255, 0.2);
-          }
-
-          .p-avatar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            font-weight: bold;
-          }
 
           .p-username {
             color: #fff;
             font-weight: 500;
-            max-width: 100px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
           }
 
           .p-balance {
             color: #ffd700;
             font-weight: bold;
-            margin-left: 10px;
-          }
-
-          .el-icon--right {
-            color: #fff;
-          }
-        }
-
-        .p-app {
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: center;
-          color: var(--el-color-white);
-          cursor: pointer;
-          gap: 5px;
-
-          .el-icon {
-            font-size: 16px;
-          }
-
-          span {
             font-size: 14px;
+            display: flex;
+            align-items: center;
+          }
+
+          .p-btn-logout {
+            height: 26px;
+            padding: 0 12px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
           }
         }
 
@@ -1004,18 +889,6 @@ onMounted(async () => {
       flex-direction: row;
       height: 100%;
       flex: 1;
-
-      .p-logo {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        z-index: 1;
-
-        &-img {
-          width: 200px;
-        }
-      }
 
       .p-other {
         display: flex;
