@@ -1,137 +1,506 @@
 <template>
-  <div class="m-supplier-games">
-    <loginPop />
-    <van-nav-bar left-arrow :title="title" @click-left="onClickLeft" />
+  <div class="pc-supplier-games">
+    <!-- 顶部导航栏 -->
+    <div class="supplier-navbar">
+      <div class="navbar-container">
+        <div class="navbar-left">
+          <el-button
+            type="text"
+            @click="onClickBack"
+            class="back-button"
+          >
+            <el-icon><ArrowLeft /></el-icon>
+            <span>{{ $t('common.back') || '返回' }}</span>
+          </el-button>
 
-    <!-- 简化的供应商信息头部 - 只显示名字 -->
-    <div class="m-supplier-header" v-if="supplierInfo.name">
-      <div class="m-supplier-banner">
-        <div class="m-supplier-details">
-          <h3 class="m-supplier-name">{{ supplierInfo.name }}</h3>
-          <div class="m-supplier-info">
-            <span class="m-category-name">{{ categoryName }}</span>
-            <van-tag
-              :type="supplierInfo.is_can_run === 1 ? 'success' : 'danger'"
-              size="mini"
+          <el-breadcrumb separator="/">
+            <el-breadcrumb-item :to="{ path: '/' }">
+              {{ $t('main.index') || '首页' }}
+            </el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/games' }">
+              {{ $t('game.all') || '全部游戏' }}
+            </el-breadcrumb-item>
+            <el-breadcrumb-item>
+              {{ supplierInfo.name }}
+            </el-breadcrumb-item>
+          </el-breadcrumb>
+        </div>
+
+        <div class="navbar-right">
+          <!-- 搜索框 -->
+          <el-input
+            v-model="searchKeyword"
+            :placeholder="$t('common.search') || '搜索游戏'"
+            class="search-input"
+            clearable
+            @clear="handleSearch"
+            @keyup.enter="handleSearch"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+
+          <!-- 视图切换 -->
+          <el-button-group class="view-switcher">
+            <el-button
+              :type="viewMode === 'grid' ? 'primary' : ''"
+              @click="viewMode = 'grid'"
             >
-              {{ supplierInfo.is_can_run === 1 ? '正常运行' : '维护中' }}
-            </van-tag>
-            <span class="m-game-count">{{ totalGames }} 个游戏</span>
-          </div>
+              <el-icon><Grid /></el-icon>
+            </el-button>
+            <el-button
+              :type="viewMode === 'list' ? 'primary' : ''"
+              @click="viewMode = 'list'"
+            >
+              <el-icon><List /></el-icon>
+            </el-button>
+          </el-button-group>
         </div>
       </div>
     </div>
 
-    <!-- 游戏列表区域 -->
-    <div class="m-games-container">
-      <!-- 筛选栏 -->
-      <div class="m-filter-bar">
-        <div class="m-filter-info">
-          <span class="m-filter-text">{{ supplierInfo.name }} - {{ categoryName }}</span>
-        </div>
-        <!-- 可以添加更多筛选选项，如排序等 -->
-      </div>
-
-      <!-- 游戏网格 -->
-      <div class="m-games-content" ref="scrollContainer">
-        <!-- 空数据状态 -->
-        <van-empty
-          v-if="gameList.length === 0 && !loading && !initialLoading"
-          :description="$t('noData')"
-          class="m-empty-state"
-        />
-
-        <!-- 初始加载状态 -->
-        <div v-if="initialLoading" class="m-initial-loading">
-          <van-loading size="32px">加载游戏中...</van-loading>
-        </div>
-
-        <!-- 游戏列表 -->
-        <div v-else-if="gameList.length > 0" class="m-games-grid">
-          <div
-            class="m-game-item"
-            v-for="(game, idx) in gameList"
-            :key="`${game.id}-${idx}`"
-            @click.stop="enterGame(game)"
-          >
-            <div class="m-game-card">
-              <!-- 游戏图片 -->
-              <van-image
-                :src="getImgUrl(game.game_img_url || game.img_url || '')"
-                class="m-game-img"
-                :lazy-load="true"
-                fit="cover"
-              >
-                <template v-slot:error>
-                  <van-icon name="warning-o" class="m-ico" size="24" />
-                </template>
-              </van-image>
-
-              <!-- 游戏标签层 -->
-              <div class="m-game-overlay">
-                <!-- 供应商标签 -->
-                <div class="m-supplier-tag">{{ game.supplier_code || supplierInfo.code }}</div>
-
-                <!-- 热门标签 -->
-                <div v-if="game.is_hot_text" class="m-hot-tag">{{ game.is_hot_text }}</div>
-
-                <!-- 维护状态遮罩 -->
-                <div v-if="game.is_can_run === 0" class="m-maintenance-overlay">
-                  <div class="m-maintenance-content">
-                    <van-icon name="warning-o" size="24" color="#fff" />
-                    <div class="m-maintenance-text">维护中</div>
-                  </div>
+    <!-- 供应商信息头部 -->
+    <div class="supplier-header" v-if="supplierInfo.name">
+      <div class="header-container">
+        <div class="supplier-banner">
+          <!-- 供应商Logo/图标 -->
+          <div class="supplier-logo">
+            <el-image
+              :src="supplierInfo.logo || getDefaultLogo()"
+              fit="contain"
+              class="logo-image"
+            >
+              <template #error>
+                <div class="logo-placeholder">
+                  <el-icon :size="60"><Box /></el-icon>
                 </div>
+              </template>
+            </el-image>
+          </div>
+
+          <!-- 供应商详情 -->
+          <div class="supplier-details">
+            <div class="details-top">
+              <h1 class="supplier-name">{{ supplierInfo.name }}</h1>
+              <el-tag
+                :type="supplierInfo.is_can_run === 1 ? 'success' : 'danger'"
+                size="large"
+                class="status-tag"
+              >
+                <el-icon>
+                  <CircleCheck v-if="supplierInfo.is_can_run === 1" />
+                  <CircleClose v-else />
+                </el-icon>
+                {{ supplierInfo.is_can_run === 1 ? '正常运行' : '维护中' }}
+              </el-tag>
+            </div>
+
+            <div class="details-info">
+              <div class="info-item">
+                <el-icon><Folder /></el-icon>
+                <span>分类：{{ categoryName }}</span>
+              </div>
+              <div class="info-item">
+                <el-icon><GameController /></el-icon>
+                <span>游戏数量：{{ totalGames || gameList.length }} 个</span>
+              </div>
+              <div class="info-item" v-if="supplierInfo.description">
+                <el-icon><Document /></el-icon>
+                <span>{{ supplierInfo.description }}</span>
               </div>
             </div>
 
-            <!-- 游戏信息底部 -->
-            <div class="m-game-footer">
-              <span class="m-game-name" :title="game.game_name">
-                {{ game.game_name || game.name }}
-              </span>
-              <!-- 维护状态指示器 -->
-              <van-tag
-                v-if="game.is_can_run === 0"
-                type="danger"
-                size="mini"
-                class="m-maintenance-indicator"
+            <!-- 快速筛选标签 -->
+            <div class="quick-filters">
+              <el-tag
+                v-for="filter in quickFilters"
+                :key="filter.value"
+                :type="activeFilter === filter.value ? 'primary' : 'info'"
+                class="filter-tag"
+                @click="handleQuickFilter(filter.value)"
+                :effect="activeFilter === filter.value ? 'dark' : 'plain'"
               >
-                维护
-              </van-tag>
+                {{ filter.label }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主体内容区域 -->
+    <div class="games-container">
+      <div class="container-wrapper">
+        <!-- 侧边栏筛选（可选） -->
+        <div class="sidebar-filters" v-if="showSidebar">
+          <div class="filter-section">
+            <h3 class="filter-title">游戏筛选</h3>
+
+            <div class="filter-group">
+              <h4>游戏状态</h4>
+              <el-radio-group v-model="filterStatus" @change="handleFilterChange">
+                <el-radio :label="'all'">全部</el-radio>
+                <el-radio :label="'available'">可玩</el-radio>
+                <el-radio :label="'maintenance'">维护中</el-radio>
+              </el-radio-group>
+            </div>
+
+            <div class="filter-group">
+              <h4>排序方式</h4>
+              <el-radio-group v-model="sortBy" @change="handleSortChange">
+                <el-radio :label="'default'">默认</el-radio>
+                <el-radio :label="'name'">名称</el-radio>
+                <el-radio :label="'popular'">热门</el-radio>
+                <el-radio :label="'newest'">最新</el-radio>
+              </el-radio-group>
             </div>
           </div>
         </div>
 
-        <!-- 加载更多状态 -->
-        <div v-if="loadingMore" class="m-loading-more">
-          <van-loading size="20px">加载更多...</van-loading>
-        </div>
+        <!-- 游戏内容区域 -->
+        <div class="games-content">
+          <!-- 加载状态 -->
+          <div v-if="initialLoading" class="loading-state">
+            <el-icon class="is-loading" :size="60" color="#409eff">
+              <Loading />
+            </el-icon>
+            <p>加载游戏中...</p>
+          </div>
 
-        <!-- 没有更多数据 -->
-        <div v-else-if="!hasMore && gameList.length > 0" class="m-no-more">
-          没有更多游戏了
+          <!-- 空状态 -->
+          <el-empty
+            v-else-if="filteredGameList.length === 0"
+            :description="searchKeyword ? '没有找到相关游戏' : '暂无游戏'"
+            class="empty-state"
+          >
+            <el-button type="primary" @click="resetFilters">
+              重置筛选
+            </el-button>
+          </el-empty>
+
+          <!-- 网格视图 -->
+          <div v-else-if="viewMode === 'grid'" class="games-grid">
+            <div
+              v-for="(game, idx) in paginatedGames"
+              :key="`${game.id}-${idx}`"
+              class="game-card"
+              @click="enterGame(game)"
+            >
+              <!-- 游戏状态标签 -->
+              <div class="game-badges">
+                <el-tag
+                  v-if="game.is_hot_text"
+                  type="danger"
+                  size="small"
+                  effect="dark"
+                  class="hot-badge"
+                >
+                  <el-icon><Sunny /></el-icon>
+                  {{ game.is_hot_text }}
+                </el-tag>
+                <el-tag
+                  v-if="game.is_new"
+                  type="success"
+                  size="small"
+                  effect="dark"
+                  class="new-badge"
+                >
+                  NEW
+                </el-tag>
+              </div>
+
+              <!-- 游戏图片 -->
+              <div class="game-image">
+                <el-image
+                  :src="getImgUrl(game.game_img_url || game.img_url || '')"
+                  fit="cover"
+                  lazy
+                  class="image"
+                >
+                  <template #placeholder>
+                    <div class="image-loading">
+                      <el-icon class="is-loading"><Loading /></el-icon>
+                    </div>
+                  </template>
+                  <template #error>
+                    <div class="image-error">
+                      <el-icon :size="40"><Picture /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
+
+                <!-- 维护遮罩 -->
+                <div v-if="game.is_can_run === 0" class="maintenance-overlay">
+                  <el-icon :size="40"><Lock /></el-icon>
+                  <span>维护中</span>
+                </div>
+
+                <!-- 悬浮操作层 -->
+                <div class="game-overlay">
+                  <el-button
+                    type="primary"
+                    size="default"
+                    :disabled="game.is_can_run === 0"
+                  >
+                    {{ game.is_can_run === 0 ? '维护中' : '开始游戏' }}
+                  </el-button>
+                  <div class="overlay-actions">
+                    <el-button
+                      type="text"
+                      @click.stop="handleFavorite(game)"
+                      class="action-btn"
+                    >
+                      <el-icon :color="game.favorited ? '#f56c6c' : ''">
+                        <Star />
+                      </el-icon>
+                    </el-button>
+                    <el-button
+                      type="text"
+                      @click.stop="handleInfo(game)"
+                      class="action-btn"
+                    >
+                      <el-icon><InfoFilled /></el-icon>
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 游戏信息 -->
+              <div class="game-info">
+                <h3 class="game-name" :title="game.game_name || game.name">
+                  {{ game.game_name || game.name }}
+                </h3>
+                <div class="game-meta">
+                  <span class="supplier-code">
+                    {{ game.supplier_code || supplierInfo.code }}
+                  </span>
+                  <el-tag
+                    v-if="game.is_can_run === 0"
+                    type="danger"
+                    size="small"
+                    effect="plain"
+                  >
+                    维护
+                  </el-tag>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 列表视图 -->
+          <div v-else class="games-list">
+            <el-table
+              :data="paginatedGames"
+              style="width: 100%"
+              @row-click="enterGame"
+              row-class-name="game-row"
+            >
+              <el-table-column
+                label="游戏"
+                min-width="300"
+              >
+                <template #default="{ row }">
+                  <div class="game-cell">
+                    <el-image
+                      :src="getImgUrl(row.game_img_url || row.img_url || '')"
+                      fit="cover"
+                      class="game-thumb"
+                      lazy
+                    />
+                    <div class="game-detail">
+                      <div class="game-title">
+                        {{ row.game_name || row.name }}
+                        <el-tag
+                          v-if="row.is_hot_text"
+                          type="danger"
+                          size="small"
+                          class="hot-tag"
+                        >
+                          {{ row.is_hot_text }}
+                        </el-tag>
+                      </div>
+                      <div class="game-code">
+                        代码：{{ row.game_code }}
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </el-table-column>
+
+              <el-table-column
+                prop="supplier_code"
+                label="供应商"
+                width="150"
+              >
+                <template #default="{ row }">
+                  {{ row.supplier_code || supplierInfo.code }}
+                </template>
+              </el-table-column>
+
+              <el-table-column
+                label="状态"
+                width="120"
+                align="center"
+              >
+                <template #default="{ row }">
+                  <el-tag
+                    :type="row.is_can_run === 1 ? 'success' : 'danger'"
+                    effect="plain"
+                  >
+                    {{ row.is_can_run === 1 ? '正常' : '维护' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+
+              <el-table-column
+                label="操作"
+                width="200"
+                align="center"
+              >
+                <template #default="{ row }">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    :disabled="row.is_can_run === 0"
+                    @click.stop="enterGame(row)"
+                  >
+                    {{ row.is_can_run === 0 ? '维护中' : '进入游戏' }}
+                  </el-button>
+                  <el-button
+                    type="text"
+                    size="small"
+                    @click.stop="handleFavorite(row)"
+                  >
+                    <el-icon :color="row.favorited ? '#f56c6c' : ''">
+                      <Star />
+                    </el-icon>
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 分页 -->
+          <div class="pagination-wrapper" v-if="filteredGameList.length > pageSize">
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :total="filteredGameList.length"
+              :page-sizes="[20, 40, 60, 100]"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="handleSizeChange"
+              @current-change="handlePageChange"
+            />
+          </div>
+
+          <!-- 加载更多（无限滚动） -->
+          <div
+            v-if="hasMore && !initialLoading"
+            v-loading="loadingMore"
+            element-loading-text="加载更多游戏..."
+            class="load-more"
+            @click="loadMoreGames"
+          >
+            <el-button v-if="!loadingMore" type="text">
+              点击加载更多
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- 游戏详情弹窗 -->
+    <el-dialog
+      v-model="gameInfoDialog"
+      :title="selectedGame?.game_name || selectedGame?.name"
+      width="600px"
+      class="game-info-dialog"
+    >
+      <div class="dialog-content" v-if="selectedGame">
+        <el-image
+          :src="getImgUrl(selectedGame.game_img_url || selectedGame.img_url || '')"
+          fit="cover"
+          class="dialog-image"
+        />
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="游戏代码">
+            {{ selectedGame.game_code }}
+          </el-descriptions-item>
+          <el-descriptions-item label="供应商">
+            {{ selectedGame.supplier_code || supplierInfo.code }}
+          </el-descriptions-item>
+          <el-descriptions-item label="游戏类型">
+            {{ categoryName }}
+          </el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="selectedGame.is_can_run === 1 ? 'success' : 'danger'">
+              {{ selectedGame.is_can_run === 1 ? '正常' : '维护中' }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <template #footer>
+        <el-button @click="gameInfoDialog = false">关闭</el-button>
+        <el-button
+          type="primary"
+          :disabled="selectedGame?.is_can_run === 0"
+          @click="enterGame(selectedGame)"
+        >
+          进入游戏
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-defineOptions({ name: 'SupplierGameList' })
-import { onMounted, ref, computed, nextTick, onUnmounted } from 'vue'
+import { onMounted, ref, computed, nextTick, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import {
+  ArrowLeft,
+  Search,
+  Grid,
+  List,
+  Box,
+  CircleCheck,
+  CircleClose,
+  Folder,
+  Document,
+  Loading,
+  Picture,
+  Sunny,
+  Lock,
+  Star,
+  InfoFilled
+} from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useAppStore } from '@/stores/app'
-import { showToast } from 'vant'
-import { getImgUrl, mobileFunc } from '@/utils/tools'
-import loginPop from '@/components/loginPop.vue'
-import api from '@/api'
+import { getImgUrl, mobileFunc, convertFrontendToBackendLang } from '@/utils/tools'
 import { useI18n } from 'vue-i18n'
-import type { gameInfo } from 'typings'
 import { getLanguage } from '@/lang'
-import { convertFrontendToBackendLang } from '@/utils/tools'
+import type { gameInfo } from 'typings'
 
-// 接收路由传递的 props
+// 自定义游戏控制器图标
+const GameController = {
+  name: 'GameController',
+  render() {
+    return h('svg', {
+      viewBox: '0 0 1024 1024',
+      width: '1em',
+      height: '1em',
+      fill: 'currentColor'
+    }, [
+      h('path', {
+        d: 'M832 384h-128c-35.2 0-64 28.8-64 64v128c0 35.2 28.8 64 64 64h128c35.2 0 64-28.8 64-64V448c0-35.2-28.8-64-64-64zM320 384H192c-35.2 0-64 28.8-64 64v128c0 35.2 28.8 64 64 64h128c35.2 0 64-28.8 64-64V448c0-35.2-28.8-64-64-64z'
+      })
+    ])
+  }
+}
+
+defineOptions({ name: 'PcSupplierGames' })
+
+// Props定义
 interface SupplierProps {
   name: string
   type: string
@@ -149,39 +518,47 @@ const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
 
-console.log('Supplier props:', props)
-console.log('Supplier route params:', route.params)
-console.log('Supplier route query:', route.query)
+// 响应式数据
+const initialLoading = ref(true)
+const loading = ref(false)
+const loadingMore = ref(false)
+const hasMore = ref(true)
+const currentPage = ref(1)
+const pageSize = ref(20)
+const totalGames = ref(0)
 
-// ==================== 响应式数据 ====================
-const initialLoading = ref(true)  // 初始加载状态
-const loading = ref(false)        // 常规加载状态
-const loadingMore = ref(false)    // 加载更多状态
-const hasMore = ref(true)         // 是否还有更多数据
-const currentPage = ref(1)        // 当前页码
-const totalGames = ref(0)         // 游戏总数
-const scrollContainer = ref(null) // 滚动容器引用
-
-const title = ref<string>(
-  props.supplier_name ||
-  route.query?.supplier_name?.toString() ||
-  props.name ||
-  '供应商游戏'
-)
+// UI状态
+const viewMode = ref<'grid' | 'list'>('grid')
+const searchKeyword = ref('')
+const showSidebar = ref(false)
+const activeFilter = ref('all')
+const filterStatus = ref('all')
+const sortBy = ref('default')
+const gameInfoDialog = ref(false)
+const selectedGame = ref<gameInfo | null>(null)
 
 // 供应商信息
 const supplierInfo = ref({
   code: props.supplier_code || props.name,
   name: props.supplier_name || route.query?.supplier_name?.toString() || props.name || '',
   categoryCode: props.category_code || route.query?.category_code?.toString() || 'SLOT',
-  currencyCode: props.currency_code || route.query?.currency_code?.toString() || 'CNY', // 保留作为fallback
+  currencyCode: props.currency_code || route.query?.currency_code?.toString() || 'CNY',
   id: props.supplier_id || route.query?.supplier_id?.toString() || '',
   description: route.query?.supplier_desc?.toString() || '',
-  is_can_run: Number(route.query?.is_can_run) || 1
+  is_can_run: Number(route.query?.is_can_run) || 1,
+  logo: ''
 })
 
-// 游戏数据
-const gameList = ref<gameInfo[]>([])      // 游戏列表
+// 游戏列表
+const gameList = ref<gameInfo[]>([])
+
+// 快速筛选选项
+const quickFilters = ref([
+  { label: '全部游戏', value: 'all' },
+  { label: '热门游戏', value: 'hot' },
+  { label: '最新游戏', value: 'new' },
+  { label: '可玩游戏', value: 'available' }
+])
 
 // 计算属性
 const categoryName = computed(() => {
@@ -196,28 +573,79 @@ const categoryName = computed(() => {
   return categoryMap[supplierInfo.value.categoryCode] || supplierInfo.value.categoryCode
 })
 
-// ==================== 导航方法 ====================
-function onClickLeft() {
+// 过滤后的游戏列表
+const filteredGameList = computed(() => {
+  let result = [...gameList.value]
+
+  // 搜索过滤
+  if (searchKeyword.value) {
+    const keyword = searchKeyword.value.toLowerCase()
+    result = result.filter(game =>
+      (game.game_name || game.name || '').toLowerCase().includes(keyword) ||
+      (game.game_code || '').toLowerCase().includes(keyword)
+    )
+  }
+
+  // 状态过滤
+  if (filterStatus.value === 'available') {
+    result = result.filter(game => game.is_can_run === 1)
+  } else if (filterStatus.value === 'maintenance') {
+    result = result.filter(game => game.is_can_run === 0)
+  }
+
+  // 快速筛选
+  if (activeFilter.value === 'hot') {
+    result = result.filter(game => game.is_hot_text)
+  } else if (activeFilter.value === 'new') {
+    result = result.filter(game => game.is_new)
+  } else if (activeFilter.value === 'available') {
+    result = result.filter(game => game.is_can_run === 1)
+  }
+
+  // 排序
+  if (sortBy.value === 'name') {
+    result.sort((a, b) => (a.game_name || a.name || '').localeCompare(b.game_name || b.name || ''))
+  } else if (sortBy.value === 'popular') {
+    result.sort((a, b) => (b.is_hot_text ? 1 : 0) - (a.is_hot_text ? 1 : 0))
+  } else if (sortBy.value === 'newest') {
+    result.sort((a, b) => (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0))
+  }
+
+  return result
+})
+
+// 分页后的游戏
+const paginatedGames = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredGameList.value.slice(start, end)
+})
+
+// 方法
+function onClickBack() {
   router.back()
 }
 
-// ==================== 游戏相关方法 ====================
+function getDefaultLogo() {
+  // 返回默认logo图片路径
+  return '/default-supplier-logo.png'
+}
+
+// 进入游戏
 function enterGame(game: gameInfo) {
-  console.log('enterGame:', game)
   if (!store.isLogin()) {
-    store.$patch({ loginShow: true })
+    ElMessage.warning('请先登录')
+    router.push('/login')
     return
   }
 
-  // 检查游戏维护状态
   if (game.is_can_run === 0) {
-    showToast('游戏维护中，暂时无法进入')
+    ElMessage.warning('游戏维护中，暂时无法进入')
     return
   }
 
-  // 检查供应商维护状态
   if (supplierInfo.value.is_can_run === 0) {
-    showToast('该厂商正在维护中')
+    ElMessage.warning('该厂商正在维护中')
     return
   }
 
@@ -231,11 +659,8 @@ function enterGame(game: gameInfo) {
   })
 }
 
-// ==================== 数据获取方法 ====================
 // 获取游戏列表
 async function getGameList(page = 1, isLoadMore = false) {
-  console.log(`获取游戏列表 - 页码: ${page}, 加载更多: ${isLoadMore}`)
-
   if (isLoadMore) {
     loadingMore.value = true
   } else {
@@ -246,87 +671,60 @@ async function getGameList(page = 1, isLoadMore = false) {
   }
 
   try {
-    // 获取用户货币类型
     const userInfo = store.getUser()
-    const userCurrency = userInfo?.currency || 'CNY' // 默认人民币
+    const userCurrency = userInfo?.currency || 'CNY'
 
-    console.log('用户货币类型:', userCurrency)
-    console.log('供应商信息:', supplierInfo.value)
-
-    // 然后修改 getGameList 函数中的请求参数部分：
     const requestParams = {
-      // ==================== 🔥 1. 分页相关 ====================
       page: page,
-      limit: 20,
-
-      // ==================== 🔥 2. 厂商代码 ====================
+      limit: 50, // PC端可以加载更多
       supplier_code: supplierInfo.value.code,
-
-      // ==================== 🔥 3. 游戏类型 ====================
       game_type: supplierInfo.value.categoryCode,
-
-      // ==================== 🔥 4. 货币类型 ====================
       currency: userCurrency,
-
-      // ==================== 🔥 5. 语言 ====================
       language: convertFrontendToBackendLang(getLanguage()),
     }
 
-    console.log('游戏列表请求参数:', requestParams)
-    const resp = await api.gameList(requestParams)
+    const resp = await invokeApi('gameList', requestParams)
     console.log('游戏列表响应:', resp)
 
     if (resp && resp.code === 200) {
-      // 处理不同的响应格式
       let newGames = []
       let pagination = null
 
       if (resp.data && Array.isArray(resp.data)) {
-        // 简单数组格式
         newGames = resp.data
-        hasMore.value = newGames.length === 20 // 假设满页就还有更多
+        hasMore.value = newGames.length === 50
       } else if (resp.data && resp.data.list && Array.isArray(resp.data.list)) {
-        // 分页格式
         newGames = resp.data.list
         pagination = resp.data.pagination
         totalGames.value = resp.data.total || 0
         hasMore.value = pagination?.has_more || false
-        currentPage.value = pagination?.current_page || page
-      } else {
-        newGames = []
       }
 
       // 数据处理
       newGames.forEach(game => {
-        // 确保必要字段存在
         if (!game.supplier_code) {
           game.supplier_code = supplierInfo.value.code
         }
         if (!game.api_name) {
           game.api_name = supplierInfo.value.code
         }
+        // 添加模拟数据
+        game.is_new = Math.random() > 0.8
+        game.favorited = false
       })
 
       if (isLoadMore) {
-        // 加载更多：追加数据
         gameList.value.push(...newGames)
       } else {
-        // 首次加载：替换数据
         gameList.value = newGames
-        currentPage.value = page
       }
-
-      console.log(`游戏列表加载成功: 新增${newGames.length}个, 总计${gameList.value.length}个, 还有更多:${hasMore.value}`)
 
     } else {
       throw new Error(resp?.message || '获取游戏列表失败')
     }
   } catch (error) {
     console.error('获取游戏列表失败:', error)
-    showToast((error as Error)?.message || '获取游戏列表失败')
-    if (!isLoadMore) {
-      gameList.value = []
-    }
+    ElMessage.error((error as Error)?.message || '获取游戏列表失败')
   } finally {
     loading.value = false
     loadingMore.value = false
@@ -334,68 +732,79 @@ async function getGameList(page = 1, isLoadMore = false) {
   }
 }
 
-// 加载更多游戏
+// 加载更多
 async function loadMoreGames() {
   if (!hasMore.value || loadingMore.value || loading.value) {
-    console.log('跳过加载更多:', { hasMore: hasMore.value, loadingMore: loadingMore.value, loading: loading.value })
     return
   }
-
-  const nextPage = currentPage.value + 1
-  console.log('准备加载更多，页码:', nextPage)
-  await getGameList(nextPage, true)
+  await getGameList(currentPage.value + 1, true)
 }
 
-// 滚动监听
-function setupScrollListener() {
-  const container = scrollContainer.value
-  if (!container) {
-    console.log('滚动容器未找到')
-    return
+// 搜索处理
+function handleSearch() {
+  currentPage.value = 1
+}
+
+// 快速筛选
+function handleQuickFilter(value: string) {
+  activeFilter.value = value
+  currentPage.value = 1
+}
+
+// 筛选变化
+function handleFilterChange() {
+  currentPage.value = 1
+}
+
+// 排序变化
+function handleSortChange() {
+  currentPage.value = 1
+}
+
+// 分页大小变化
+function handleSizeChange(val: number) {
+  pageSize.value = val
+  currentPage.value = 1
+}
+
+// 页码变化
+function handlePageChange(val: number) {
+  currentPage.value = val
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// 收藏游戏
+function handleFavorite(game: gameInfo) {
+  game.favorited = !game.favorited
+  if (game.favorited) {
+    ElMessage.success('已添加到收藏')
+  } else {
+    ElMessage.info('已取消收藏')
   }
-
-  const handleScroll = () => {
-    const { scrollTop, scrollHeight, clientHeight } = container
-    const threshold = 100 // 距离底部100px时开始加载
-
-    if (scrollTop + clientHeight >= scrollHeight - threshold) {
-      console.log('触发加载更多')
-      loadMoreGames()
-    }
-  }
-
-  container.addEventListener('scroll', handleScroll, { passive: true })
-
-  // 组件卸载时清理监听器
-  onUnmounted(() => {
-    container.removeEventListener('scroll', handleScroll)
-  })
 }
 
-//获取我的收藏游戏
-async function getMyGames() {
-  // 已移除收藏功能
-  return
+// 查看游戏信息
+function handleInfo(game: gameInfo) {
+  selectedGame.value = game
+  gameInfoDialog.value = true
 }
 
-// ==================== 初始化方法 ====================
+// 重置筛选
+function resetFilters() {
+  searchKeyword.value = ''
+  activeFilter.value = 'all'
+  filterStatus.value = 'all'
+  sortBy.value = 'default'
+  currentPage.value = 1
+}
+
+// 初始化
 async function init() {
-  console.log('初始化供应商游戏页面...')
-  console.log('供应商信息:', supplierInfo.value)
-
   try {
-    // 获取游戏列表
     await getGameList(1, false)
-
-    // 设置滚动监听
-    nextTick(() => {
-      setupScrollListener()
-    })
-
-    console.log('供应商游戏页面初始化完成')
   } catch (error) {
-    console.error('供应商游戏页面初始化失败:', error)
-    showToast('页面加载失败，请重试')
+    console.error('初始化失败:', error)
+    ElMessage.error('页面加载失败，请重试')
   }
 }
 
@@ -405,51 +814,153 @@ onMounted(async () => {
 </script>
 
 <style lang="less" scoped>
-.m-supplier-games {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #f5f6f7;
+.pc-supplier-games {
+  min-height: 100vh;
+  background: #f5f7fa;
 
-  // 供应商信息头部
-  .m-supplier-header {
+  // 顶部导航
+  .supplier-navbar {
     background: #fff;
-    padding: 16px;
-    border-bottom: 1px solid #f0f0f0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 
-    .m-supplier-banner {
+    .navbar-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+      height: 60px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
 
-      .m-supplier-details {
-        flex: 1;
+      .navbar-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
 
-        .m-supplier-name {
-          margin: 0 0 8px 0;
-          font-size: 22px;
-          font-weight: 600;
-          color: #333;
-          line-height: 1.3;
+        .back-button {
+          font-size: 14px;
+          color: #606266;
+
+          &:hover {
+            color: #409eff;
+          }
+        }
+      }
+
+      .navbar-right {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+
+        .search-input {
+          width: 250px;
         }
 
-        .m-supplier-info {
+        .view-switcher {
+          .el-button {
+            padding: 8px 12px;
+          }
+        }
+      }
+    }
+  }
+
+  // 供应商头部
+  .supplier-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px 0;
+    color: #fff;
+
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+
+      .supplier-banner {
+        display: flex;
+        gap: 40px;
+        align-items: center;
+
+        .supplier-logo {
+          width: 120px;
+          height: 120px;
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 12px;
+          padding: 20px;
           display: flex;
           align-items: center;
-          gap: 12px;
-          flex-wrap: wrap;
+          justify-content: center;
 
-          .m-category-name {
-            font-size: 14px;
-            color: #666;
-            background: #f0f0f0;
-            padding: 4px 8px;
-            border-radius: 4px;
+          .logo-image {
+            width: 100%;
+            height: 100%;
           }
 
-          .m-game-count {
-            font-size: 13px;
-            color: #999;
+          .logo-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c0c4cc;
+          }
+        }
+
+        .supplier-details {
+          flex: 1;
+
+          .details-top {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 15px;
+
+            .supplier-name {
+              font-size: 32px;
+              font-weight: 600;
+              margin: 0;
+            }
+
+            .status-tag {
+              .el-icon {
+                margin-right: 4px;
+              }
+            }
+          }
+
+          .details-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 20px;
+
+            .info-item {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 16px;
+              opacity: 0.95;
+
+              .el-icon {
+                font-size: 18px;
+              }
+            }
+          }
+
+          .quick-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+
+            .filter-tag {
+              cursor: pointer;
+              transition: all 0.3s;
+
+              &:hover {
+                transform: translateY(-2px);
+              }
+            }
           }
         }
       }
@@ -457,120 +968,152 @@ onMounted(async () => {
   }
 
   // 游戏容器
-  .m-games-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  .games-container {
+    padding: 30px 0;
 
-    // 筛选栏
-    .m-filter-bar {
-      background: #fff;
-      padding: 12px 16px;
-      border-bottom: 1px solid #f0f0f0;
+    .container-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      gap: 20px;
 
-      .m-filter-info {
-        .m-filter-text {
-          font-size: 16px;
-          color: #333;
-          font-weight: 500;
-        }
-      }
-    }
+      // 侧边栏筛选
+      .sidebar-filters {
+        width: 240px;
+        flex-shrink: 0;
 
-    // 游戏内容区域
-    .m-games-content {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-
-      // 空状态
-      .m-empty-state {
-        margin-top: 80px;
-      }
-
-      // 初始加载状态
-      .m-initial-loading {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 200px;
-        color: #666;
-      }
-
-      // 游戏网格 - 修改为3列布局
-      .m-games-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-
-        .m-game-item {
+        .filter-section {
           background: #fff;
           border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          transition: transform 0.2s ease;
+          padding: 20px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
-          &:active {
-            transform: scale(0.98);
+          .filter-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin: 0 0 20px 0;
+            color: #303133;
           }
 
-          .m-game-card {
-            position: relative;
-            width: 100%;
-            padding-bottom: 100%; // 1:1 比例
-            overflow: hidden;
+          .filter-group {
+            margin-bottom: 25px;
 
-            .m-game-img {
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              background: #f8f9fa;
+            h4 {
+              font-size: 14px;
+              color: #606266;
+              margin: 0 0 10px 0;
             }
 
-            .m-game-overlay {
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: linear-gradient(
-                to bottom,
-                transparent 0%,
-                transparent 60%,
-                rgba(0, 0, 0, 0.7) 100%
-              );
+            .el-radio-group {
               display: flex;
               flex-direction: column;
-              justify-content: flex-end;
-              padding: 6px;
 
-              .m-supplier-tag {
-                align-self: flex-start;
-                background: rgba(40, 203, 147, 0.9);
-                color: #fff;
-                padding: 2px 4px;
-                border-radius: 3px;
-                font-size: 9px;
-                margin-bottom: auto;
+              .el-radio {
+                margin-bottom: 8px;
               }
+            }
+          }
+        }
+      }
 
-              .m-hot-tag {
+      // 游戏内容
+      .games-content {
+        flex: 1;
+
+        // 加载状态
+        .loading-state {
+          background: #fff;
+          border-radius: 8px;
+          padding: 80px;
+          text-align: center;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+          p {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #606266;
+          }
+        }
+
+        // 空状态
+        .empty-state {
+          background: #fff;
+          border-radius: 8px;
+          padding: 80px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        // 网格视图
+        .games-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 20px;
+          margin-bottom: 30px;
+
+          .game-card {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+
+            &:hover {
+              transform: translateY(-5px);
+              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+
+              .game-overlay {
+                opacity: 1;
+              }
+            }
+
+            .game-badges {
+              position: absolute;
+              top: 10px;
+              left: 10px;
+              right: 10px;
+              z-index: 2;
+              display: flex;
+              gap: 5px;
+              flex-wrap: wrap;
+
+              .hot-badge,
+              .new-badge {
+                font-size: 11px;
+              }
+            }
+
+            .game-image {
+              position: relative;
+              width: 100%;
+              padding-bottom: 100%;
+              overflow: hidden;
+
+              .image {
                 position: absolute;
-                top: 6px;
-                right: 6px;
-                background: rgba(255, 107, 107, 0.9);
-                color: #fff;
-                padding: 2px 4px;
-                border-radius: 3px;
-                font-size: 9px;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
               }
 
-              // 新的维护状态遮罩
-              .m-maintenance-overlay {
+              .image-loading,
+              .image-error {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f5f7fa;
+                color: #c0c4cc;
+              }
+
+              .maintenance-overlay {
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -578,102 +1121,230 @@ onMounted(async () => {
                 bottom: 0;
                 background: rgba(0, 0, 0, 0.8);
                 display: flex;
+                flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                z-index: 10;
+                color: #fff;
+                z-index: 3;
 
-                .m-maintenance-content {
+                span {
+                  margin-top: 10px;
+                  font-size: 14px;
+                }
+              }
+
+              .game-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s;
+                z-index: 1;
+
+                .overlay-actions {
                   display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  gap: 6px;
+                  gap: 10px;
+                  margin-top: 10px;
 
-                  .m-maintenance-text {
-                    color: #fff;
-                    font-size: 12px;
-                    font-weight: 500;
-                    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                  .action-btn {
+                    background: rgba(255, 255, 255, 0.2);
+                    border-radius: 50%;
+                    width: 36px;
+                    height: 36px;
+                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    .el-icon {
+                      font-size: 18px;
+                      color: #fff;
+                    }
+
+                    &:hover {
+                      background: rgba(255, 255, 255, 0.3);
+                    }
                   }
                 }
               }
             }
-          }
 
-          .m-game-footer {
-            padding: 8px 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
+            .game-info {
+              padding: 12px;
 
-            .m-game-name {
-              flex: 1;
-              font-size: 12px;
-              color: #333;
-              font-weight: 500;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              line-height: 1.3;
-            }
+              .game-name {
+                font-size: 14px;
+                font-weight: 500;
+                color: #303133;
+                margin: 0 0 8px 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
 
-            // 新的维护状态指示器
-            .m-maintenance-indicator {
-              flex-shrink: 0;
-              font-size: 10px;
-              padding: 1px 4px;
+              .game-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+
+                .supplier-code {
+                  font-size: 12px;
+                  color: #909399;
+                }
+              }
             }
           }
         }
-      }
 
-      // 加载更多状态
-      .m-loading-more {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-        color: #666;
-      }
+        // 列表视图
+        .games-list {
+          background: #fff;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          margin-bottom: 30px;
 
-      // 没有更多数据
-      .m-no-more {
-        text-align: center;
-        padding: 20px;
-        color: #999;
-        font-size: 14px;
+          :deep(.game-row) {
+            cursor: pointer;
+
+            &:hover {
+              background: #f5f7fa;
+            }
+          }
+
+          .game-cell {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            .game-thumb {
+              width: 60px;
+              height: 60px;
+              border-radius: 4px;
+              flex-shrink: 0;
+            }
+
+            .game-detail {
+              flex: 1;
+
+              .game-title {
+                font-size: 14px;
+                font-weight: 500;
+                color: #303133;
+                margin-bottom: 5px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+
+                .hot-tag {
+                  font-size: 11px;
+                }
+              }
+
+              .game-code {
+                font-size: 12px;
+                color: #909399;
+              }
+            }
+          }
+        }
+
+        // 分页
+        .pagination-wrapper {
+          display: flex;
+          justify-content: center;
+          padding: 20px 0;
+        }
+
+        // 加载更多
+        .load-more {
+          text-align: center;
+          padding: 20px;
+          background: #fff;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+      }
+    }
+  }
+
+  // 游戏详情弹窗
+  .game-info-dialog {
+    .dialog-content {
+      .dialog-image {
+        width: 100%;
+        height: 300px;
+        margin-bottom: 20px;
+        border-radius: 8px;
       }
     }
   }
 }
 
-// 隐藏滚动条
-::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-}
+// 响应式设计
+@media (max-width: 1200px) {
+  .pc-supplier-games {
+    .games-container {
+      .container-wrapper {
+        .sidebar-filters {
+          display: none;
+        }
 
-// 解决iOS滚动卡顿
-.m-games-content {
-  -webkit-overflow-scrolling: touch;
-}
-
-// 响应式设计 - 平板和大屏幕
-@media screen and (min-width: 768px) {
-  .m-games-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 12px !important;
-  }
-
-  .m-games-content {
-    padding: 16px !important;
+        .games-content {
+          .games-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          }
+        }
+      }
+    }
   }
 }
 
-@media screen and (min-width: 1024px) {
-  .m-games-grid {
-    grid-template-columns: repeat(5, 1fr) !important;
-    gap: 16px !important;
+@media (max-width: 768px) {
+  .pc-supplier-games {
+    .supplier-header {
+      .header-container {
+        .supplier-banner {
+          flex-direction: column;
+          text-align: center;
+
+          .supplier-details {
+            .details-top {
+              flex-direction: column;
+
+              .supplier-name {
+                font-size: 24px;
+              }
+            }
+
+            .details-info {
+              justify-content: center;
+            }
+
+            .quick-filters {
+              justify-content: center;
+            }
+          }
+        }
+      }
+    }
+
+    .games-container {
+      .container-wrapper {
+        .games-content {
+          .games-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+      }
+    }
   }
 }
 </style>

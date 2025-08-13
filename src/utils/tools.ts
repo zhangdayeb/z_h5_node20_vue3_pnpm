@@ -9,6 +9,7 @@ const domain = location.origin
 // ==================== 设备检测功能 ====================
 
 export function mobileFunc(): boolean {
+  return false
   const urlParams = new URLSearchParams(window.location.search)
 
   // 1. URL 参数强制设置（最高优先级）
@@ -79,13 +80,6 @@ export function getImgUrl(url: string): string {
     return ''
   }
   return url
-}
-
-export function getImgUrl_old(url: string): string {
-  if (url.trim().length <= 0) {
-    return ''
-  }
-  return `${domain}` + url
 }
 
 export function getDomain(): string {
