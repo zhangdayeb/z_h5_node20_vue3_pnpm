@@ -1,116 +1,198 @@
 <template>
-  <div class="daili-record">
-    <van-nav-bar
-      left-arrow
-      :title="$t('agentRecord')"
-      @click-left="onClickLeft"
-      class="nav-bar"
-    />
-
-    <!-- 代理记录列表 -->
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-      <van-list
-        v-model:loading="loading"
-        :finished="finished"
-        :finished-text="$t('noMore')"
-        @load="onLoad"
-        class="record-list"
+  <div class="pc-daili-record">
+    <!-- PC端头部 -->
+    <div class="pc-header">
+      <el-button
+        type="primary"
+        :icon="ArrowLeft"
+        @click="onClickLeft"
+        class="back-btn"
       >
-        <div
-          v-for="item in list"
-          :key="item.id"
-          class="record-item"
-        >
-          <div class="record-info">
-            <div class="record-title">{{ item.name }}</div>
-            <div class="record-time">{{ $t('balance') }}:{{ item.money }}</div>
-            <div class="record-time">{{ item.created_at }}</div>
-          </div>
-          <div class="record-action">
-            <div class="record-proportion">{{ item.fanyong_proportion }}%</div>
-            <div class="action-buttons">
-              <van-button
+        {{ $t('common.back') }}
+      </el-button>
+      <h2 class="page-title">{{ $t('agentRecord') }}</h2>
+    </div>
+
+    <!-- PC端内容区域 -->
+    <div class="pc-content">
+      <!-- 代理记录表格 -->
+      <el-table
+        v-loading="loading"
+        :data="list"
+        class="record-table"
+        empty-text=""
+        v-infinite-scroll="onLoad"
+        :infinite-scroll-disabled="finished"
+        :infinite-scroll-delay="200"
+      >
+        <el-table-column prop="name" :label="$t('agent')" width="200" />
+        <el-table-column :label="$t('balance')" width="150">
+          <template #default="{ row }">
+            {{ row.money }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('currentRate')" width="120">
+          <template #default="{ row }">
+            <el-tag type="success">{{ row.fanyong_proportion }}%</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="created_at" :label="$t('applyTime')" width="180" />
+        <el-table-column :label="$t('common.tip')" width="200">
+          <template #default="{ row }">
+            <el-button-group>
+              <el-button
                 type="primary"
                 size="small"
-                @click="handleEdit(item)"
-                class="edit-btn"
+                @click="handleEdit(row)"
               >
                 {{ $t('adjustProportion') }}
-              </van-button>
-              <van-button
+              </el-button>
+              <el-button
                 type="warning"
                 size="small"
-                @click="handleAddMoney(item)"
-                class="add-money-btn"
+                @click="handleAddMoney(row)"
               >
                 {{ $t('addCredits') }}
-              </van-button>
-            </div>
-          </div>
-        </div>
-      </van-list>
-    </van-pull-refresh>
+              </el-button>
+            </el-button-group>
+          </template>
+        </el-table-column>
+      </el-table>
 
-    <!-- 空状态 -->
-    <van-empty
-      v-if="!loading && !refreshing && list.length === 0"
-      :description="$t('noAgentRecord')"
-      image="https://img.yzcdn.cn/vant/custom-empty-image.png"
-    />
+      <!-- 加载更多提示 -->
+      <div v-if="!finished && list.length > 0" class="load-more">
+        <el-icon class="is-loading"><Loading /></el-icon>
+        <span>{{ $t('loading') }}</span>
+      </div>
+
+      <!-- 没有更多数据提示 -->
+      <div v-if="finished && list.length > 0" class="no-more">
+        {{ $t('noMore') }}
+      </div>
+
+      <!-- 空状态 -->
+      <el-empty
+        v-if="!loading && !refreshing && list.length === 0"
+        :description="$t('noAgentRecord')"
+        class="empty-state"
+      />
+
+      <!-- 刷新按钮 -->
+      <el-button
+        v-if="list.length > 0"
+        type="primary"
+        :loading="refreshing"
+        @click="onRefresh"
+        class="refresh-btn"
+      >
+        {{ $t('refresh') }}
+      </el-button>
+    </div>
 
     <!-- 编辑比例弹窗 -->
-    <van-dialog
-      v-model:show="showEditDialog"
+    <el-dialog
+      v-model="showEditDialog"
       :title="$t('adjustCommissionRate')"
-      show-cancel-button
-      :confirm-button-text="$t('confirm')"
-      :cancel-button-text="$t('cancel')"
-      :before-close="handleEditConfirm"
+      width="500px"
+      :before-close="handleEditDialogClose"
     >
       <div class="edit-content">
         <div class="edit-info">
-          <p>{{ $t('agent') }}：{{ currentEditItem?.name || '' }}</p>
-          <p>{{ $t('currentRate') }}：{{ currentEditItem?.fanyong_proportion || '0.00' }}</p>
-          <p>{{ $t('yourRate') }}：{{ currentUserInfo?.fanyong_proportion || '0.00' }}</p>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item :label="$t('agent')">
+              {{ currentEditItem?.name || '' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('currentRate')">
+              {{ currentEditItem?.fanyong_proportion || '0.00' }}%
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('yourRate')">
+              {{ currentUserInfo?.fanyong_proportion || '0.00' }}%
+            </el-descriptions-item>
+          </el-descriptions>
         </div>
-        <van-field
-          v-model="editProportion"
-          type="number"
-          :label="$t('newRate')"
-          :placeholder="$t('enterDecimal')"
-          step="0.01"
-        />
+
+        <el-form class="edit-form" label-width="100px">
+          <el-form-item :label="$t('newRate')">
+            <el-input
+              v-model="editProportion"
+              type="number"
+              :placeholder="$t('enterDecimal')"
+              step="0.01"
+            >
+              <template #suffix>%</template>
+            </el-input>
+          </el-form-item>
+        </el-form>
       </div>
-    </van-dialog>
+
+      <template #footer>
+        <el-button @click="showEditDialog = false">{{ $t('cancel') }}</el-button>
+        <el-button
+          type="primary"
+          @click="handleEditConfirm('confirm')"
+          :loading="editLoading"
+        >
+          {{ $t('confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
 
     <!-- 上分弹窗 -->
-    <van-dialog
-      v-model:show="showAddMoneyDialog"
+    <el-dialog
+      v-model="showAddMoneyDialog"
       :title="$t('memberAddCredits')"
-      show-cancel-button
-      :confirm-button-text="$t('confirmTransfer')"
-      :cancel-button-text="$t('cancel')"
-      :before-close="handleAddMoneyConfirm"
+      width="500px"
+      :before-close="handleAddMoneyDialogClose"
     >
       <div class="add-money-content">
         <div class="add-money-info">
-          <p>{{ $t('member') }}：{{ currentAddMoneyItem?.name || '' }}</p>
-          <p>{{ $t('yourBalance') }}：{{ currentUserInfo?.money || '0.00' }}</p>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item :label="$t('member')">
+              {{ currentAddMoneyItem?.name || '' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('yourBalance')">
+              {{ currentUserInfo?.money || '0.00' }}
+            </el-descriptions-item>
+          </el-descriptions>
         </div>
-        <van-field
-          v-model="addMoneyAmount"
-          type="number"
-          :label="$t('transferAmount')"
-          :placeholder="$t('enterTransferAmount')"
-          step="0.01"
-        />
-        <div class="add-money-tips">
-          <p class="tip-text">• {{ $t('transferAmountTip1') }}</p>
-          <p class="tip-text">• {{ $t('transferAmountTip2') }}</p>
-          <p class="tip-text">• {{ $t('transferAmountTip3') }}</p>
-        </div>
+
+        <el-form class="add-money-form" label-width="120px">
+          <el-form-item :label="$t('transferAmount')">
+            <el-input
+              v-model="addMoneyAmount"
+              type="number"
+              :placeholder="$t('enterTransferAmount')"
+              step="0.01"
+            />
+          </el-form-item>
+        </el-form>
+
+        <el-alert
+          type="warning"
+          :closable="false"
+          class="transfer-tips"
+        >
+          <template #default>
+            <div class="tip-list">
+              <p>• {{ $t('transferAmountTip1') }}</p>
+              <p>• {{ $t('transferAmountTip2') }}</p>
+              <p>• {{ $t('transferAmountTip3') }}</p>
+            </div>
+          </template>
+        </el-alert>
       </div>
-    </van-dialog>
+
+      <template #footer>
+        <el-button @click="showAddMoneyDialog = false">{{ $t('cancel') }}</el-button>
+        <el-button
+          type="primary"
+          @click="handleAddMoneyConfirm('confirm')"
+          :loading="transferLoading"
+        >
+          {{ $t('confirmTransfer') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -118,10 +200,11 @@
 import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import { invokeApi } from '@/utils/tools'
-import { showToast } from 'vant'
+import { ElMessage } from 'element-plus'
+import { ArrowLeft, Loading } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 
-defineOptions({ name: 'DailiRecord' })
+defineOptions({ name: 'PcDailiRecord' })
 
 interface DailiRecordItem {
   id: number
@@ -151,11 +234,13 @@ const finished = ref(false)
 const showEditDialog = ref(false)
 const currentEditItem = ref<DailiRecordItem | null>(null)
 const editProportion = ref('')
+const editLoading = ref(false)
 
 // === 上分状态 ===
 const showAddMoneyDialog = ref(false)
 const currentAddMoneyItem = ref<DailiRecordItem | null>(null)
 const addMoneyAmount = ref('')
+const transferLoading = ref(false)
 
 // === 初始化 ===
 onMounted(() => {
@@ -256,6 +341,10 @@ function handleEdit(item: DailiRecordItem) {
   showEditDialog.value = true
 }
 
+function handleEditDialogClose() {
+  showEditDialog.value = false
+}
+
 async function handleEditConfirm(action: string) {
   if (action !== 'confirm') {
     showEditDialog.value = false
@@ -263,7 +352,7 @@ async function handleEditConfirm(action: string) {
   }
 
   if (!currentEditItem.value || !editProportion.value) {
-    showToast(t('enterCommissionRate'))
+    ElMessage.error(t('enterCommissionRate'))
     return false
   }
 
@@ -271,9 +360,11 @@ async function handleEditConfirm(action: string) {
   const userProportion = parseFloat(currentUserInfo.value?.fanyong_proportion || '0')
 
   if (isNaN(inputValue) || inputValue < 0 || inputValue > userProportion) {
-    showToast(t('rateMustBeBetween', { max: userProportion }))
+    ElMessage.error(t('rateMustBeBetween', { max: userProportion }))
     return false
   }
+
+  editLoading.value = true
 
   try {
     const resp = await invokeApi('dailiEdit', {
@@ -282,7 +373,7 @@ async function handleEditConfirm(action: string) {
     })
 
     if (resp && resp.code === 200) {
-      showToast(t('modifySuccess'))
+      ElMessage.success(t('modifySuccess'))
 
       // 更新列表中的数据
       const index = list.value.findIndex(item => item.id === currentEditItem.value?.id)
@@ -293,13 +384,15 @@ async function handleEditConfirm(action: string) {
       showEditDialog.value = false
       return true
     } else {
-      showToast(resp?.message || t('modifyFailed'))
+      ElMessage.error(resp?.message || t('modifyFailed'))
       return false
     }
   } catch (error) {
     console.error('修改失败:', error)
-    showToast(t('modifyFailed'))
+    ElMessage.error(t('modifyFailed'))
     return false
+  } finally {
+    editLoading.value = false
   }
 }
 
@@ -311,6 +404,10 @@ function handleAddMoney(item: DailiRecordItem) {
   showAddMoneyDialog.value = true
 }
 
+function handleAddMoneyDialogClose() {
+  showAddMoneyDialog.value = false
+}
+
 async function handleAddMoneyConfirm(action: string) {
   if (action !== 'confirm') {
     showAddMoneyDialog.value = false
@@ -318,7 +415,7 @@ async function handleAddMoneyConfirm(action: string) {
   }
 
   if (!currentAddMoneyItem.value || !addMoneyAmount.value) {
-    showToast(t('enterTransferAmount'))
+    ElMessage.error(t('enterTransferAmount'))
     return false
   }
 
@@ -326,14 +423,16 @@ async function handleAddMoneyConfirm(action: string) {
   const userMoney = parseFloat(currentUserInfo.value?.money || '0')
 
   if (isNaN(inputValue) || inputValue <= 0) {
-    showToast(t('enterValidAmount'))
+    ElMessage.error(t('enterValidAmount'))
     return false
   }
 
   if (inputValue > userMoney) {
-    showToast(t('amountExceedsBalance', { balance: userMoney.toFixed(2) }))
+    ElMessage.error(t('amountExceedsBalance', { balance: userMoney.toFixed(2) }))
     return false
   }
+
+  transferLoading.value = true
 
   try {
     console.log('发送转账请求:', {
@@ -357,7 +456,7 @@ async function handleAddMoneyConfirm(action: string) {
 
       // 延时提示和刷新
       setTimeout(() => {
-        showToast(t('transferSuccess'))
+        ElMessage.success(t('transferSuccess'))
       }, 200)
 
       setTimeout(() => {
@@ -367,13 +466,15 @@ async function handleAddMoneyConfirm(action: string) {
 
       return true
     } else {
-      showToast(resp?.message || t('transferFailed'))
+      ElMessage.error(resp?.message || t('transferFailed'))
       return false
     }
   } catch (error) {
     console.error('转账失败:', error)
-    showToast(t('transferFailed'))
+    ElMessage.error(t('transferFailed'))
     return false
+  } finally {
+    transferLoading.value = false
   }
 }
 
@@ -384,129 +485,140 @@ function onClickLeft() {
 </script>
 
 <style scoped>
-.daili-record {
+.pc-daili-record {
   min-height: 100vh;
-  background-color: #f7f8fa;
+  background-color: #f5f7fa;
+  padding: 20px;
 }
 
-.nav-bar {
-  background-color: #fff;
-  border-bottom: 1px solid #ebedf0;
-}
-
-.record-list {
-  padding: 16px;
-}
-
-.record-item {
+.pc-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
+  padding: 16px 24px;
   background-color: #fff;
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.record-info {
-  flex: 1;
+.back-btn {
+  margin-right: 16px;
 }
 
-.record-title {
-  font-size: 16px;
-  color: #333;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.record-time {
-  font-size: 12px;
-  color: #999;
-}
-
-.record-action {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.record-proportion {
-  font-size: 14px;
-  color: #07c160;
+.page-title {
+  font-size: 20px;
   font-weight: 600;
+  color: #333;
+  margin: 0;
 }
 
-.action-buttons {
+.pc-content {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.record-table {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.load-more {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #666;
+  font-size: 14px;
 }
 
-.edit-btn, .add-money-btn {
-  min-width: 70px;
-  height: 32px;
-  font-size: 12px;
+.load-more .el-icon {
+  margin-right: 8px;
+}
+
+.no-more {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.empty-state {
+  padding: 80px 0;
+}
+
+.refresh-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
 }
 
 .edit-content, .add-money-content {
-  padding: 16px;
-}
-
-.edit-info, .add-money-info {
-  margin-bottom: 16px;
-}
-
-.edit-info p, .add-money-info p {
-  margin: 8px 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.add-money-tips {
-  margin-top: 16px;
-  padding: 12px;
-  background-color: #f7f8fa;
-  border-radius: 6px;
-}
-
-.tip-text {
-  margin: 4px 0;
-  font-size: 12px;
-  color: #999;
-  line-height: 1.4;
-}
-
-.daili-record :deep(.van-list__finished-text) {
-  color: #999;
-  font-size: 12px;
   padding: 20px 0;
 }
 
-.daili-record :deep(.van-empty) {
-  padding: 100px 0;
+.edit-info, .add-money-info {
+  margin-bottom: 24px;
 }
 
-.daili-record :deep(.van-dialog) {
-  border-radius: 12px;
+.edit-form, .add-money-form {
+  margin-top: 24px;
 }
 
-.daili-record :deep(.van-field__label) {
-  font-size: 14px;
+.transfer-tips {
+  margin-top: 20px;
+}
+
+.tip-list p {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+/* Element Plus 样式覆盖 */
+.pc-daili-record :deep(.el-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pc-daili-record :deep(.el-table__header) {
+  background-color: #f8f9fa;
+}
+
+.pc-daili-record :deep(.el-table th) {
+  background-color: #f8f9fa;
+  font-weight: 600;
   color: #333;
 }
 
-.daili-record :deep(.van-field__control) {
-  font-size: 14px;
+.pc-daili-record :deep(.el-table td) {
+  padding: 16px 12px;
 }
 
-.daili-record :deep(.van-button--warning) {
-  background-color: #ff976a;
-  border-color: #ff976a;
+.pc-daili-record :deep(.el-button-group .el-button) {
+  margin: 0;
 }
 
-.daili-record :deep(.van-button--warning):active {
-  background-color: #e8663c;
-  border-color: #e8663c;
+.pc-daili-record :deep(.el-dialog__header) {
+  padding: 20px 24px 10px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.pc-daili-record :deep(.el-dialog__body) {
+  padding: 20px 24px;
+}
+
+.pc-daili-record :deep(.el-dialog__footer) {
+  padding: 10px 24px 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+.pc-daili-record :deep(.el-descriptions__body .el-descriptions__table) {
+  border-radius: 6px;
+}
+
+.pc-daili-record :deep(.el-alert--warning) {
+  border-radius: 6px;
 }
 </style>
