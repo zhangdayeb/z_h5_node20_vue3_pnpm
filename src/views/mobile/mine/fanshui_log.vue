@@ -2,7 +2,7 @@
   <div class="fanshui-record">
     <van-nav-bar
       left-arrow
-      title="返水记录"
+      :title="$t('rebateRecord')"
       @click-left="onClickLeft"
       class="nav-bar"
     />
@@ -12,7 +12,7 @@
       <van-list
         v-model:loading="loading"
         :finished="finished"
-        finished-text="没有更多了"
+        :finished-text="$t('noMore')"
         @load="onLoad"
         class="record-list"
       >
@@ -30,7 +30,7 @@
     <!-- 空状态 -->
     <van-empty
       v-if="!loading && !refreshing && list.length === 0"
-      description="暂无返水记录"
+      :description="$t('noRebateRecord')"
       image="https://img.yzcdn.cn/vant/custom-empty-image.png"
     />
   </div>
@@ -39,6 +39,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
+import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { invokeApi } from '@/utils/tools'
 
 defineOptions({ name: 'FanshuiRecord' })
@@ -52,6 +54,7 @@ interface FanshuiRecordItem {
 }
 
 const router = useRouter()
+const { t } = useI18n()
 
 const page = ref(0)
 const list = ref<FanshuiRecordItem[]>([])
@@ -118,6 +121,7 @@ async function getFanshuiRecords() {
     }
   } catch (error) {
     console.error('获取返水记录失败:', error)
+    showToast(t('getRebateRecordFailed'))
     finished.value = true
   } finally {
     loading.value = false
