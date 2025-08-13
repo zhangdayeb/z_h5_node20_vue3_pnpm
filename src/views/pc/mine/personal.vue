@@ -19,7 +19,7 @@
     <van-cell-group class="m-top10">
       <van-cell class="money-cell">
         <template #title>
-          <span class="money-title">用户余额</span>
+          <span class="money-title">{{ $t('mine.balance') }}</span>
         </template>
         <template #value>
           <span class="money-value">{{ formatMoney(userInfo?.money) }}</span>
@@ -29,7 +29,7 @@
       <!-- 条件渲染：只有当配置允许时才显示返水金额 -->
       <van-cell class="money-cell" v-if="shouldShowFanshui">
         <template #title>
-          <span class="money-title">返水金额</span>
+          <span class="money-title">{{ $t('rebateAmount') }}</span>
         </template>
         <template #value>
           <span class="money-value rebate">{{ formatMoney(userInfo?.money_rebate) }}</span>
@@ -38,7 +38,7 @@
 
       <van-cell class="money-cell">
         <template #title>
-          <span class="money-title">返佣金额</span>
+          <span class="money-title">{{ $t('commissionAmount') }}</span>
         </template>
         <template #value>
           <span class="money-value commission">{{ formatMoney(userInfo?.money_fanyong) }}</span>
@@ -46,7 +46,7 @@
       </van-cell>
 
       <van-cell
-        title="货币类型"
+        :title="$t('currencyType')"
         :value="formatCurrency(userInfo?.currency)"
       />
     </van-cell-group>
@@ -64,7 +64,7 @@
         @click="editUserInfo('phone')"
       />
       <van-cell
-        title="昵称"
+        :title="$t('mine.nickname')"
         :value="userInfo?.nick_name ?? userInfo?.nickname ?? ''"
         :is-link="true"
         @click="editUserInfo('nick_name')"
@@ -81,16 +81,16 @@
       <van-cell-group inset class="m-pop-frm">
         <van-field
           v-model="basicForm.nick_name"
-          label="昵称"
-          :rules="[{ required: true, message: '请输入昵称' }]"
-          placeholder="请输入昵称"
+          :label="$t('mine.nickname')"
+          :rules="[{ required: true, message: $t('mine.inputNickname') }]"
+          :placeholder="$t('mine.inputNickname')"
           v-if="editField === 'nick_name'"
         />
         <van-field
           v-model="basicForm.phone"
-          label="手机号"
-          :rules="[{ required: true, message: '请输入手机号' }]"
-          placeholder="请输入手机号"
+          :label="$t('register.phone')"
+          :rules="[{ required: true, message: $t('mine.inputPhoneNumber') }]"
+          :placeholder="$t('mine.inputPhoneNumber')"
           v-if="editField === 'phone'"
         />
       </van-cell-group>
@@ -152,23 +152,24 @@ function formatMoney(amount: string | number | undefined): string {
 // 格式化货币类型显示
 function formatCurrency(currency: string | undefined): string {
   const currencyMap: Record<string, string> = {
-    'CNY': '人民币 (CNY)',
-    'USD': '美元 (USD)',
-    'EUR': '欧元 (EUR)',
-    'JPY': '日元 (JPY)',
-    'KRW': '韩元 (KRW)',
-    'THB': '泰铢 (THB)',
-    'VND': '越南盾 (VND)',
-    'SGD': '新加坡元 (SGD)',
-    'MYR': '马来西亚令吉 (MYR)',
-    'PHP': '菲律宾比索 (PHP)',
-    'IDR': '印尼盾 (IDR)',
-    'BTC': '比特币 (BTC)',
-    'ETH': '以太坊 (ETH)',
-    'USDT': '泰达币 (USDT)'
+    'CNY': t('currency.cny'),
+    'USD': t('currency.usd'),
+    'EUR': t('currency.eur'),
+    'JPY': t('currency.jpy'),
+    'KRW': t('currency.krw'),
+    'THB': t('currency.thb'),
+    'VND': t('currency.vnd'),
+    'SGD': t('currency.sgd'),
+    'MYR': t('currency.myr'),
+    'PHP': t('currency.php'),
+    'IDR': t('currency.idr'),
+    'BTC': t('currency.btc'),
+    'ETH': t('currency.eth'),
+    'USDT': t('currency.usdt')
   }
 
-  return currencyMap[currency || 'CNY'] || `${currency || 'CNY'}`
+  const currencyKey = currency || 'CNY'
+  return currencyMap[currencyKey] || `${currencyKey}`
 }
 
 // 返回
@@ -196,13 +197,13 @@ async function updateBasicInfo() {
 
     if (editField.value === 'nick_name') {
       if (!basicForm.value.nick_name.trim()) {
-        showToast('请输入昵称')
+        showToast(t('mine.inputNickname'))
         return
       }
       updateData.nick_name = basicForm.value.nick_name.trim()
     } else if (editField.value === 'phone') {
       if (!basicForm.value.phone.trim()) {
-        showToast('请输入手机号')
+        showToast(t('mine.inputPhoneNumber'))
         return
       }
       updateData.phone = basicForm.value.phone.trim()
@@ -212,7 +213,7 @@ async function updateBasicInfo() {
     const response = await userApi.updateUserInfo(updateData)
 
     if (response && response.code === 200) {
-      showToast('更新成功')
+      showToast(t('mine.updateSuccess'))
 
       // 更新本地存储的用户信息
       const currentUser = store.getUser()
@@ -225,11 +226,11 @@ async function updateBasicInfo() {
       // 重新获取用户信息确保数据同步
       await refreshUserInfo()
     } else {
-      showToast(response?.message || '更新失败')
+      showToast(response?.message || t('mine.updateFailed'))
     }
   } catch (error: any) {
     console.error('更新基础信息失败:', error)
-    showToast(error?.message || '更新失败')
+    showToast(error?.message || t('mine.updateFailed'))
   }
 }
 
