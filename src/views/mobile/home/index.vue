@@ -24,22 +24,14 @@ import loginPop from '@/components/loginPop.vue'
 import { useAppStore } from '@/stores/app'
 import { useConfigStore } from '@/stores/config'
 import { onMounted, watch } from 'vue'
-import { handleTelegramAutoLogin, isTelegramMiniApp } from '@/utils/tools'
+import { handleTelegramAutoLogin } from '@/utils/tools'
 
 const store = useAppStore()
 const configStore = useConfigStore()
 
 // 简化的 Telegram 自动登录
 async function tryTelegramLogin() {
-  // 只有在 Telegram 环境下才尝试自动登录
-  if (isTelegramMiniApp() && !store.getUser()) {
-    console.log('📱 Telegram 环境检测到，尝试自动登录...')
-    await handleTelegramAutoLogin()
-  } else if (isTelegramMiniApp()) {
-    console.log('📱 Telegram 环境但用户已登录')
-  } else {
-    console.log('🌐 普通网页环境，跳过自动登录')
-  }
+  await handleTelegramAutoLogin()
 }
 
 // 监听应用就绪状态

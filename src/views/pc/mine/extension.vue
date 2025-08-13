@@ -1,63 +1,95 @@
 <template>
-  <div class="m-exten">
-    <van-nav-bar
-      left-arrow
-      :title="$t('mine.tuiguanG')"
-      @click-left="onClickLeft"
-      class="m-nav"
-    />
-
-    <!-- 用户信息区域 -->
-    <div class="user-info-section">
-      <div class="user-card">
-        <div class="user-details">
-          <div class="user-id">ID: {{ userInfo?.id }}</div>
-        </div>
-      </div>
-
-      <div class="invite-code-card">
-        <div class="card-title">{{ $t('extension.myInviteCode') }}</div>
-        <div class="invite-code">{{ userInfo?.inviteCode || $t('extension.loading') }}</div>
-        <van-button
-          type="primary"
-          size="small"
-          @click="copyInviteCode"
-          :loading="copyingCode"
-        >
-          {{ $t('extension.copyInviteCode') }}
-        </van-button>
-      </div>
-    </div>
-
-    <!-- 推广链接区域 -->
-    <div class="promotion-link-section">
-      <div class="link-card">
-        <div class="card-title">{{ $t('extension.promotionLink') }}</div>
-        <div class="link-content">
-          <div class="link-text">{{ promotionLink }}</div>
-          <van-button
-            type="primary"
-            size="small"
-            @click="copyPromotionLink"
-            :loading="copyingLink"
-          >
-            {{ $t('extension.copyLink') }}
-          </van-button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 操作按钮区域 -->
-    <div class="action-section">
-      <van-button
+  <div class="pc-extension">
+    <!-- PC端头部 -->
+    <div class="pc-header">
+      <el-button
         type="primary"
-        block
-        round
-        @click="sharePromotion"
-        class="share-btn"
+        :icon="ArrowLeft"
+        @click="onClickLeft"
+        class="back-btn"
       >
-        {{ $t('extension.sharePromotionLink') }}
-      </van-button>
+        {{ $t('common.back') }}
+      </el-button>
+      <h2 class="page-title">{{ $t('mine.tuiguanG') }}</h2>
+    </div>
+
+    <!-- PC端内容区域 -->
+    <div class="pc-content">
+      <div class="content-wrapper">
+        <!-- 用户信息卡片 -->
+        <div class="user-info-card">
+          <div class="card-header">
+            <el-icon class="header-icon"><User /></el-icon>
+            <h3>{{ $t('mine.baseInfo') }}</h3>
+          </div>
+          <div class="user-details">
+            <div class="user-id">ID: {{ userInfo?.id }}</div>
+          </div>
+        </div>
+
+        <!-- 邀请码卡片 -->
+        <div class="invite-code-card">
+          <div class="card-header">
+            <el-icon class="header-icon"><Ticket /></el-icon>
+            <h3>{{ $t('extension.myInviteCode') }}</h3>
+          </div>
+          <div class="invite-code-content">
+            <div class="invite-code-display">
+              <div class="invite-code">
+                {{ userInfo?.inviteCode || $t('extension.loading') }}
+              </div>
+              <el-button
+                type="primary"
+                :loading="copyingCode"
+                @click="copyInviteCode"
+                class="copy-btn"
+              >
+                <el-icon><DocumentCopy /></el-icon>
+                {{ $t('extension.copyInviteCode') }}
+              </el-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 推广链接卡片 -->
+        <div class="promotion-link-card">
+          <div class="card-header">
+            <el-icon class="header-icon"><Link /></el-icon>
+            <h3>{{ $t('extension.promotionLink') }}</h3>
+          </div>
+          <div class="link-content">
+            <div class="link-text">{{ promotionLink }}</div>
+            <el-button
+              type="primary"
+              :loading="copyingLink"
+              @click="copyPromotionLink"
+              class="copy-link-btn"
+            >
+              <el-icon><DocumentCopy /></el-icon>
+              {{ $t('extension.copyLink') }}
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 分享操作卡片 -->
+        <div class="share-action-card">
+          <div class="card-header">
+            <el-icon class="header-icon"><Share /></el-icon>
+            <h3>{{ $t('extension.sharePromotionLink') }}</h3>
+          </div>
+          <div class="share-content">
+            <el-button
+              type="success"
+              size="large"
+              @click="sharePromotion"
+              class="share-btn"
+            >
+              <el-icon><Share /></el-icon>
+              {{ $t('extension.sharePromotionLink') }}
+            </el-button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -65,11 +97,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { showToast } from 'vant'
+import { ElMessage } from 'element-plus'
+import { ArrowLeft, User, Ticket, Link, Share, DocumentCopy } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { userApi } from '@/api'
 
-defineOptions({ name: 'ExtensionVue' })
+defineOptions({ name: 'PcExtensionVue' })
 
 // 假设的用户信息类型
 interface UserInfo {
@@ -104,14 +137,14 @@ function onClickLeft() {
 // 复制邀请码
 async function copyInviteCode() {
   if (!userInfo.value?.inviteCode) {
-    showToast(t('extension.inviteCodeNotExist'))
+    ElMessage.warning(t('extension.inviteCodeNotExist'))
     return
   }
 
   copyingCode.value = true
   try {
     await navigator.clipboard.writeText(userInfo.value.inviteCode)
-    showToast(t('extension.inviteCodeCopied'))
+    ElMessage.success(t('extension.inviteCodeCopied'))
   } catch (err) {
     // 兼容性处理
     const textArea = document.createElement('textarea')
@@ -120,7 +153,7 @@ async function copyInviteCode() {
     textArea.select()
     document.execCommand('copy')
     document.body.removeChild(textArea)
-    showToast(t('extension.inviteCodeCopied'))
+    ElMessage.success(t('extension.inviteCodeCopied'))
   } finally {
     copyingCode.value = false
   }
@@ -129,14 +162,14 @@ async function copyInviteCode() {
 // 复制推广链接
 async function copyPromotionLink() {
   if (!promotionLink.value) {
-    showToast(t('extension.promotionLinkGenerating'))
+    ElMessage.warning(t('extension.promotionLinkGenerating'))
     return
   }
 
   copyingLink.value = true
   try {
     await navigator.clipboard.writeText(promotionLink.value)
-    showToast(t('extension.promotionLinkCopied'))
+    ElMessage.success(t('extension.promotionLinkCopied'))
   } catch (err) {
     // 兼容性处理
     const textArea = document.createElement('textarea')
@@ -145,7 +178,7 @@ async function copyPromotionLink() {
     textArea.select()
     document.execCommand('copy')
     document.body.removeChild(textArea)
-    showToast(t('extension.promotionLinkCopied'))
+    ElMessage.success(t('extension.promotionLinkCopied'))
   } finally {
     copyingLink.value = false
   }
@@ -187,7 +220,7 @@ async function fetchUserInfo() {
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
-    showToast(t('extension.userInfoLoadFailed'))
+    ElMessage.error(t('extension.getUserInfoFailed'))
   }
 }
 
@@ -204,105 +237,179 @@ onMounted(() => {
 })
 </script>
 
-<style lang="less" scoped>
-.m-exten {
+<style scoped>
+.pc-extension {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 20px;
+}
+
+.pc-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.back-btn {
+  margin-right: 16px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.pc-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.content-wrapper {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  background: #f5f5f5;
-  min-height: 100vh;
+  gap: 20px;
 }
 
-// 用户信息区域
-.user-info-section {
-  padding: 16px;
+/* 卡片通用样式 */
+.user-info-card,
+.invite-code-card,
+.promotion-link-card,
+.share-action-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e4e7ed;
+}
 
-  .user-card {
-    background: #fff;
-    border-radius: 12px;
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.header-icon {
+  font-size: 20px;
+  color: #409eff;
+  margin-right: 12px;
+}
+
+.card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* 用户信息卡片 */
+.user-details {
+  margin-top: 16px;
+}
+
+.user-id {
+  font-size: 14px;
+  color: #999;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+/* 邀请码卡片 */
+.invite-code-content {
+  text-align: center;
+}
+
+.invite-code-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.invite-code {
+  font-size: 28px;
+  font-weight: bold;
+  color: #409eff;
+  letter-spacing: 4px;
+  padding: 20px 30px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 12px;
+  border: 2px dashed #409eff;
+  min-width: 200px;
+  font-family: 'Courier New', monospace;
+}
+
+.copy-btn {
+  padding: 12px 24px;
+  font-size: 14px;
+}
+
+/* 推广链接卡片 */
+.link-content {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.link-text {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+  word-break: break-all;
+  border: 1px solid #e9ecef;
+  font-family: 'Courier New', monospace;
+}
+
+.copy-link-btn {
+  align-self: flex-start;
+}
+
+/* 分享操作卡片 */
+.share-content {
+  text-align: center;
+}
+
+.share-btn {
+  padding: 14px 32px;
+  font-size: 16px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .pc-extension {
+    padding: 16px;
+  }
+
+  .content-wrapper {
+    gap: 16px;
+  }
+
+  .user-info-card,
+  .invite-code-card,
+  .promotion-link-card,
+  .share-action-card {
     padding: 20px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-    .user-details {
-      .user-id {
-        font-size: 14px;
-        color: #999;
-      }
-    }
   }
 
-  .invite-code-card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-    .card-title {
-      font-size: 16px;
-      color: #666;
-      margin-bottom: 12px;
-    }
-
-    .invite-code {
-      font-size: 24px;
-      font-weight: bold;
-      color: #1989fa;
-      letter-spacing: 2px;
-      margin-bottom: 16px;
-      padding: 12px;
-      background: #f0f9ff;
-      border-radius: 8px;
-      border: 2px dashed #1989fa;
-    }
+  .invite-code {
+    font-size: 24px;
+    letter-spacing: 2px;
+    padding: 16px 20px;
   }
 }
-
-// 推广链接区域
-.promotion-link-section {
-  padding: 0 16px 16px;
-
-  .link-card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-    .card-title {
-      font-size: 16px;
-      color: #666;
-      margin-bottom: 12px;
-    }
-
-    .link-content {
-      .link-text {
-        background: #f8f9fa;
-        padding: 12px;
-        border-radius: 8px;
-        font-size: 14px;
-        color: #666;
-        word-break: break-all;
-        margin-bottom: 12px;
-        border: 1px solid #e9ecef;
-      }
-    }
-  }
-}
-
-// 操作按钮区域
-.action-section {
-  padding: 16px;
-  margin-top: auto;
-
-  .share-btn {
-    height: 48px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-}
-</style>
-
-<style lang="less">
-@import url('@/views/mobile/common.less');
 </style>
