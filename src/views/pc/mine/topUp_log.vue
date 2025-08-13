@@ -336,191 +336,227 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="less" scoped>
+<style scoped>
 .top-up-record {
+  min-height: 100vh;
+  background-color: #f7f8fa;
+}
+
+.nav-bar {
+  background-color: #fff;
+  border-bottom: 1px solid #ebedf0;
+}
+
+.filter-bar {
+  background-color: #fff;
+  border-bottom: 1px solid #ebedf0;
+}
+
+.record-list {
+  padding: 10px;
+}
+
+.record-item {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.record-item:active {
+  transform: scale(0.98);
+  background-color: #f8f9fa;
+}
+
+.record-header .record-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.record-header .record-title .amount {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.record-header .record-title .amount.amount-success {
+  color: #07c160;
+}
+
+.record-header .record-title .amount.amount-error {
+  color: #fa5151;
+}
+
+.record-header .record-title .amount.amount-pending {
+  color: #ff8f00;
+}
+
+.record-header .record-title .status-tag {
+  border-radius: 12px;
+}
+
+.record-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.record-info .info-row:last-child {
+  margin-bottom: 0;
+}
+
+.record-info .info-row .label {
+  color: #969799;
+  min-width: 80px;
+}
+
+.record-info .info-row .value {
+  color: #323233;
+  text-align: right;
+  flex: 1;
+}
+
+.detail-popup .detail-content {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background-color: #f5f5f5;
+}
 
-  .nav-bar {
+.detail-popup .detail-content .detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #ebedf0;
+}
+
+.detail-popup .detail-content .detail-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #323233;
+}
+
+.detail-popup .detail-content .detail-header .van-icon {
+  font-size: 20px;
+  color: #969799;
+  cursor: pointer;
+}
+
+.detail-popup .detail-content .detail-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.detail-popup .detail-content .detail-body .detail-amount {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.detail-popup .detail-content .detail-body .detail-amount .amount-label {
+  display: block;
+  font-size: 14px;
+  color: #969799;
+  margin-bottom: 8px;
+}
+
+.detail-popup .detail-content .detail-body .detail-amount .amount-value {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.detail-popup .detail-content .detail-body .detail-amount .amount-value.amount-success {
+  color: #07c160;
+}
+
+.detail-popup .detail-content .detail-body .detail-amount .amount-value.amount-error {
+  color: #fa5151;
+}
+
+.detail-popup .detail-content .detail-body .detail-amount .amount-value.amount-pending {
+  color: #ff8f00;
+}
+
+.detail-popup .detail-content .detail-body .detail-status {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.detail-popup .detail-content .detail-body .detail-info {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* PC端适配样式 */
+@media (min-width: 768px) {
+  .top-up-record {
+    max-width: 800px;
+    margin: 0 auto;
     background-color: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   }
 
-  .filter-bar {
-    background-color: #fff;
-    border-bottom: 1px solid #ebedf0;
+  .nav-bar {
+    border-radius: 8px 8px 0 0;
   }
 
   .record-list {
-    flex: 1;
-    padding: 10px;
+    padding: 16px 24px;
   }
 
   .record-item {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    cursor: pointer;
+    margin-bottom: 16px;
+    padding: 20px 24px;
+    border: 1px solid #ebedf0;
     transition: all 0.3s ease;
+  }
 
-    &:active {
-      transform: scale(0.98);
-      background-color: #f8f9fa;
-    }
+  .record-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-color: #d0d0d0;
+  }
 
-    .record-header {
-      .record-title {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
+  .record-header .record-title .amount {
+    font-size: 20px;
+  }
 
-        .amount {
-          font-size: 18px;
-          font-weight: 600;
-
-          &.amount-success {
-            color: #07c160;
-          }
-
-          &.amount-error {
-            color: #fa5151;
-          }
-
-          &.amount-pending {
-            color: #ff8f00;
-          }
-        }
-
-        .status-tag {
-          border-radius: 12px;
-        }
-      }
-    }
-
-    .record-info {
-      .info-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        font-size: 14px;
-
-        &:last-child {
-          margin-bottom: 0;
-        }
-
-        .label {
-          color: #969799;
-          min-width: 80px;
-        }
-
-        .value {
-          color: #323233;
-          text-align: right;
-          flex: 1;
-        }
-      }
-    }
+  .record-info .info-row {
+    font-size: 16px;
   }
 }
 
-.detail-popup {
-  .detail-content {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+/* 大屏PC端适配 */
+@media (min-width: 1200px) {
+  .top-up-record {
+    max-width: 1000px;
+  }
 
-    .detail-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      border-bottom: 1px solid #ebedf0;
+  .record-list {
+    padding: 24px 32px;
+  }
 
-      h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-        color: #323233;
-      }
+  .record-item {
+    padding: 24px 32px;
+    margin-bottom: 20px;
+  }
 
-      .van-icon {
-        font-size: 20px;
-        color: #969799;
-        cursor: pointer;
-      }
-    }
-
-    .detail-body {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-
-      .detail-amount {
-        text-align: center;
-        margin-bottom: 16px;
-
-        .amount-label {
-          display: block;
-          font-size: 14px;
-          color: #969799;
-          margin-bottom: 8px;
-        }
-
-        .amount-value {
-          font-size: 28px;
-          font-weight: 600;
-
-          &.amount-success {
-            color: #07c160;
-          }
-
-          &.amount-error {
-            color: #fa5151;
-          }
-
-          &.amount-pending {
-            color: #ff8f00;
-          }
-        }
-      }
-
-      .detail-status {
-        text-align: center;
-        margin-bottom: 24px;
-      }
-
-      .detail-info {
-        border-radius: 8px;
-        overflow: hidden;
-      }
-    }
+  .record-header .record-title .amount {
+    font-size: 22px;
   }
 }
-</style>
 
-<style lang="less">
-.amount-positive {
-  color: #07c160 !important;
-}
-
-.amount-negative {
-  color: #fa5151 !important;
-}
-
-.amount-pending {
-  color: #ff8f00 !important;
-}
-
-.amount-success {
-  color: #07c160 !important;
-}
-
-.amount-error {
-  color: #fa5151 !important;
+/* 超大屏适配 */
+@media (min-width: 1600px) {
+  .top-up-record {
+    max-width: 1200px;
+  }
 }
 </style>

@@ -149,6 +149,7 @@ onMounted(() => {
   padding: 0;
 }
 
+/* 移动端样式 */
 .fanshui-record :deep(.van-cell) {
   margin-bottom: 8px;
   background-color: #fff;
@@ -194,5 +195,101 @@ onMounted(() => {
 
 .fanshui-record :deep(.van-empty) {
   padding: 100px 0;
+}
+
+/* PC端适配样式 */
+@media (min-width: 768px) {
+  .fanshui-record {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-bar {
+    border-radius: 8px 8px 0 0;
+  }
+
+  .record-list {
+    padding: 16px 24px;
+  }
+
+  .fanshui-record :deep(.van-cell) {
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 12px;
+    padding: 20px 24px;
+    border: 1px solid #ebedf0;
+    transition: all 0.3s ease;
+  }
+
+  .fanshui-record :deep(.van-cell:hover) {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-color: #d0d0d0;
+  }
+
+  .fanshui-record :deep(.van-cell:first-child) {
+    margin-top: 0;
+  }
+
+  .fanshui-record :deep(.van-cell__title) {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .fanshui-record :deep(.van-cell__label) {
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .fanshui-record :deep(.van-cell__value) {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .fanshui-record :deep(.van-list__finished-text) {
+    font-size: 14px;
+    padding: 30px 0;
+  }
+
+  .fanshui-record :deep(.van-empty) {
+    padding: 120px 0;
+  }
+}
+
+/* 大屏PC端适配 */
+@media (min-width: 1200px) {
+  .fanshui-record {
+    max-width: 1000px;
+  }
+
+  .record-list {
+    padding: 24px 32px;
+  }
+
+  .fanshui-record :deep(.van-cell) {
+    padding: 24px 32px;
+    margin-bottom: 16px;
+  }
+
+  .fanshui-record :deep(.van-cell__title) {
+    font-size: 18px;
+  }
+
+  .fanshui-record :deep(.van-cell__label) {
+    font-size: 15px;
+  }
+
+  .fanshui-record :deep(.van-cell__value) {
+    font-size: 20px;
+  }
+}
+
+/* 超大屏适配 */
+@media (min-width: 1600px) {
+  .fanshui-record {
+    max-width: 1200px;
+  }
 }
 </style>

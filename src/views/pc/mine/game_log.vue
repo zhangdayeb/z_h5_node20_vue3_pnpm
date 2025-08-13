@@ -142,35 +142,161 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="less" scoped>
+<style scoped>
 .game-record {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: #f5f5f5;
-
-  .nav-bar {
-    background-color: #fff;
-  }
-
-  .record-list {
-    flex: 1;
-    background-color: #fff;
-    margin-top: 10px;
-  }
-}
-</style>
-
-<style lang="less">
-.amount-positive {
-  color: #07c160 !important;
+  min-height: 100vh;
+  background-color: #f7f8fa;
 }
 
-.amount-negative {
-  color: #fa5151 !important;
+.nav-bar {
+  background-color: #fff;
+  border-bottom: 1px solid #ebedf0;
+}
+
+.record-list {
+  padding: 0;
+}
+
+.game-record :deep(.van-cell) {
+  margin-bottom: 8px;
+  background-color: #fff;
+  border-radius: 8px;
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.game-record :deep(.van-cell:first-child) {
+  margin-top: 16px;
+}
+
+.game-record :deep(.van-cell__title) {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.game-record :deep(.van-cell__label) {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.game-record :deep(.van-cell__value) {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.game-record :deep(.van-cell__value.amount-positive) {
+  color: #07c160;
+}
+
+.game-record :deep(.van-cell__value.amount-negative) {
+  color: #ee0a24;
+}
+
+.game-record :deep(.van-list__finished-text) {
+  color: #999;
+  font-size: 12px;
+  padding: 20px 0;
 }
 
 .game-record :deep(.van-empty) {
   padding: 100px 0;
+}
+
+/* PC端适配样式 */
+@media (min-width: 768px) {
+  .game-record {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-bar {
+    border-radius: 8px 8px 0 0;
+  }
+
+  .record-list {
+    padding: 16px 24px;
+  }
+
+  .game-record :deep(.van-cell) {
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 12px;
+    padding: 20px 24px;
+    border: 1px solid #ebedf0;
+    transition: all 0.3s ease;
+  }
+
+  .game-record :deep(.van-cell:hover) {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-color: #d0d0d0;
+  }
+
+  .game-record :deep(.van-cell:first-child) {
+    margin-top: 0;
+  }
+
+  .game-record :deep(.van-cell__title) {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .game-record :deep(.van-cell__label) {
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .game-record :deep(.van-cell__value) {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .game-record :deep(.van-list__finished-text) {
+    font-size: 14px;
+    padding: 30px 0;
+  }
+
+  .game-record :deep(.van-empty) {
+    padding: 120px 0;
+  }
+}
+
+/* 大屏PC端适配 */
+@media (min-width: 1200px) {
+  .game-record {
+    max-width: 1000px;
+  }
+
+  .record-list {
+    padding: 24px 32px;
+  }
+
+  .game-record :deep(.van-cell) {
+    padding: 24px 32px;
+    margin-bottom: 16px;
+  }
+
+  .game-record :deep(.van-cell__title) {
+    font-size: 18px;
+  }
+
+  .game-record :deep(.van-cell__label) {
+    font-size: 15px;
+  }
+
+  .game-record :deep(.van-cell__value) {
+    font-size: 20px;
+  }
+}
+
+/* 超大屏适配 */
+@media (min-width: 1600px) {
+  .game-record {
+    max-width: 1200px;
+  }
 }
 </style>
