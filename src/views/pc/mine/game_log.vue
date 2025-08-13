@@ -1,49 +1,120 @@
 <template>
-  <div class="game-record">
-    <van-nav-bar
-      left-arrow
-      :title="$t('mine.gameLog')"
-      @click-left="onClickLeft"
-      class="nav-bar"
-    />
-
-    <!-- 游戏记录列表 -->
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-      <van-list
-        v-model:loading="loading"
-        :finished="finished"
-        :finished-text="$t('noMore')"
-        @load="onLoad"
-        class="record-list"
+  <div class="pc-game-record">
+    <!-- PC端头部 -->
+    <div class="pc-header">
+      <el-button
+        type="primary"
+        :icon="ArrowLeft"
+        @click="onClickLeft"
+        class="back-btn"
       >
-        <van-cell
-          v-for="item in list"
-          :key="item.id"
-          :title="item.operate_type_text"
-          :label="item.created_at || $t('timeUnknown')"
-          :value="item.amount_display"
-          :value-class="getAmountClass(item.money)"
-        />
-      </van-list>
-    </van-pull-refresh>
+        {{ $t('common.back') }}
+      </el-button>
+      <h2 class="page-title">{{ $t('mine.gameLog') }}</h2>
+    </div>
 
-    <!-- 空状态 -->
-    <van-empty
-      v-if="!loading && !refreshing && list.length === 0"
-      :description="$t('noGameRecord')"
-      image="https://img.yzcdn.cn/vant/custom-empty-image.png"
-    />
+    <!-- PC端内容区域 -->
+    <div class="pc-content">
+      <!-- 游戏记录表格 -->
+      <el-table
+        v-loading="loading"
+        :data="list"
+        class="record-table"
+        :empty-text="$t('noGameRecord')"
+        stripe
+      >
+        <el-table-column
+          prop="operate_type_text"
+          :label="$t('mine.operateType')"
+          min-width="150"
+        />
+        <el-table-column
+          prop="money_type_text"
+          :label="$t('mine.walletType')"
+          width="120"
+        />
+        <el-table-column
+          prop="description"
+          :label="$t('moneyLog.desc')"
+          min-width="200"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="created_at"
+          :label="$t('moneyLog.tradeDate')"
+          width="180"
+        >
+          <template #default="{ row }">
+            {{ row.created_at || $t('timeUnknown') }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="amount_display"
+          :label="$t('mine.moneyLogAmount')"
+          width="150"
+          align="right"
+        >
+          <template #default="{ row }">
+            <span :class="getAmountClass(row.money)">
+              {{ row.amount_display }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="money_after"
+          :label="$t('moneyLog.afterMoney')"
+          width="150"
+          align="right"
+        >
+          <template #default="{ row }">
+            {{ row.money_after }}
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页组件 -->
+      <el-pagination
+        v-if="total > 0"
+        v-model:current-page="currentPage"
+        :page-size="pageSize"
+        :total="total"
+        :background="true"
+        layout="total, prev, pager, next, jumper"
+        @current-change="handlePageChange"
+        class="pagination"
+      />
+
+      <!-- 空状态 -->
+      <el-empty
+        v-if="!loading && list.length === 0"
+        :description="$t('noGameRecord')"
+        class="empty-state"
+      />
+
+      <!-- 刷新按钮 -->
+      <el-button
+        v-if="list.length > 0"
+        type="primary"
+        :loading="refreshing"
+        @click="onRefresh"
+        class="refresh-btn"
+        :icon="Refresh"
+      >
+        {{ $t('refresh') }}
+      </el-button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
-import { showToast } from 'vant'
+import { ElMessage } from 'element-plus'
+import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { invokeApi } from '@/utils/tools'
 
-defineOptions({ name: 'GameRecord' })
+defineOptions({ name: 'PcGameRecord' })
 
 interface GameRecordItem {
   id: number
@@ -70,11 +141,15 @@ interface GameRecordItem {
 const router = useRouter()
 const { t } = useI18n()
 
-const page = ref(0)
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
+
+// 数据相关
 const list = ref<GameRecordItem[]>([])
 const loading = ref(false)
 const refreshing = ref(false)
-const finished = ref(false)
 
 // 获取金额样式类
 function getAmountClass(money: string): string {
@@ -82,18 +157,18 @@ function getAmountClass(money: string): string {
   return amount >= 0 ? 'amount-positive' : 'amount-negative'
 }
 
-// 下拉刷新
-const onRefresh = async () => {
-  finished.value = false
-  loading.value = true
-  page.value = 0
-  list.value = []
+// 刷新数据
+async function onRefresh() {
+  refreshing.value = true
+  currentPage.value = 1
   await getGameRecords()
   refreshing.value = false
+  ElMessage.success(t('success'))
 }
 
-// 加载更多
-const onLoad = async () => {
+// 处理分页变化
+async function handlePageChange(page: number) {
+  currentPage.value = page
   await getGameRecords()
 }
 
@@ -104,10 +179,12 @@ function onClickLeft() {
 
 // 获取游戏记录
 async function getGameRecords() {
+  loading.value = true
+
   try {
     const resp = await invokeApi('gameRecord', {
-      page: page.value + 1,
-      limit: 20
+      page: currentPage.value,
+      limit: pageSize.value
     })
 
     if (!resp) {
@@ -117,186 +194,140 @@ async function getGameRecords() {
 
     if (resp.data) {
       const data = resp.data
-      page.value = data.pagination?.current_page ?? 1
-      const newList = data.list ?? []
+      list.value = data.list || []
 
-      if (page.value === 1) {
-        list.value = newList
-      } else {
-        list.value = list.value.concat(newList)
+      // 更新分页信息
+      if (data.pagination) {
+        total.value = data.pagination.total || 0
+        currentPage.value = data.pagination.current_page || 1
       }
-
-      // 判断是否还有更多数据
-      finished.value = !data.pagination?.has_more
+    } else {
+      list.value = []
+      total.value = 0
     }
   } catch (error) {
-    console.error('获取游戏记录失败:', error)
-    showToast(t('getGameRecordFailed'))
+    ElMessage.error(t('getGameRecordFailed'))
+    list.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
   }
-
-  loading.value = false
 }
 
-onMounted(async () => {
-  await getGameRecords()
+// 页面加载时获取数据
+onMounted(() => {
+  getGameRecords()
 })
 </script>
 
 <style scoped>
-.game-record {
+.pc-game-record {
   min-height: 100vh;
-  background-color: #f7f8fa;
+  background-color: #f5f7fa;
+  padding: 20px;
 }
 
-.nav-bar {
-  background-color: #fff;
-  border-bottom: 1px solid #ebedf0;
-}
-
-.record-list {
-  padding: 0;
-}
-
-.game-record :deep(.van-cell) {
-  margin-bottom: 8px;
+.pc-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px 24px;
   background-color: #fff;
   border-radius: 8px;
-  margin-left: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.back-btn {
   margin-right: 16px;
 }
 
-.game-record :deep(.van-cell:first-child) {
-  margin-top: 16px;
-}
-
-.game-record :deep(.van-cell__title) {
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-}
-
-.game-record :deep(.van-cell__label) {
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-}
-
-.game-record :deep(.van-cell__value) {
-  font-size: 16px;
+.page-title {
+  font-size: 20px;
   font-weight: 600;
+  color: #333;
+  margin: 0;
 }
 
-.game-record :deep(.van-cell__value.amount-positive) {
-  color: #07c160;
+.pc-content {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
 }
 
-.game-record :deep(.van-cell__value.amount-negative) {
-  color: #ee0a24;
+.record-table {
+  width: 100%;
+  margin-bottom: 20px;
 }
 
-.game-record :deep(.van-list__finished-text) {
-  color: #999;
-  font-size: 12px;
-  padding: 20px 0;
+.amount-positive {
+  color: #67c23a;
+  font-weight: 600;
+  font-size: 16px;
 }
 
-.game-record :deep(.van-empty) {
-  padding: 100px 0;
+.amount-negative {
+  color: #f56c6c;
+  font-weight: 600;
+  font-size: 16px;
 }
 
-/* PC端适配样式 */
-@media (min-width: 768px) {
-  .game-record {
-    max-width: 800px;
-    margin: 0 auto;
-    background-color: #fff;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .nav-bar {
-    border-radius: 8px 8px 0 0;
-  }
-
-  .record-list {
-    padding: 16px 24px;
-  }
-
-  .game-record :deep(.van-cell) {
-    margin-left: 0;
-    margin-right: 0;
-    margin-bottom: 12px;
-    padding: 20px 24px;
-    border: 1px solid #ebedf0;
-    transition: all 0.3s ease;
-  }
-
-  .game-record :deep(.van-cell:hover) {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-    border-color: #d0d0d0;
-  }
-
-  .game-record :deep(.van-cell:first-child) {
-    margin-top: 0;
-  }
-
-  .game-record :deep(.van-cell__title) {
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .game-record :deep(.van-cell__label) {
-    font-size: 14px;
-    margin-top: 6px;
-  }
-
-  .game-record :deep(.van-cell__value) {
-    font-size: 18px;
-    font-weight: 700;
-  }
-
-  .game-record :deep(.van-list__finished-text) {
-    font-size: 14px;
-    padding: 30px 0;
-  }
-
-  .game-record :deep(.van-empty) {
-    padding: 120px 0;
-  }
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 
-/* 大屏PC端适配 */
+.empty-state {
+  padding: 80px 0;
+}
+
+.refresh-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+/* Element Plus 样式覆盖 */
+.pc-game-record :deep(.el-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pc-game-record :deep(.el-table__header) {
+  background-color: #f8f9fa;
+}
+
+.pc-game-record :deep(.el-table th) {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.pc-game-record :deep(.el-table td) {
+  padding: 16px 12px;
+}
+
+.pc-game-record :deep(.el-table__empty-block) {
+  padding: 60px 0;
+}
+
+.pc-game-record :deep(.el-pagination) {
+  padding: 12px 0;
+}
+
+/* 大屏优化 */
 @media (min-width: 1200px) {
-  .game-record {
-    max-width: 1000px;
-  }
-
-  .record-list {
-    padding: 24px 32px;
-  }
-
-  .game-record :deep(.van-cell) {
-    padding: 24px 32px;
-    margin-bottom: 16px;
-  }
-
-  .game-record :deep(.van-cell__title) {
-    font-size: 18px;
-  }
-
-  .game-record :deep(.van-cell__label) {
-    font-size: 15px;
-  }
-
-  .game-record :deep(.van-cell__value) {
-    font-size: 20px;
+  .pc-game-record {
+    max-width: 1400px;
+    margin: 0 auto;
   }
 }
 
-/* 超大屏适配 */
 @media (min-width: 1600px) {
-  .game-record {
-    max-width: 1200px;
+  .pc-game-record {
+    max-width: 1600px;
   }
 }
 </style>

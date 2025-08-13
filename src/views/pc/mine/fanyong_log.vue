@@ -1,49 +1,95 @@
 <template>
-  <div class="fanyong-record">
-    <van-nav-bar
-      left-arrow
-      :title="$t('commissionRecord')"
-      @click-left="onClickLeft"
-      class="nav-bar"
-    />
-
-    <!-- 返佣记录列表 -->
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-      <van-list
-        v-model:loading="loading"
-        :finished="finished"
-        :finished-text="$t('noMore')"
-        @load="onLoad"
-        class="record-list"
+  <div class="pc-fanyong-record">
+    <!-- PC端头部 -->
+    <div class="pc-header">
+      <el-button
+        type="primary"
+        :icon="ArrowLeft"
+        @click="onClickLeft"
+        class="back-btn"
       >
-        <van-cell
-          v-for="item in list"
-          :key="item.id"
-          :title="item.remark"
-          :label="item.create_time"
-          :value="item.money_display"
-          :value-class="getAmountClass(item.money)"
-        />
-      </van-list>
-    </van-pull-refresh>
+        {{ $t('common.back') }}
+      </el-button>
+      <h2 class="page-title">{{ $t('commissionRecord') }}</h2>
+    </div>
 
-    <!-- 空状态 -->
-    <van-empty
-      v-if="!loading && !refreshing && list.length === 0"
-      :description="$t('noCommissionRecord')"
-      image="https://img.yzcdn.cn/vant/custom-empty-image.png"
-    />
+    <!-- PC端内容区域 -->
+    <div class="pc-content">
+      <!-- 返佣记录表格 -->
+      <el-table
+        v-loading="loading"
+        :data="list"
+        class="record-table"
+        :empty-text="$t('noCommissionRecord')"
+        stripe
+      >
+        <el-table-column
+          prop="remark"
+          :label="$t('remark')"
+          min-width="200"
+        />
+        <el-table-column
+          prop="create_time"
+          :label="$t('moneyLog.tradeDate')"
+          width="180"
+        />
+        <el-table-column
+          prop="money_display"
+          :label="$t('commissionAmount')"
+          width="150"
+          align="right"
+        >
+          <template #default="{ row }">
+            <span :class="getAmountClass(row.money)">
+              {{ row.money_display }}
+            </span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页组件 -->
+      <el-pagination
+        v-if="total > 0"
+        v-model:current-page="currentPage"
+        :page-size="pageSize"
+        :total="total"
+        :background="true"
+        layout="total, prev, pager, next, jumper"
+        @current-change="handlePageChange"
+        class="pagination"
+      />
+
+      <!-- 空状态 -->
+      <el-empty
+        v-if="!loading && list.length === 0"
+        :description="$t('noCommissionRecord')"
+        class="empty-state"
+      />
+
+      <!-- 刷新按钮 -->
+      <el-button
+        v-if="list.length > 0"
+        type="primary"
+        :loading="refreshing"
+        @click="onRefresh"
+        class="refresh-btn"
+        :icon="Refresh"
+      >
+        {{ $t('refresh') }}
+      </el-button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
-import { showToast } from 'vant'
+import { ElMessage } from 'element-plus'
+import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { invokeApi } from '@/utils/tools'
 
-defineOptions({ name: 'FanyongRecord' })
+defineOptions({ name: 'PcFanyongRecord' })
 
 interface FanyongRecordItem {
   id: number
@@ -56,11 +102,15 @@ interface FanyongRecordItem {
 const router = useRouter()
 const { t } = useI18n()
 
-const page = ref(0)
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
+
+// 数据相关
 const list = ref<FanyongRecordItem[]>([])
 const loading = ref(false)
 const refreshing = ref(false)
-const finished = ref(false)
 
 // 获取金额样式类
 function getAmountClass(money: string): string {
@@ -68,18 +118,18 @@ function getAmountClass(money: string): string {
   return amount >= 0 ? 'amount-positive' : 'amount-negative'
 }
 
-// 下拉刷新
-const onRefresh = async () => {
-  finished.value = false
-  loading.value = true
-  page.value = 0
-  list.value = []
+// 刷新数据
+async function onRefresh() {
+  refreshing.value = true
+  currentPage.value = 1
   await getFanyongRecords()
   refreshing.value = false
+  ElMessage.success(t('success'))
 }
 
-// 加载更多
-const onLoad = async () => {
+// 处理分页变化
+async function handlePageChange(page: number) {
+  currentPage.value = page
   await getFanyongRecords()
 }
 
@@ -90,10 +140,12 @@ function onClickLeft() {
 
 // 获取返佣记录
 async function getFanyongRecords() {
+  loading.value = true
+
   try {
     const resp = await invokeApi('fanyongRecord', {
-      page: page.value + 1,
-      limit: 20
+      page: currentPage.value,
+      limit: pageSize.value
     })
 
     if (!resp) {
@@ -103,26 +155,21 @@ async function getFanyongRecords() {
 
     if (resp.data) {
       const data = resp.data
-      page.value = data.pagination?.current_page ?? 1
-      const newList = data.list ?? []
+      list.value = data.list || []
 
-      if (page.value === 1) {
-        // 首次加载或刷新
-        list.value = newList
-      } else {
-        // 加载更多
-        list.value.push(...newList)
+      // 更新分页信息
+      if (data.pagination) {
+        total.value = data.pagination.total || 0
+        currentPage.value = data.pagination.current_page || 1
       }
-
-      // 判断是否还有更多数据
-      finished.value = !data.pagination?.has_more
     } else {
-      finished.value = true
+      list.value = []
+      total.value = 0
     }
   } catch (error) {
-    console.error('获取返佣记录失败:', error)
-    showToast(t('getCommissionRecordFailed'))
-    finished.value = true
+    ElMessage.error(t('getCommissionRecordFailed'))
+    list.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
@@ -135,160 +182,113 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.fanyong-record {
+.pc-fanyong-record {
   min-height: 100vh;
-  background-color: #f7f8fa;
+  background-color: #f5f7fa;
+  padding: 20px;
 }
 
-.nav-bar {
-  background-color: #fff;
-  border-bottom: 1px solid #ebedf0;
-}
-
-.record-list {
-  padding: 0;
-}
-
-.fanyong-record :deep(.van-cell) {
-  margin-bottom: 8px;
+.pc-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px 24px;
   background-color: #fff;
   border-radius: 8px;
-  margin-left: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.back-btn {
   margin-right: 16px;
 }
 
-.fanyong-record :deep(.van-cell:first-child) {
-  margin-top: 16px;
-}
-
-.fanyong-record :deep(.van-cell__title) {
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-}
-
-.fanyong-record :deep(.van-cell__label) {
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-}
-
-.fanyong-record :deep(.van-cell__value) {
-  font-size: 16px;
+.page-title {
+  font-size: 20px;
   font-weight: 600;
+  color: #333;
+  margin: 0;
 }
 
-.fanyong-record :deep(.van-cell__value.amount-positive) {
-  color: #07c160;
+.pc-content {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
 }
 
-.fanyong-record :deep(.van-cell__value.amount-negative) {
-  color: #ee0a24;
+.record-table {
+  width: 100%;
+  margin-bottom: 20px;
 }
 
-.fanyong-record :deep(.van-list__finished-text) {
-  color: #999;
-  font-size: 12px;
-  padding: 20px 0;
+.amount-positive {
+  color: #67c23a;
+  font-weight: 600;
+  font-size: 16px;
 }
 
-.fanyong-record :deep(.van-empty) {
-  padding: 100px 0;
+.amount-negative {
+  color: #f56c6c;
+  font-weight: 600;
+  font-size: 16px;
 }
 
-/* PC端适配样式 */
-@media (min-width: 768px) {
-  .fanyong-record {
-    max-width: 800px;
-    margin: 0 auto;
-    background-color: #fff;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .nav-bar {
-    border-radius: 8px 8px 0 0;
-  }
-
-  .record-list {
-    padding: 16px 24px;
-  }
-
-  .fanyong-record :deep(.van-cell) {
-    margin-left: 0;
-    margin-right: 0;
-    margin-bottom: 12px;
-    padding: 20px 24px;
-    border: 1px solid #ebedf0;
-    transition: all 0.3s ease;
-  }
-
-  .fanyong-record :deep(.van-cell:hover) {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-    border-color: #d0d0d0;
-  }
-
-  .fanyong-record :deep(.van-cell:first-child) {
-    margin-top: 0;
-  }
-
-  .fanyong-record :deep(.van-cell__title) {
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .fanyong-record :deep(.van-cell__label) {
-    font-size: 14px;
-    margin-top: 6px;
-  }
-
-  .fanyong-record :deep(.van-cell__value) {
-    font-size: 18px;
-    font-weight: 700;
-  }
-
-  .fanyong-record :deep(.van-list__finished-text) {
-    font-size: 14px;
-    padding: 30px 0;
-  }
-
-  .fanyong-record :deep(.van-empty) {
-    padding: 120px 0;
-  }
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 
-/* 大屏PC端适配 */
+.empty-state {
+  padding: 80px 0;
+}
+
+.refresh-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+/* Element Plus 样式覆盖 */
+.pc-fanyong-record :deep(.el-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pc-fanyong-record :deep(.el-table__header) {
+  background-color: #f8f9fa;
+}
+
+.pc-fanyong-record :deep(.el-table th) {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.pc-fanyong-record :deep(.el-table td) {
+  padding: 16px 12px;
+}
+
+.pc-fanyong-record :deep(.el-table__empty-block) {
+  padding: 60px 0;
+}
+
+.pc-fanyong-record :deep(.el-pagination) {
+  padding: 12px 0;
+}
+
+/* 大屏优化 */
 @media (min-width: 1200px) {
-  .fanyong-record {
-    max-width: 1000px;
-  }
-
-  .record-list {
-    padding: 24px 32px;
-  }
-
-  .fanyong-record :deep(.van-cell) {
-    padding: 24px 32px;
-    margin-bottom: 16px;
-  }
-
-  .fanyong-record :deep(.van-cell__title) {
-    font-size: 18px;
-  }
-
-  .fanyong-record :deep(.van-cell__label) {
-    font-size: 15px;
-  }
-
-  .fanyong-record :deep(.van-cell__value) {
-    font-size: 20px;
+  .pc-fanyong-record {
+    max-width: 1200px;
+    margin: 0 auto;
   }
 }
 
-/* 超大屏适配 */
 @media (min-width: 1600px) {
-  .fanyong-record {
-    max-width: 1200px;
+  .pc-fanyong-record {
+    max-width: 1400px;
   }
 }
 </style>
