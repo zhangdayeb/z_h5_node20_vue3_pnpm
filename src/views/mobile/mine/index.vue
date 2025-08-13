@@ -1,210 +1,229 @@
 <template>
-  <div class="pc-mine">
-    <div class="pc-header">
-      <div class="pc-user">
-        <el-avatar :size="80" class="pc-ava">
-          <el-icon :size="40"><UserFilled /></el-icon>
-        </el-avatar>
-        <div class="pc-user-right">
+  <div class="m-mine">
+    <div class="m-header">
+      <div class="m-user">
+        <van-image :src="avatarImg" fit="contain" class="m-ava"></van-image>
+        <div class="m-user-right">
           <h5 v-if="store.getUser() === null" @click.stop="loginHandler">
             {{ $t('mine.loginRegister') }}
           </h5>
-          <div class="pc-user-info" v-else>
-            <span class="pc-level-name">{{ store.getUser()?.name }}</span>
-            <div class="pc-user-level">
-              <div class="pc-img-bg">VIP</div>
-              <span class="pc-level-txt">{{ store.getUser()?.level }}</span>
+          <div class="m-user-info" v-else>
+            <span class="m-level-name">{{ store.getUser()?.name }}</span>
+            <div class="m-user-level">
+              <div class="m-img-bg">VIP</div>
+              <span class="m-level-txt">{{ store.getUser()?.level }}</span>
             </div>
           </div>
-          <span>{{ $t('mine.welcomeTo') }} {{ siteConfig?.site_name ?? '' }}</span>
+          <span
+            >{{ $t('mine.welcomeTo') }} {{ siteConfig?.site_name ?? '' }}</span
+          >
         </div>
-        <div class="pc-settings" @click="settingHandler">
-          <el-icon :size="24"><Setting /></el-icon>
-        </div>
+        <div class="m-seetings" @click="settingHandler"></div>
       </div>
-      <div class="pc-info">
-        <div class="pc-col pc-gap10" @click="refreshBalance" :class="{ 'pc-clickable': true }">
+      <div class="m-info">
+        <div class="m-col m-gap10" @click="refreshBalance" :class="{ 'm-clickable': true }">
           <p>
-            {{ $t('mine.centerWallet') }}
-            <el-icon class="pc-p-icon"><ArrowRight /></el-icon>
+            {{ $t('mine.centerWallet')
+            }}<van-icon name="arrow" color="#c3dae9" class="m-p-icon" />
           </p>
           <h6 v-if="!balanceLoading">{{ Number(store.getUser()?.money ?? '0').toFixed(2) }}</h6>
-          <h6 v-else class="pc-loading-text">
-            <el-icon class="is-loading"><Loading /></el-icon>
-            加载中...
-          </h6>
+          <h6 v-else class="m-loading-text">加载中...</h6>
         </div>
         <!-- 条件渲染：只有当配置允许时才显示返水钱包 -->
-        <div class="pc-col pc-gap10" v-if="shouldShowFanshui">
+        <div class="m-col m-gap10" v-if="shouldShowFanshui">
           <p>
-            {{ $t('mine.fsWallet') }}
-            <el-icon class="pc-p-icon"><ArrowRight /></el-icon>
+            {{ $t('mine.fsWallet')
+            }}<van-icon name="arrow" color="#c3dae9" class="m-p-icon" />
           </p>
           <h6>{{ Number(store.getUser()?.money_rebate ?? '0').toFixed(2) }}</h6>
         </div>
-        <div class="pc-col pc-action-btn" @click="dwHandler(0)">
-          <el-icon :size="32" color="#4CAF50"><Wallet /></el-icon>
+        <div
+          class="m-col"
+          @click="dwHandler(0)"
+          style="display: flex; justify-content: center; align-items: center"
+        >
+          <van-image fit="contain" :src="dipositImg" class="m-icon" />
           <p>{{ $t('mine.deposit') }}</p>
         </div>
-        <div class="pc-col pc-action-btn" @click="dwHandler(1)">
-          <el-icon :size="32" color="#2196F3"><Money /></el-icon>
+        <div
+          class="m-col"
+          @click="dwHandler(1)"
+          style="display: flex; justify-content: center; align-items: center"
+        >
+          <van-image fit="contain" :src="withdrawImg" class="m-icon" />
           <p>{{ $t('mine.withdraw') }}</p>
         </div>
       </div>
     </div>
-
-    <div class="pc-content">
-      <div class="pc-func">
-        <h5 class="pc-label">{{ $t('mine.normalFunc') }}</h5>
-        <div class="pc-func-contain">
-          <div class="pc-func-item" @click.stop="recordHandler(1)">
-            <el-icon :size="40" color="#FF9800"><Document /></el-icon>
-            <p>{{ $t('mine.moneyLog') }}</p>
-          </div>
-          <div class="pc-func-item" @click.stop="recordHandler(2)">
-            <el-icon :size="40" color="#9C27B0"><TrophyBase /></el-icon>
-            <p>{{ $t('mine.gameLog') }}</p>
-          </div>
-          <div class="pc-func-item" @click.stop="recordHandler(3)">
-            <el-icon :size="40" color="#F44336"><Star /></el-icon>
-            <p>{{ $t('mine.levelRight') }}</p>
-          </div>
-          <div class="pc-func-item" @click.stop="recordHandler(4)">
-            <el-icon :size="40" color="#00BCD4"><Share /></el-icon>
-            <p>{{ $t('mine.pullMoney') }}</p>
-          </div>
+    <div class="m-func">
+      <h5 class="m-label">{{ $t('mine.normalFunc') }}</h5>
+      <div class="m-func-contain">
+        <div class="m-func-item" @click.stop="recordHandler(1)">
+          <van-image
+            fit="contain"
+            :src="trancationImg"
+            class="m-img"
+          ></van-image>
+          <p>{{ $t('mine.moneyLog') }}</p>
         </div>
-      </div>
-
-      <!-- menu -->
-      <div class="pc-menu-container">
-        <div class="pc-menu-section">
-          <el-card shadow="hover" class="pc-mine-menu">
-            <div class="pc-menu-item" @click="menuHandler(0)">
-              <el-icon><User /></el-icon>
-              <span>{{ $t('mine.persionalInfo') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-            <div class="pc-menu-item" @click="menuHandler(1)">
-              <el-icon><Lock /></el-icon>
-              <span>{{ $t('mine.accountSafe') }}</span>
-              <span class="pc-menu-value">{{ $t('mine.safest') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-            <div class="pc-menu-item" @click="menuHandler(2)">
-              <el-icon><CreditCard /></el-icon>
-              <span>{{ $t('mine.bankCard') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-          </el-card>
+        <div class="m-func-item" @click.stop="recordHandler(2)">
+          <van-image
+            fit="contain"
+            :src="betRecordImg"
+            class="m-img"
+          ></van-image>
+          <p>{{ $t('mine.gameLog') }}</p>
         </div>
-
-        <div class="pc-menu-section">
-          <el-card shadow="hover" class="pc-mine-menu">
-            <div class="pc-menu-item" @click="menuHandler(3)">
-              <el-icon><List /></el-icon>
-              <span>{{ $t('rechargeRecord') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-            <div class="pc-menu-item" @click="menuHandler(4)">
-              <el-icon><Tickets /></el-icon>
-              <span>{{ $t('mine.moneyLog') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-            <!-- 条件渲染：只有当配置允许时才显示返水记录菜单 -->
-            <div class="pc-menu-item" @click="menuHandler(5)" v-if="shouldShowFanshui">
-              <el-icon><Coin /></el-icon>
-              <span>{{ $t('rebateRecord') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-            <div class="pc-menu-item" @click="menuHandler(6)">
-              <el-icon><Present /></el-icon>
-              <span>{{ $t('commissionRecord') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-            <div class="pc-menu-item" @click="menuHandler(7)">
-              <el-icon><UserFilled /></el-icon>
-              <span>{{ $t('subordinateMembers') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-            <div class="pc-menu-item" @click="logoutHandler">
-              <el-icon><SwitchButton /></el-icon>
-              <span>{{ $t('user.logout') }}</span>
-              <el-icon class="pc-menu-arrow"><ArrowRight /></el-icon>
-            </div>
-          </el-card>
+        <div class="m-func-item" @click.stop="recordHandler(3)">
+          <van-image fit="contain" :src="vipImg" class="m-img"></van-image>
+          <p>{{ $t('mine.levelRight') }}</p>
+        </div>
+        <div class="m-func-item" @click.stop="recordHandler(4)">
+          <van-image fit="contain" :src="agentImg" class="m-img"></van-image>
+          <p>{{ $t('mine.pullMoney') }}</p>
         </div>
       </div>
     </div>
 
-    <!-- 设置弹窗 -->
-    <el-dialog
-      v-model="show"
-      :title="$t('user.settings')"
-      width="500px"
-      class="pc-settings-dialog"
+    <!-- menu -->
+    <van-cell-group class="m-mine-menu">
+      <van-cell
+        :title="$t('mine.persionalInfo')"
+        is-link
+        @click.stop="menuHandler(0)"
+      >
+        <template #icon>
+          <van-icon name="contact" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        :title="$t('mine.accountSafe')"
+        is-link
+        :value="$t('mine.safest')"
+        @click.stop="menuHandler(1)"
+      >
+        <template #icon>
+          <van-icon name="shield-o" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        :title="$t('mine.bankCard')"
+        is-link
+        @click.stop="menuHandler(2)"
+      >
+        <template #icon>
+          <van-icon name="card" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+    </van-cell-group>
+
+    <van-cell-group class="m-mine-menu m-mt10">
+      <van-cell
+        :title="$t('rechargeRecord')"
+        is-link
+        @click.stop="menuHandler(3)"
+      >
+        <template #icon>
+          <van-icon name="records" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        :title="$t('mine.moneyLog')"
+        is-link
+        @click.stop="menuHandler(4)"
+      >
+        <template #icon>
+          <van-icon name="bill-o" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <!-- 条件渲染：只有当配置允许时才显示返水记录菜单 -->
+      <van-cell
+        :title="$t('rebateRecord')"
+        is-link
+        @click.stop="menuHandler(5)"
+        v-if="shouldShowFanshui"
+      >
+        <template #icon>
+          <van-icon name="balance-o" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        :title="$t('commissionRecord')"
+        is-link
+        @click.stop="menuHandler(6)"
+      >
+        <template #icon>
+          <van-icon name="gift-o" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        :title="$t('subordinateMembers')"
+        is-link
+        @click.stop="menuHandler(7)"
+      >
+        <template #icon>
+          <van-icon name="friends-o" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+      <van-cell
+        :title="$t('user.logout')"
+        is-link
+        @click.stop="logoutHandler"
+      >
+        <template #icon>
+          <van-icon name="logout" class="m-cell-icon m-f17" />
+        </template>
+      </van-cell>
+    </van-cell-group>
+
+    <van-popup
+      position="right"
+      v-model:show="show"
+      :style="{ width: '100%', height: '100%' }"
     >
-      <div class="pc-pop-contain">
-        <el-card class="pc-settings-card">
-          <div class="pc-settings-item" @click="router.push('/safeSettings')">
-            <el-icon><Lock /></el-icon>
-            <span>{{ $t('mine.safeSetting') }}</span>
-            <el-icon class="pc-settings-arrow"><ArrowRight /></el-icon>
-          </div>
-        </el-card>
+      <van-nav-bar
+        left-arrow
+        :title="$t('user.settings')"
+        @click-left="onClickLeft"
+      />
+      <div class="m-pop-contain">
+        <van-cell-group class="m-mt10">
+          <van-cell
+            :title="$t('mine.safeSetting')"
+            is-link
+            to="safeSettings"
+          ></van-cell>
+        </van-cell-group>
+        <van-cell-group class="m-mt10">
+          <van-cell :title="$t('user.conactUs')" is-link></van-cell>
+          <van-cell :title="$t('mine.aboutUs')" is-link></van-cell>
+        </van-cell-group>
 
-        <el-card class="pc-settings-card">
-          <div class="pc-settings-item">
-            <el-icon><ChatDotRound /></el-icon>
-            <span>{{ $t('user.conactUs') }}</span>
-            <el-icon class="pc-settings-arrow"><ArrowRight /></el-icon>
-          </div>
-          <div class="pc-settings-item">
-            <el-icon><InfoFilled /></el-icon>
-            <span>{{ $t('mine.aboutUs') }}</span>
-            <el-icon class="pc-settings-arrow"><ArrowRight /></el-icon>
-          </div>
-        </el-card>
-
-        <el-button type="danger" class="pc-logout-btn" @click="logoutHandler">
-          {{ $t('user.logout') }}
-        </el-button>
+        <van-button class="m-mt10 m-btn-txt" @click="logoutHandler">{{
+          $t('user.logout')
+        }}</van-button>
       </div>
-    </el-dialog>
+    </van-popup>
   </div>
 </template>
 
 <script setup lang="ts">
+import avatarImg from '@/assets/mobile/avatar.png'
+import dipositImg from '@/assets/mobile/mine_deposit.png'
+import withdrawImg from '@/assets/mobile/mine_withdraw.png'
+
+import trancationImg from '@/assets/mobile/transactionRecords.png'
+import betRecordImg from '@/assets/mobile/betRecords.png'
+import vipImg from '@/assets/mobile/vip.png'
+import agentImg from '@/assets/mobile/agent.png'
 import api from '@/api'
 import { userApi } from '@/api'
 import { useAppStore } from '@/stores/app'
 import { useConfigStore } from '@/stores/config'
 import { onMounted, ref, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { showToast } from 'vant'
 import type { SiteConfig } from 'typings'
 import { useRouter } from 'vue-router'
-import {
-  UserFilled,
-  Setting,
-  ArrowRight,
-  Loading,
-  Wallet,
-  Money,
-  Document,
-  TrophyBase,
-  Star,
-  Share,
-  User,
-  Lock,
-  CreditCard,
-  List,
-  Tickets,
-  Coin,
-  Present,
-  SwitchButton,
-  ChatDotRound,
-  InfoFilled
-} from '@element-plus/icons-vue'
 
 defineOptions({ name: 'MineIndex' })
 const router = useRouter()
@@ -219,8 +238,10 @@ const balanceLoading = ref(false)
 // 计算属性：判断是否显示返水相关功能
 const shouldShowFanshui = computed(() => {
   const fanshuiConfig = configStore.getConfigValue('default_user_fanshui', '0')
+
   // 兼容字符串和数字，只要是0就不显示
   const value = typeof fanshuiConfig === 'string' ? parseFloat(fanshuiConfig) : fanshuiConfig
+
   return value > 0
 })
 
@@ -246,13 +267,13 @@ async function refreshBalance() {
     if (response && response.code === 200 && response.data) {
       // 更新用户信息到store
       store.setUser(response.data)
-      ElMessage.success('余额已更新')
+      showToast('余额已更新')
     } else {
-      ElMessage.error('刷新失败，请重试')
+      showToast('刷新失败，请重试')
     }
   } catch (error) {
     console.error('刷新余额失败:', error)
-    ElMessage.error('刷新失败，请重试')
+    showToast('刷新失败，请重试')
   } finally {
     balanceLoading.value = false
   }
@@ -265,6 +286,7 @@ async function getSiteConfig() {
 
 function loginHandler() {
   store.$patch({ loginShow: true })
+  // console.log('login show', store.getUser(), store.loginShow)
 }
 
 // 设置
@@ -276,6 +298,10 @@ function settingHandler() {
   show.value = true
 }
 
+// 返回
+function onClickLeft() {
+  show.value = false
+}
 // 存/取款
 function dwHandler(n: number) {
   if (!store.isLogin()) {
@@ -353,10 +379,11 @@ async function logoutHandler() {
   store.loading()
   try {
     const resp = await api.logout()
+    console.log('logout resp:', resp)
     if (resp && resp.code === 200) {
       store.logout()
       store.stopLoad()
-      ElMessage.success({
+      showToast({
         message: resp.message,
         onClose: () => {
           window.location.href = '/'
@@ -365,361 +392,236 @@ async function logoutHandler() {
     }
   } catch (err) {
     console.log('logout err', err)
-    ElMessage.error((err as Error).message)
+    showToast((err as Error).message)
     store.stopLoad()
   }
 }
-
 onMounted(async () => {
   await getSiteConfig()
 })
 </script>
-
 <style lang="less" scoped>
-.pc-mine {
+.m-mine {
   display: flex;
   flex-direction: column;
-  background: #f5f7fa;
-  min-height: 100vh;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 30px;
+  // height: calc(100% - 50px);
+  background: var(--color-m-background);
+  padding-bottom: 60px;
 
-  .pc-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
+  .m-header {
+    height: 200px;
+    background: url('../../../assets/mobile/mine_header_bg.png') no-repeat;
+    background-size: 100% 100%;
+    color: #3c4045;
     display: flex;
     flex-direction: column;
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 30px;
-    min-height: 320px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
 
-    .pc-user {
-      padding: 50px;
+    .m-user {
+      padding: 25px;
       position: relative;
       display: flex;
       flex-direction: row;
       align-items: center;
-      height: 160px;
-      gap: 25px;
+      height: 100px;
+      gap: 15px;
 
-      .pc-ava {
-        background: rgba(255, 255, 255, 0.2);
-        border: 3px solid rgba(255, 255, 255, 0.3);
+      .m-ava {
+        width: 58px;
+        height: 58px;
       }
-
       &-right {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 10px;
+        gap: 5px;
 
-        .pc-user-info {
+        .m-user-info {
           display: flex;
           flex-direction: row;
           justify-content: flex-start;
           align-items: center;
-          gap: 12px;
+          gap: 5px;
 
-          .pc-level-name {
-            font-size: 28px;
-            font-weight: 600;
-            color: #fff;
+          .m-level-name {
+            font-size: 18px;
+            font-weight: 400;
           }
-
-          .pc-user-level {
-            height: 32px;
-            background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+          .m-user-level {
+            // width: 31px;
+            height: 20px;
+            background-image: url('../../../assets/mobile/level_bg.png');
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 4px;
-            padding: 0 12px;
-            border-radius: 16px;
+            gap: 2px;
+            padding: 0 5px;
+            justify-content: flex-start;
 
-            .pc-img-bg,
-            .pc-level-txt {
-              color: #333;
-              font-size: 16px;
-              font-weight: 600;
+            .m-img-bg {
+              color: #fff;
+              font-size: 14px;
+            }
+            .m-level-txt {
+              color: #fff;
+              font-size: 14px;
             }
           }
         }
-
         h5 {
-          font-size: 28px;
-          font-weight: 600;
-          cursor: pointer;
-          color: #fff;
-          transition: opacity 0.3s ease;
-
-          &:hover {
-            opacity: 0.8;
-          }
+          font-size: 18px;
+          font-weight: 400;
         }
-
         span {
-          font-size: 16px;
-          color: rgba(255, 255, 255, 0.9);
+          font-size: 12px;
         }
       }
-
-      .pc-settings {
+      .m-seetings {
         position: absolute;
-        right: 40px;
-        top: 40px;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-        color: #fff;
-
-        &:hover {
-          transform: rotate(90deg);
-        }
+        right: 20px;
+        top: 15px;
+        width: 21px;
+        height: 20px;
+        background: url('../../../assets/mobile/setting.png') no-repeat;
+        background-size: 100%;
+        z-index: 2;
       }
     }
-
-    .pc-info {
+    .m-info {
       display: flex;
       flex-direction: row;
       justify-content: space-around;
       align-items: flex-end;
       flex: 1;
-      padding: 0 50px 40px 50px;
-      background: rgba(0, 0, 0, 0.1);
+      height: 100px;
+      padding: 0 28px 25px 28px;
+      background: url('../../../assets/mobile/mine_header_bg2.png') no-repeat;
+      background-size: 100% 100%;
 
-      .pc-col {
+      .m-col {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        align-items: center;
-        min-width: 150px;
-        color: #fff;
+        gap: 5px;
 
-        .pc-p-icon {
+        .m-p-icon {
           margin-left: 5px;
-          vertical-align: middle;
         }
-
+        .m-icon {
+          width: 26px;
+          height: 22px;
+        }
         p {
-          font-size: 16px;
-          text-align: center;
-          display: flex;
-          align-items: center;
+          font-size: 12px;
         }
-
         h6 {
-          font-size: 24px;
-          font-weight: 600;
-          text-align: center;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-
-          .is-loading {
-            animation: rotate 1s linear infinite;
-          }
+          font-size: 18px;
+          font-weight: 400;
         }
       }
-
-      .pc-gap10 {
-        gap: 15px;
+      .m-gap10 {
+        gap: 10px;
       }
 
-      .pc-action-btn {
+      // 新增：点击样式
+      .m-clickable {
         cursor: pointer;
-        transition: transform 0.3s ease;
-        padding: 15px;
-        border-radius: 12px;
+        transition: opacity 0.2s ease;
 
         &:hover {
-          transform: translateY(-3px);
-          background-color: rgba(255, 255, 255, 0.1);
+          opacity: 0.8;
+        }
+
+        &:active {
+          opacity: 0.6;
         }
       }
 
-      .pc-clickable {
-        cursor: pointer;
-        transition: all 0.3s ease;
-        padding: 15px;
-        border-radius: 12px;
-
-        &:hover {
-          background-color: rgba(255, 255, 255, 0.1);
-        }
-      }
-
-      .pc-loading-text {
-        color: rgba(255, 255, 255, 0.8);
+      // 新增：加载中文字样式
+      .m-loading-text {
+        color: #999;
+        font-size: 16px !important;
       }
     }
   }
 
-  .pc-content {
+  .m-func {
     display: flex;
     flex-direction: column;
-    gap: 30px;
-  }
+    height: 130px;
+    margin-bottom: 10px;
+    padding: 0 15px;
+    background-color: var(--van-nav-bar-background);
 
-  .pc-func {
-    background-color: #fff;
-    border-radius: 16px;
-    padding: 30px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-
-    .pc-label {
-      font-size: 20px;
+    .m-label {
+      height: 40px;
+      line-height: 40px;
+      font-size: 13px;
       font-weight: 700;
-      color: #303133;
-      margin-bottom: 25px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid #e4e7ed;
+      color: var(--m-mine-label-color);
+      border-bottom: 1px solid #e8ebf6;
     }
-
     &-contain {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 30px;
+      height: 90px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-around;
+      align-items: center;
 
-      .pc-func-item {
+      .m-func-item {
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        color: #606266;
-        gap: 15px;
-        padding: 30px;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-        background: #f7f8fa;
+        flex: 1;
+        color: var(--m-mine-label-color);
+        gap: 5px;
 
-        &:hover {
-          background-color: #fff;
-          border-color: #667eea;
-          transform: translateY(-3px);
-          box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+        .m-img {
+          width: 34px;
+          height: 34px;
         }
-
         p {
-          font-size: 16px;
-          text-align: center;
-          font-weight: 500;
+          font-size: 12px;
         }
       }
     }
   }
 
-  .pc-menu-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
+  .m-mine-menu {
+    .m-cell-icon {
+      margin-top: 3.5px;
+      margin-right: 10px;
+      width: 17px;
+      height: 17px;
+    }
+    .m-f17 {
+      font-size: 17px;
+    }
+  }
+  .m-mt10 {
+    margin-top: 10px;
+  }
 
-    .pc-menu-section {
-      .pc-mine-menu {
-        border-radius: 16px;
-        padding: 20px;
+  .m-pop-contain {
+    display: flex;
+    flex-direction: column;
+    background: #eef3f8;
+    flex: 1;
+    height: calc(100% - 46px);
 
-        .pc-menu-item {
-          display: flex;
-          align-items: center;
-          padding: 18px 20px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          border-radius: 8px;
-          margin-bottom: 8px;
-
-          &:last-child {
-            margin-bottom: 0;
-          }
-
-          &:hover {
-            background-color: #f5f7fa;
-            padding-left: 25px;
-          }
-
-          .el-icon {
-            font-size: 20px;
-            color: #667eea;
-            margin-right: 15px;
-          }
-
-          span {
-            flex: 1;
-            font-size: 16px;
-            color: #303133;
-          }
-
-          .pc-menu-value {
-            color: #67c23a;
-            margin-right: 10px;
-            flex: none;
-          }
-
-          .pc-menu-arrow {
-            color: #c0c4cc;
-            margin-right: 0;
-          }
-        }
-      }
+    .m-btn-txt {
+      color: #ff4f4f;
     }
   }
 }
-
-.pc-settings-dialog {
-  .pc-pop-contain {
-    padding: 20px;
-
-    .pc-settings-card {
-      margin-bottom: 20px;
-
-      .pc-settings-item {
-        display: flex;
-        align-items: center;
-        padding: 15px;
-        cursor: pointer;
-        transition: background 0.3s ease;
-        border-radius: 8px;
-
-        &:hover {
-          background-color: #f5f7fa;
-        }
-
-        .el-icon {
-          font-size: 20px;
-          color: #667eea;
-          margin-right: 15px;
-        }
-
-        span {
-          flex: 1;
-          font-size: 16px;
-        }
-
-        .pc-settings-arrow {
-          color: #c0c4cc;
-          margin-right: 0;
-        }
-      }
+</style>
+<style lang="less">
+.m-mine-menu {
+  .van-cell__value {
+    span {
+      white-space: nowrap;
     }
-
-    .pc-logout-btn {
-      width: 100%;
-      height: 45px;
-      font-size: 16px;
-      margin-top: 10px;
-    }
-  }
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
   }
 }
 </style>
