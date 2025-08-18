@@ -3,9 +3,13 @@
     <!-- 合作伙伴区域 -->
     <div class="p-footer-wrapper">
       <div class="p-partner-icons">
-        <el-icon v-for="i in 10" :key="i" class="p-partner-icon">
-          <Trophy />
-        </el-icon>
+        <img
+          v-for="i in 10"
+          :key="i"
+          :src="`/src/assets/web/footer/${i}.png`"
+          :alt="`合作伙伴 ${i}`"
+          class="p-partner-icon"
+        />
       </div>
     </div>
 
@@ -53,34 +57,10 @@
 
       <!-- 关于我们链接 -->
       <div class="p-brand3">
-        <RouterLink
-          v-for="(item, idx) in abouts"
-          :key="idx"
-          :to="`/aboutUs/${item.id}`"
-          class="p-about-link"
-        >{{ item.title }}</RouterLink>
-      </div>
-
-      <!-- 客服入口 -->
-      <div class="p-brand4">
-        <div class="p-one" @click="goToSupport">
-          <div class="p-online">
-            <el-icon class="p-on-img">
-              <Service />
-            </el-icon>
-            <span>{{ $t('main.kf') }}</span>
-          </div>
-          <div class="p-btn">{{ $t('footer.consultNow') }}</div>
-        </div>
-        <div class="p-one" @click="goToSupport">
-          <div class="p-online">
-            <el-icon class="p-on-img">
-              <Phone />
-            </el-icon>
-            <span>{{ $t('main.hotline') }}</span>
-          </div>
-          <div class="p-btn">{{ $t('footer.consultNow') }}</div>
-        </div>
+        <RouterLink to="/aboutUs/1" class="p-about-link">关于我们</RouterLink>
+        <RouterLink to="/aboutUs/2" class="p-about-link">使用条款</RouterLink>
+        <RouterLink to="/aboutUs/3" class="p-about-link">隐私政策</RouterLink>
+        <RouterLink to="/aboutUs/4" class="p-about-link">负责任博彩</RouterLink>
       </div>
     </div>
 
@@ -93,53 +73,15 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import {
-  Service,
-  Phone,
-  Trophy,
   Medal,
   Stamp,
   Checked,
   CircleCheck,
   SuccessFilled
 } from '@element-plus/icons-vue'
-import type { About } from 'typings'
-import { onMounted, ref } from 'vue'
-import { invokeApi } from '@/utils/tools'
 
 defineOptions({ name: 'PcCommonFooter' })
-
-const router = useRouter()
-const abouts = ref<About[]>([])
-
-// 跳转到客服页面
-function goToSupport() {
-  router.push('/support')
-}
-
-// 获取关于我们列表
-async function getAboutList() {
-  try {
-    const resp = await invokeApi('aboutList')
-    if (resp) {
-      abouts.value = resp.data as About[]
-    }
-  } catch (error) {
-    console.error('获取关于我们列表失败', error)
-    // 使用默认数据
-    abouts.value = [
-      { id: 1, title: '关于我们' },
-      { id: 2, title: '使用条款' },
-      { id: 3, title: '隐私政策' },
-      { id: 4, title: '负责任博彩' }
-    ]
-  }
-}
-
-onMounted(async () => {
-  await getAboutList()
-})
 </script>
 
 <style lang="less" scoped>
@@ -169,13 +111,16 @@ onMounted(async () => {
       gap: 30px;
 
       .p-partner-icon {
-        font-size: 40px;
-        color: #828e9e;
+        height: 40px;
+        width: auto;
+        max-width: 80px;
+        object-fit: contain;
         transition: all 0.3s;
         cursor: pointer;
+        filter: grayscale(100%) opacity(0.7);
 
         &:hover {
-          color: #fff;
+          filter: grayscale(0%) opacity(1);
           transform: scale(1.1);
         }
       }
@@ -275,62 +220,6 @@ onMounted(async () => {
         &:hover {
           color: #fff;
           padding-left: 5px;
-        }
-      }
-    }
-
-    .p-brand4 {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 15px;
-
-      .p-one {
-        cursor: pointer;
-
-        .p-online {
-          margin-bottom: 8px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-
-          .p-on-img {
-            font-size: calc(20px / var(--Cardinality));
-            color: #828e9e;
-            transition: all 0.3s;
-          }
-
-          span {
-            color: #828e9e;
-            font-size: 14px;
-            transition: all 0.3s;
-          }
-        }
-
-        .p-btn {
-          border-radius: 4px;
-          border: 1px solid #707684;
-          width: calc(84px / var(--Cardinality));
-          height: calc(30px / var(--Cardinality));
-          line-height: calc(30px / var(--Cardinality));
-          text-align: center;
-          cursor: pointer;
-          font-size: 12px;
-          transition: all 0.3s;
-
-          &:hover {
-            border: 1px solid #fff;
-            color: #fff;
-            background: rgba(255, 255, 255, 0.1);
-          }
-        }
-
-        &:hover {
-          .p-on-img,
-          span {
-            color: #fff;
-          }
         }
       }
     }
