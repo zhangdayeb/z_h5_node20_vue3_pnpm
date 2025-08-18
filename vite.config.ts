@@ -81,12 +81,12 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'https://zuserapi.ampj998.top/',
+        target: '',
         changeOrigin: true,
         // rewrite: path => path.replace(/^\/api/, '/api'),
       },
       '/storage': {
-        target: 'https://zuserapi.ampj998.top/',
+        target: '',
         changeOrigin: true,
         // rewrite: path => path.replace(/^\/storage/, '/storage/'),
       },
