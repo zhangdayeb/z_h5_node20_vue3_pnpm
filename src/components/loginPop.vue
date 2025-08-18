@@ -59,7 +59,7 @@
         }}</span>
         <div>|</div>
         <span class="m-link-label m-border" @click.stop="registerHandler">{{
-          $t('login.register')
+          $t('login.registerNow')
         }}</span>
       </van-cell>
     </div>

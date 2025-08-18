@@ -162,7 +162,7 @@
               {{ $t('login.rememberMe') }}
             </el-checkbox>
             <el-link type="primary" :underline="false" @click="goToForgotPassword">
-              {{ $t('login.forgotPassword') }}
+              {{ $t('login.forgetPwd') }}
             </el-link>
           </div>
         </el-form-item>
