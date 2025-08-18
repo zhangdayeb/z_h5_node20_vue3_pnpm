@@ -2,7 +2,7 @@
   <div class="p-header">
     <div class="p-header-wrapper">
       <div class="p-header-bar">
-        <div class="p-bar-wrapper" style="z-index: 120">
+        <div class="p-bar-wrapper">
           <!-- 语言切换下拉菜单 -->
           <el-dropdown
             trigger="click"
@@ -72,89 +72,6 @@
                 </el-button>
               </div>
             </template>
-          </div>
-        </div>
-      </div>
-
-      <!-- 导航菜单 -->
-      <div class="p-header-menu">
-        <div class="p-menu-wrapper">
-          <div class="p-other">
-            <div class="p-nav">
-              <div
-                class="p-nav-item"
-                v-for="(item, idx) in menuList"
-                :key="idx"
-                :class="{ active: idx === menuIndex }"
-                @mouseenter="menuIndex = idx"
-                @mouseleave="menuIndex = -1"
-              >
-                <a href="javascript:;" class="category">
-                  <span>{{ item.title }}</span>
-                  <el-icon v-if="item.is_hot" class="p-hot">
-                    <StarFilled />
-                  </el-icon>
-                </a>
-                <div class="p-submenu" v-if="gamesByType[`${item.game_type}`] && item.game_type !== 0">
-                  <div class="p-submenu-wrapper">
-                    <template
-                      v-for="(it, ix) in gamesByType[`${item.game_type}`]"
-                    >
-                      <a
-                        class="p-submenu-item"
-                        href="javascript:;"
-                        :key="ix"
-                        v-if="ix < 4"
-                        @click="playGame(it)"
-                      >
-                        <el-image
-                          :src="getImgUrl(it.logo_url)"
-                          fit="contain"
-                          class="p-item-img"
-                        ></el-image>
-                        <div class="p-item-right">
-                          <p class="p-label">{{ it.title }}</p>
-                          <div class="p-btn">{{ $t('game.start') }}</div>
-                        </div>
-                      </a>
-                    </template>
-                    <a
-                      href="javascript:;"
-                      class="p-item-more"
-                      v-if="gamesByType[`${item.game_type}`].length > 4"
-                    >
-                      <p class="p-more">{{ $t('common.viewMore') }}</p>
-                      <span class="p-num">{{
-                        gamesByType[`${item.game_type}`].length
-                      }}</span>
-                      <p class="p-txt">{{ $t('game.venues') }}</p>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 右侧功能图标 -->
-            <div class="p-other-right">
-              <div class="p-other-item" @click="goToGift">
-                <el-icon class="p-icon-img">
-                  <Present />
-                </el-icon>
-                <span>{{ $t('main.gift') }}</span>
-              </div>
-              <div class="p-other-item" @click="goToSupport">
-                <el-icon class="p-icon-img">
-                  <Service />
-                </el-icon>
-                <span>{{ $t('main.kf') }}</span>
-              </div>
-              <div class="p-other-item" @click="goToSupport">
-                <el-icon class="p-icon-img">
-                  <Phone />
-                </el-icon>
-                <span>{{ $t('main.hotline') }}</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -278,10 +195,6 @@ import { onMounted, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   CaretBottom,
-  StarFilled,
-  Present,
-  Service,
-  Phone,
   User,
   Lock,
   Key,
@@ -295,12 +208,11 @@ import enUsImg from '@/assets/mobile/lang/en_us.png'
 import thThImg from '@/assets/mobile/lang/th_th.png'
 import viVnImg from '@/assets/mobile/lang/vi_vn.png'
 import koKrImg from '@/assets/mobile/lang/ko_kr.png'
-import { getDomain, invokeApi, getImgUrl } from '@/utils/tools'
+import { getDomain, invokeApi } from '@/utils/tools'
 import { useAppStore } from '@/stores/app'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import type { gameType } from 'typings'
 
 defineOptions({ name: 'PcCommonHeader' })
 
@@ -309,9 +221,6 @@ const store = useAppStore()
 const { t } = useI18n()
 const langIsVisible = ref(false)
 const currLang = ref()
-const menuIndex = ref(-1)
-const gamesByType = ref<{ [key: string]: gameType[] }>({})
-const menuList = ref<any[]>([])
 
 // 登录相关
 const loginDialogVisible = ref(false)
@@ -360,17 +269,6 @@ const langList = ref<
   { icon: viVnImg, lang: 'vi-VN', label: 'ViệtName' },
   { icon: koKrImg, lang: 'ko-KR', label: '한국어' }
 ])
-
-// 游戏类型映射到i18n key
-const gameTypeI18nMap: { [key: number]: string } = {
-  0: 'hotGames',
-  1: 'liveCasino',
-  2: 'fishingGames',
-  3: 'electronicGames',
-  4: 'lotteryGames',
-  5: 'sportsEvents',
-  6: 'cardGames'
-}
 
 // 语言切换可见性
 function visibleChange(b: boolean) {
@@ -422,7 +320,7 @@ function resetLoginForm() {
   loginFormRef.value?.resetFields()
 }
 
-// 处理登录 - 完全按照移动端逻辑
+// 处理登录
 async function handleLogin() {
   if (!loginFormRef.value) return
 
@@ -440,8 +338,6 @@ async function handleLogin() {
           captcha: showCaptcha.value ? loginForm.captcha : ''
         })
 
-        console.log('login resp', resp)
-
         if (resp && resp.code === 200) {
           const { access_token, user_info } = resp.data || {}
 
@@ -450,14 +346,12 @@ async function handleLogin() {
             return
           }
 
-          // 设置 token - 使用store的方法
+          // 设置 token
           store.setToken(access_token)
-          console.log('Token 设置成功:', access_token)
 
-          // 设置用户信息 - 直接使用登录返回的user_info
+          // 设置用户信息
           if (user_info) {
             store.setUser(user_info)
-            console.log('用户信息设置成功:', user_info)
           }
 
           // 保存记住我选项
@@ -478,8 +372,6 @@ async function handleLogin() {
 
           // 关闭登录弹窗
           loginDialogVisible.value = false
-
-          console.log('登录流程完成')
 
         } else {
           // 登录失败
@@ -508,7 +400,6 @@ async function getCaptcha() {
     const resp = await invokeApi('authCaptcha')
     if (resp && resp.code === 200 && resp.data) {
       captchaData.value = { key: resp.data }
-      // 如果需要显示验证码图片，设置验证码URL
       captchaUrl.value = `/api/captcha/image?key=${resp.data}&t=${Date.now()}`
     }
   } catch (error) {
@@ -543,7 +434,7 @@ function goToForgotPassword() {
   router.push('/forgot-password')
 }
 
-// 处理退出登录 - 按照移动端逻辑
+// 处理退出登录
 async function handleLogout() {
   try {
     await ElMessageBox.confirm(
@@ -561,13 +452,10 @@ async function handleLogout() {
     // 调用退出登录API
     try {
       const resp = await invokeApi('logout')
-      console.log('logout resp:', resp)
 
       if (resp && resp.code === 200) {
-        // 使用store的logout方法清除数据
         store.logout()
         store.stopLoad()
-
         ElMessage.success(resp.message || t('login.logoutSuccess'))
 
         // 跳转到首页
@@ -591,27 +479,6 @@ async function handleLogout() {
   }
 }
 
-// 玩游戏
-function playGame(game: gameType) {
-  if (!store.isLogin()) {
-    ElMessage.warning(t('game.loginRequired'))
-    showLoginDialog()
-    return
-  }
-  // 跳转到游戏页面
-  router.push(`/game/${game.id}`)
-}
-
-// 跳转到优惠页面
-function goToGift() {
-  router.push('/gift')
-}
-
-// 跳转到客服页面
-function goToSupport() {
-  router.push('/support')
-}
-
 // 跳转到个人中心
 function goToPersonalCenter() {
   if (!store.isLogin()) {
@@ -633,48 +500,6 @@ async function getSysConfig() {
   })
   if (resp) {
     store.$patch({ systemConf: resp.data })
-  }
-}
-
-// 获取游戏类型列表作为菜单
-async function getGameTypesAsMenu() {
-  try {
-    const resp = await invokeApi('gameTypes')
-    if (resp && resp.data) {
-      const types = resp.data as any[]
-
-      // 转换为菜单格式并翻译
-      menuList.value = types.map(item => ({
-        title: t(gameTypeI18nMap[item.game_type]) || item.title || item.name,
-        game_type: item.game_type,
-        is_hot: item.is_hot || item.game_type === 0,
-        sort: item.sort || 0
-      }))
-
-      // 按排序字段排序
-      menuList.value.sort((a, b) => a.sort - b.sort)
-    }
-  } catch (error) {
-    console.error('获取游戏类型失败，使用默认菜单', error)
-    // 使用默认菜单
-    menuList.value = [
-      { title: t('hotGames'), game_type: 0, is_hot: true },
-      { title: t('sportsEvents'), game_type: 5, is_hot: false },
-      { title: t('liveCasino'), game_type: 1, is_hot: false },
-      { title: t('electronicGames'), game_type: 3, is_hot: false },
-      { title: t('cardGames'), game_type: 6, is_hot: false },
-      { title: t('fishingGames'), game_type: 2, is_hot: false },
-      { title: t('lotteryGames'), game_type: 4, is_hot: false }
-    ]
-  }
-}
-
-// 获取游戏类型下的游戏
-async function getGameByType(type: number | string) {
-  const resp = await invokeApi('gameApi', { gameType: type })
-  if (resp && resp.data) {
-    const data = resp.data as gameType[]
-    gamesByType.value[`${type}`] = data
   }
 }
 
@@ -703,14 +528,6 @@ currLang.value = initLang()
 
 onMounted(async () => {
   await getSysConfig()
-  await getGameTypesAsMenu()
-
-  // 根据菜单获取对应的游戏
-  for (const menu of menuList.value) {
-    if (menu.game_type !== undefined) {
-      await getGameByType(menu.game_type)
-    }
-  }
 
   // 如果已登录，获取最新用户信息
   if (store.isLogin()) {
@@ -739,10 +556,29 @@ onMounted(async () => {
 .p-header {
   display: flex;
   flex-direction: column;
-  height: 140px;
+  height: 60px; // 大幅减少高度
+
+  &-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+    justify-content: center;
+    align-items: center;
+    height: 60px; // 对应减少高度
+    position: relative;
+
+    .p-lang-label {
+      text-align: left;
+      color: var(--el-color-white);
+      font-weight: 700;
+    }
+  }
 
   &-bar {
-    height: 47px;
+    height: 60px; // 增加高度以适应精简布局
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -759,6 +595,7 @@ onMounted(async () => {
       flex-direction: row;
       justify-content: space-between;
       align-items: center;
+      padding: 0 20px; // 增加左右间距
 
       .p-dropdown-default {
         display: flex;
@@ -790,9 +627,9 @@ onMounted(async () => {
           display: flex;
           align-items: center;
           gap: 20px;
-          padding: 5px 15px;
+          padding: 8px 20px; // 增加内边距
           background: rgba(255, 255, 255, 0.1);
-          border-radius: 20px;
+          border-radius: 25px; // 增加圆角
 
           .p-username {
             color: #fff;
@@ -817,9 +654,9 @@ onMounted(async () => {
           }
 
           .p-btn-logout {
-            height: 26px;
-            padding: 0 12px;
-            border-radius: 13px;
+            height: 32px; // 增加按钮高度
+            padding: 0 16px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
           }
@@ -827,19 +664,19 @@ onMounted(async () => {
 
         .p-btn-login,
         .p-btn-register {
-          padding: 0 15px;
-          min-width: 80px;
-          height: 28px;
+          padding: 0 20px; // 增加按钮宽度
+          min-width: 90px;
+          height: 36px; // 增加按钮高度
           cursor: pointer;
-          border-radius: 14px;
+          border-radius: 18px;
           color: #fff;
-          line-height: 28px;
+          line-height: 36px;
           text-align: center;
           font-size: 14px;
           box-sizing: border-box;
-          box-shadow: 0 1px 2px 0 rgba(6, 39, 121, 0.16);
-          border-radius: 4px;
+          box-shadow: 0 2px 4px rgba(6, 39, 121, 0.2);
           border-width: 0px;
+          font-weight: 500;
         }
 
         .p-btn-login {
@@ -848,249 +685,6 @@ onMounted(async () => {
 
         .p-btn-register {
           background: #67c23a;
-        }
-      }
-    }
-  }
-
-  &-wrapper {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 10;
-    justify-content: center;
-    align-items: center;
-    height: 140px;
-    position: relative;
-
-    .p-lang-label {
-      text-align: left;
-      color: var(--el-color-white);
-      font-weight: 700;
-    }
-  }
-
-  &-menu {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    flex: 1;
-    border: 0px solid #75abf1;
-    border-top-width: 1px;
-    background: var(--herder-bg-down);
-    backdrop-filter: blur(4px);
-    position: relative;
-
-    .p-menu-wrapper {
-      max-width: var(--web-max-width);
-      min-width: var(--web-min-width);
-      display: flex;
-      flex-direction: row;
-      height: 100%;
-      flex: 1;
-
-      .p-other {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        flex: 1;
-
-        .p-nav {
-          display: flex;
-          flex-direction: row;
-          height: 100%;
-          gap: 10px;
-
-          .p-nav-item {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center;
-            min-width: 75px;
-            position: relative;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
-            text-align: center;
-            cursor: pointer;
-
-            &::after {
-              content: '';
-              position: absolute;
-              opacity: 0;
-              left: 50%;
-              bottom: 21px;
-              height: 2px;
-              width: 60%;
-              background: #fff;
-              transition: all 0.3s ease-out;
-              transform: translateX(-50%) scaleX(0);
-            }
-
-            &:hover {
-              &:after {
-                opacity: 1;
-                transform: translateX(-50%) scaleX(1);
-              }
-              .p-submenu {
-                transform: translateY(0);
-                opacity: 1;
-              }
-            }
-
-            .category {
-              padding: 0;
-              font-size: 16px;
-              color: #fbfbfb;
-              text-shadow: 0 0 2px #6698c5;
-              transition: all 0.3s;
-              position: relative;
-              z-index: 1;
-
-              .p-hot {
-                position: absolute;
-                right: -20px;
-                top: -10px;
-                color: #ff6b6b;
-                font-size: 16px;
-              }
-            }
-
-            .p-submenu {
-              position: fixed;
-              right: 0;
-              left: 0;
-              top: 0;
-              width: 100%;
-              transition: all 0.4s;
-              transform: translateY(-100%);
-              opacity: 0;
-              padding-top: 94px;
-              background: var(--herder-bg-down);
-              z-index: -1;
-
-              .p-submenu-wrapper {
-                display: flex;
-                flex-direction: row;
-                align-items: flex-end;
-                overflow: hidden;
-                max-width: var(--web-submenu-max-width);
-                width: 100%;
-                justify-content: flex-start;
-                margin: 0 auto;
-                gap: 20px;
-
-                .p-submenu-item {
-                  display: flex;
-                  flex-direction: row;
-                  justify-content: space-between;
-                  align-items: center;
-                  gap: 20px;
-                  cursor: pointer;
-                  transition: transform 0.3s;
-
-                  &:hover {
-                    transform: scale(1.05);
-                  }
-
-                  .p-item-img {
-                    width: 168px;
-                    height: 150px;
-                  }
-
-                  .p-item-right {
-                    display: flex;
-                    flex-direction: column;
-                    width: 120px;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 20px;
-
-                    .p-label {
-                      color: var(--el-color-white);
-                      font-size: 25px;
-                    }
-
-                    .p-btn {
-                      background: url('@/assets/web/start.png') no-repeat;
-                      background-size: 100% 100%;
-                      width: 80px;
-                      height: 28px;
-                      font-size: 12px;
-                      color: var(--el-color-white);
-                      line-height: 28px;
-                      text-align: center;
-                    }
-                  }
-                }
-
-                .p-item-more {
-                  height: 150px;
-                  display: flex;
-                  flex-direction: column;
-                  justify-content: space-around;
-                  align-items: center;
-                  margin: 20px 0;
-
-                  .p-more {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: var(--el-color-white);
-                    text-shadow: 0 2px 4px rgba(83, 138, 224, 0.5);
-                  }
-                  .p-num {
-                    font-size: 60px;
-                    font-weight: 700;
-                    color: var(--el-color-white);
-                    flex: 1;
-                  }
-                  .p-txt {
-                    .p-more;
-                  }
-                }
-              }
-            }
-          }
-          .active {
-            &::after {
-              opacity: 1;
-              transform: translateX(-50%) scaleX(1);
-            }
-          }
-        }
-
-        .p-other-right {
-          display: flex;
-          flex-direction: row;
-          justify-content: flex-end;
-          align-items: center;
-          gap: 30px;
-
-          .p-other-item {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-end;
-            z-index: 10;
-            cursor: pointer;
-
-            .p-icon-img {
-              font-size: 27px;
-              color: var(--el-color-white);
-            }
-
-            span {
-              text-shadow: 0 0 2px #6698c5;
-              margin: 5px 0 0 4px;
-              font-size: 16px;
-              color: var(--el-color-white);
-            }
-          }
         }
       }
     }
