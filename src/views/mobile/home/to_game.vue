@@ -239,9 +239,10 @@ async function toggleFavorite() {
   }
 }
 
-// 自动添加到最近游戏
+// 自动添加到最近游戏 - 页面进入时立即调用
 async function addToRecentGames() {
   if (!store.isLogin()) {
+    console.log('用户未登录，跳过添加到最近游戏')
     return
   }
 
@@ -251,10 +252,17 @@ async function addToRecentGames() {
       supplier_code: gameInfo.value.supplier_code
     }
 
-    await api.userGameRecentAdd(params)
-    console.log('已自动添加到最近游戏')
+    console.log('正在添加到最近游戏:', params)
+
+    const resp = await api.userGameRecentAdd(params)
+
+    if (resp && resp.code === 200) {
+      console.log('已成功添加到最近游戏')
+    } else {
+      console.warn('添加到最近游戏失败:', resp?.message || '未知错误')
+    }
   } catch (error) {
-    console.error('添加到最近游戏失败:', error)
+    console.error('添加到最近游戏异常:', error)
     // 这里不显示错误提示，因为是后台自动操作
   }
 }
@@ -278,6 +286,7 @@ async function checkFavoriteStatus() {
         game.game_code === gameInfo.value.game_code &&
         game.supplier_code === gameInfo.value.supplier_code
       )
+      console.log('收藏状态检查完成:', isFavorite.value)
     }
   } catch (error) {
     console.error('检查收藏状态失败:', error)
@@ -295,6 +304,8 @@ async function getGameInfo() {
       provider: '游戏厂商',
       type: '电子游戏'
     }
+
+    console.log('游戏信息初始化完成:', gameInfo.value)
   } catch (error) {
     console.error('获取游戏信息失败:', error)
   }
@@ -307,11 +318,6 @@ async function enterGame() {
   startLoadingProgress()
 
   try {
-    // 自动添加到最近游戏（进入游戏时添加）
-    if (store.isLogin()) {
-      addToRecentGames()
-    }
-
     const resp = await invokeApi('gameUrl', {
       gameCode: route.params.game,
       api_code: route.params.code,
@@ -369,6 +375,10 @@ onMounted(async () => {
       getGameInfo(),
       checkFavoriteStatus()
     ])
+
+    // 初始化完成后立即添加到最近游戏
+    await addToRecentGames()
+
   } catch (error) {
     console.error('初始化失败:', error)
   } finally {
