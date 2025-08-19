@@ -69,6 +69,10 @@ const api: Api = {
   gameList: (params = {}) =>
     request.get('/game/game_list', { params }),
 
+  // 热门游戏列表 - 新增接口
+  gameHotList: (params = {}) =>
+    request.get('/game/game_hot_list', { params }),
+
   // 供应商列表
   supplierList: (params = {}) =>
     request.get('/game/supplier_list', { params }),
@@ -120,6 +124,30 @@ const api: Api = {
   // 获取用户信息
   getUserInfo: (params = {}) =>
     request.get('/user/user_info', { params }),
+
+  // 用户最近游戏列表 - 新增接口
+  userGameRecentList: (params = {}) =>
+    request.get('/user/user_game_recent_list', { params }),
+
+  // 用户收藏游戏列表 - 新增接口
+  userGameLoveList: (params = {}) =>
+    request.get('/user/user_game_love_list', { params }),
+
+  // 添加最近游戏 - 新增接口
+  userGameRecentAdd: (params = {}) =>
+    request.get('/user/user_game_recent_add', { params }),
+
+  // 添加收藏游戏 - 新增接口
+  userGameLoveAdd: (params = {}) =>
+    request.get('/user/user_game_love_add', { params }),
+
+  // 删除最近游戏 - 新增接口
+  userGameRecentDel: (params = {}) =>
+    request.get('/user/user_game_recent_del', { params }),
+
+  // 删除收藏游戏 - 新增接口
+  userGameLoveDel: (params = {}) =>
+    request.get('/user/user_game_love_del', { params }),
 
   // ========== 财务模块 ==========
   // 充值信息获取
@@ -217,6 +245,7 @@ export const infoApi = {
 export const gameApi = {
   gameTypeList: api.gameTypeList,
   gameList: api.gameList,
+  gameHotList: api.gameHotList, // 新增
   supplierList: api.supplierList,
   bannerList: api.bannerList,
   gameUrl: api.gameUrl,
@@ -232,6 +261,12 @@ export const userApi = {
   updateWithdrawPassword: api.updateWithdrawPassword,
   updateUserInfo: api.updateUserInfo,
   getUserInfo: api.getUserInfo,
+  userGameRecentList: api.userGameRecentList, // 新增
+  userGameLoveList: api.userGameLoveList, // 新增
+  userGameRecentAdd: api.userGameRecentAdd, // 新增
+  userGameLoveAdd: api.userGameLoveAdd, // 新增
+  userGameRecentDel: api.userGameRecentDel, // 新增
+  userGameLoveDel: api.userGameLoveDel, // 新增
 }
 
 export const moneyApi = {

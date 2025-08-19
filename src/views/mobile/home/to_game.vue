@@ -4,7 +4,23 @@
       left-arrow
       :title="$t('mine.toGame')"
       @click-left="onClickLeft"
-    />
+    >
+      <!-- 右侧收藏按钮 -->
+      <template #right>
+        <div
+          v-if="store.isLogin()"
+          class="nav-favorite-btn"
+          @click="toggleFavorite"
+        >
+          <van-icon
+            :name="isFavorite ? 'star' : 'star-o'"
+            :color="isFavorite ? '#ff6b6b' : '#666'"
+            size="20"
+          />
+        </div>
+      </template>
+    </van-nav-bar>
+
     <div class="m-toGame">
       <!-- 页面初始加载状态 -->
       <div class="m-loading" v-if="loading">
@@ -13,7 +29,18 @@
 
       <!-- 主内容区域 -->
       <div class="m-game-info" v-else>
-        <div class="m-title">{{ $t('enterGame') }}</div>
+        <div class="m-title">
+          {{ gameInfo.name || $t('enterGame') }}
+          <!-- 收藏状态指示器 -->
+          <van-icon
+            v-if="store.isLogin() && isFavorite"
+            name="star"
+            color="#ff6b6b"
+            size="18"
+            class="title-favorite-icon"
+          />
+        </div>
+
         <div class="m-content">
           <!-- 游戏启动加载状态 -->
           <div v-if="entering" class="m-entering-overlay">
@@ -29,6 +56,49 @@
             </div>
           </div>
 
+          <!-- 游戏信息展示区域 -->
+          <div class="m-game-details">
+            <!-- 游戏基本信息 -->
+            <div class="m-game-basic-info">
+              <div class="info-item" v-if="gameInfo.provider">
+                <span class="label">游戏厂商：</span>
+                <span class="value">{{ gameInfo.provider }}</span>
+              </div>
+              <div class="info-item" v-if="gameInfo.type">
+                <span class="label">游戏类型：</span>
+                <span class="value">{{ gameInfo.type }}</span>
+              </div>
+              <div class="info-item" v-if="gameInfo.status">
+                <span class="label">游戏状态：</span>
+                <van-tag
+                  :type="gameInfo.status === 'online' ? 'success' : 'warning'"
+                  size="small"
+                >
+                  {{ gameInfo.status === 'online' ? '正常' : '维护中' }}
+                </van-tag>
+              </div>
+            </div>
+
+            <!-- 收藏操作区域 -->
+            <div v-if="store.isLogin()" class="m-favorite-section">
+              <van-button
+                :type="isFavorite ? 'danger' : 'default'"
+                :plain="!isFavorite"
+                size="small"
+                :loading="favoriteLoading"
+                @click="toggleFavorite"
+                class="favorite-button"
+              >
+                <van-icon
+                  :name="isFavorite ? 'star' : 'star-o'"
+                  :color="isFavorite ? '#fff' : '#ff6b6b'"
+                  size="16"
+                />
+                {{ isFavorite ? $t('game.favorited') : $t('game.addToFavorite') }}
+              </van-button>
+            </div>
+          </div>
+
           <!-- 进入游戏按钮 -->
           <van-button
             size="large"
@@ -36,9 +106,9 @@
             class="m-enter-btn"
             @click="enterGame"
             :loading="entering"
-            :disabled="entering"
+            :disabled="entering || gameInfo.status === 'maintenance'"
           >
-            {{ entering ? currentLoadingText : $t('enterGame') }}
+            {{ entering ? currentLoadingText : (gameInfo.status === 'maintenance' ? $t('maintenance') : $t('enterGame')) }}
           </van-button>
         </div>
       </div>
@@ -50,10 +120,11 @@
 <script setup lang="ts">
 import { useAppStore } from '@/stores/app'
 import { invokeApi } from '@/utils/tools'
-import { showDialog } from 'vant'
+import { showDialog, showToast } from 'vant'
 import { onMounted, ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import api from '@/api'
 
 const lobbyUrl = window.location.origin;
 defineOptions({ name: 'ToGame' })
@@ -65,6 +136,22 @@ const router = useRouter()
 const gameLink = ref<HTMLAnchorElement>()
 const loading = ref(false)
 const entering = ref(false)
+
+// 收藏相关状态
+const isFavorite = ref(false)
+const favoriteLoading = ref(false)
+
+// 游戏信息
+const gameInfo = ref({
+  id: route.params.game,
+  code: route.params.code,
+  name: '',
+  provider: '',
+  type: '',
+  status: 'online', // online, maintenance
+  supplier_code: route.params.code,
+  game_code: route.params.game
+})
 
 // 加载进度相关
 const progress = ref(0)
@@ -120,6 +207,99 @@ function onClickLeft() {
   router.back()
 }
 
+// 收藏/取消收藏功能
+async function toggleFavorite() {
+  if (!store.isLogin()) {
+    showToast(t('game.loginRequired'))
+    return
+  }
+
+  favoriteLoading.value = true
+
+  try {
+    const apiCall = isFavorite.value ? api.userGameLoveDel : api.userGameLoveAdd
+    const params = {
+      game_code: gameInfo.value.game_code,
+      supplier_code: gameInfo.value.supplier_code
+    }
+
+    const resp = await apiCall(params)
+
+    if (resp && resp.code === 200) {
+      isFavorite.value = !isFavorite.value
+      showToast(isFavorite.value ? t('game.addedToFavorite') : t('game.removedFromFavorite'))
+    } else {
+      throw new Error(resp?.message || '操作失败')
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+    showToast((error as Error).message || '操作失败，请重试')
+  } finally {
+    favoriteLoading.value = false
+  }
+}
+
+// 自动添加到最近游戏
+async function addToRecentGames() {
+  if (!store.isLogin()) {
+    return
+  }
+
+  try {
+    const params = {
+      game_code: gameInfo.value.game_code,
+      supplier_code: gameInfo.value.supplier_code
+    }
+
+    await api.userGameRecentAdd(params)
+    console.log('已自动添加到最近游戏')
+  } catch (error) {
+    console.error('添加到最近游戏失败:', error)
+    // 这里不显示错误提示，因为是后台自动操作
+  }
+}
+
+// 检查游戏是否已收藏
+async function checkFavoriteStatus() {
+  if (!store.isLogin()) {
+    return
+  }
+
+  try {
+    // 获取收藏游戏列表，检查当前游戏是否在其中
+    const resp = await api.userGameLoveList({
+      page: 1,
+      limit: 100 // 获取足够多的数据来检查
+    })
+
+    if (resp && resp.code === 200 && resp.data?.list) {
+      const favoriteGames = resp.data.list
+      isFavorite.value = favoriteGames.some(game =>
+        game.game_code === gameInfo.value.game_code &&
+        game.supplier_code === gameInfo.value.supplier_code
+      )
+    }
+  } catch (error) {
+    console.error('检查收藏状态失败:', error)
+  }
+}
+
+// 获取游戏基本信息
+async function getGameInfo() {
+  try {
+    // 这里可以调用API获取游戏详细信息
+    // 目前使用路由参数的基本信息
+    gameInfo.value = {
+      ...gameInfo.value,
+      name: `游戏 ${route.params.game}`,
+      provider: '游戏厂商',
+      type: '电子游戏'
+    }
+  } catch (error) {
+    console.error('获取游戏信息失败:', error)
+  }
+}
+
 async function enterGame() {
   if (entering.value) return
 
@@ -127,6 +307,11 @@ async function enterGame() {
   startLoadingProgress()
 
   try {
+    // 自动添加到最近游戏（进入游戏时添加）
+    if (store.isLogin()) {
+      addToRecentGames()
+    }
+
     const resp = await invokeApi('gameUrl', {
       gameCode: route.params.game,
       api_code: route.params.code,
@@ -177,10 +362,20 @@ async function enterGame() {
 
 onMounted(async () => {
   loading.value = true
-  // 简单的页面初始化，不再需要获取余额等复杂逻辑
-  setTimeout(() => {
-    loading.value = false
-  }, 500)
+
+  try {
+    // 并行执行初始化任务
+    await Promise.all([
+      getGameInfo(),
+      checkFavoriteStatus()
+    ])
+  } catch (error) {
+    console.error('初始化失败:', error)
+  } finally {
+    setTimeout(() => {
+      loading.value = false
+    }, 500)
+  }
 })
 
 onUnmounted(() => {
@@ -196,6 +391,19 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
+
+  // 导航栏收藏按钮
+  .nav-favorite-btn {
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
 
   .m-toGame {
     display: flex;
@@ -231,14 +439,74 @@ onUnmounted(() => {
         justify-content: center;
         align-items: center;
         font-weight: 500;
+        position: relative;
+
+        .title-favorite-icon {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
       }
 
       .m-content {
-        padding: 40px 20px;
+        padding: 20px;
         display: flex;
         flex-direction: column;
         align-items: center;
         position: relative;
+
+        // 游戏详情区域
+        .m-game-details {
+          width: 100%;
+          margin-bottom: 20px;
+
+          .m-game-basic-info {
+            margin-bottom: 16px;
+
+            .info-item {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 8px 0;
+              border-bottom: 1px solid #f5f5f5;
+
+              &:last-child {
+                border-bottom: none;
+              }
+
+              .label {
+                font-size: 14px;
+                color: #666;
+                font-weight: 500;
+              }
+
+              .value {
+                font-size: 14px;
+                color: #333;
+              }
+            }
+          }
+
+          .m-favorite-section {
+            display: flex;
+            justify-content: center;
+            padding: 12px 0;
+
+            .favorite-button {
+              min-width: 120px;
+              height: 36px;
+              border-radius: 18px;
+              font-size: 14px;
+              font-weight: 500;
+              transition: all 0.3s ease;
+
+              &:active {
+                transform: scale(0.98);
+              }
+            }
+          }
+        }
 
         .m-enter-btn {
           width: 200px;
@@ -249,6 +517,10 @@ onUnmounted(() => {
 
           &:disabled {
             opacity: 0.7;
+          }
+
+          &:active:not(:disabled) {
+            transform: scale(0.98);
           }
         }
 

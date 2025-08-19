@@ -106,27 +106,75 @@
           <div class="m-scroll-content">
             <div class="m-scroll-list-wrapper">
               <div class="m-gameNav-container-list">
-                <!-- 热门游戏列表 - 每行3个，小图标+标题 -->
-                <div v-if="isHotGameType" class="m-content-games">
-                  <div
-                    class="m-game-item"
-                    v-for="(item, idx) in gameList"
-                    :key="item.id"
-                    @click.stop="playGameHandler(item)"
-                  >
-                    <van-image
-                      :src="getImgUrl(item.game_img_url)"
-                      class="m-game-img"
-                      fit="fill"
+                <!-- 热门游戏类型 - 显示选项卡和对应内容 -->
+                <div v-if="isHotGameType" class="m-hot-games-section">
+                  <!-- 热门游戏选项卡 -->
+                  <div class="m-hot-tabs">
+                    <div
+                      class="m-hot-tab-item"
+                      :class="{ active: activeHotTab === 'hot' }"
+                      @click="switchHotTab('hot')"
                     >
-                      <template v-slot:error>
-                        <van-icon name="warning-o" class="m-ico" size="22" />
-                      </template>
-                    </van-image>
-                    <div class="m-game-name">{{ item.game_name }}</div>
-                    <div v-if="item.is_hot_text" class="m-game-tag">{{ item.is_hot_text }}</div>
-                    <!-- 游戏维护状态标识 -->
-                    <div v-if="item.is_can_run === 0" class="m-game-status">维护中</div>
+                      {{ $t('game.hot') }}
+                    </div>
+                    <div
+                      class="m-hot-tab-item"
+                      :class="{ active: activeHotTab === 'recent' }"
+                      @click="switchHotTab('recent')"
+                    >
+                      {{ $t('game.recent') }}
+                    </div>
+                    <div
+                      class="m-hot-tab-item"
+                      :class="{ active: activeHotTab === 'favorite' }"
+                      @click="switchHotTab('favorite')"
+                    >
+                      {{ $t('game.favorite') }}
+                    </div>
+                  </div>
+
+                  <!-- 热门游戏内容区域 -->
+                  <div class="m-hot-content">
+                    <!-- 未登录提示 -->
+                    <div v-if="!store.isLogin() && (activeHotTab === 'recent' || activeHotTab === 'favorite')"
+                         class="m-login-tip">
+                      <div class="m-login-tip-content">
+                        <van-icon name="warning-o" size="24" color="#999" />
+                        <p>{{ $t(activeHotTab === 'recent' ? 'game.loginToViewRecent' : 'game.loginToViewFavorite') }}</p>
+                        <van-button type="primary" size="small" @click="loginHandler">
+                          {{ $t('game.loginNow') }}
+                        </van-button>
+                      </div>
+                    </div>
+
+                    <!-- 游戏列表 -->
+                    <div v-else class="m-content-games">
+                      <div
+                        class="m-game-item"
+                        v-for="(item, idx) in currentGameList"
+                        :key="item.id"
+                        @click.stop="playGameHandler(item)"
+                      >
+                        <van-image
+                          :src="getImgUrl(item.game_img_url)"
+                          class="m-game-img"
+                          fit="fill"
+                        >
+                          <template v-slot:error>
+                            <van-icon name="warning-o" class="m-ico" size="22" />
+                          </template>
+                        </van-image>
+                        <div class="m-game-name">{{ item.game_name }}</div>
+                        <div v-if="item.is_hot_text" class="m-game-tag">{{ item.is_hot_text }}</div>
+                        <!-- 游戏维护状态标识 -->
+                        <div v-if="item.is_can_run === 0" class="m-game-status">{{ $t('maintenance') }}</div>
+                      </div>
+                    </div>
+
+                    <!-- 空数据状态 -->
+                    <div v-if="currentGameList.length === 0 && !loading && store.isLogin()" class="m-empty">
+                      <van-empty :description="getEmptyDescription()" />
+                    </div>
                   </div>
                 </div>
 
@@ -149,23 +197,23 @@
                     </van-image>
                     <!-- 供应商名称显示在图片底部 -->
                     <div class="m-supplier-name">{{ supplier.name }}</div>
-                    <div v-if="supplier.is_can_run === 0" class="m-supplier-status">维护中</div>
+                    <div v-if="supplier.is_can_run === 0" class="m-supplier-status">{{ $t('maintenance') }}</div>
                   </div>
                 </div>
 
                 <!-- 加载更多状态 -->
                 <div v-if="loadingMore" class="m-loading-more">
-                  <van-loading>加载中...</van-loading>
+                  <van-loading>{{ $t('loading') }}</van-loading>
                 </div>
 
                 <!-- 没有更多数据 -->
-                <div v-else-if="!hasMore && (gameList.length > 0 || supplierList.length > 0)" class="m-no-more">
-                  没有更多数据了
+                <div v-else-if="!hasMore && (currentGameList.length > 0 || supplierList.length > 0)" class="m-no-more">
+                  {{ $t('noMore') }}
                 </div>
 
                 <!-- 空数据状态 -->
-                <div v-if="gameList.length === 0 && supplierList.length === 0 && !loading" class="m-empty">
-                  <van-empty description="暂无数据" />
+                <div v-if="!isHotGameType && gameList.length === 0 && supplierList.length === 0 && !loading" class="m-empty">
+                  <van-empty :description="$t('noData')" />
                 </div>
               </div>
             </div>
@@ -214,18 +262,88 @@ const banners = ref([])
 const notices = ref([])
 const gameTypes = ref([])
 const currentGameType = ref(null)
+
+// 游戏列表数据
 const gameList = ref([])
+const hotGameList = ref([])      // 热门游戏列表
+const recentGameList = ref([])   // 最近游戏列表
+const favoriteGameList = ref([]) // 收藏游戏列表
 const supplierList = ref([])
+
+// 状态控制
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
 const currentPage = ref(1)
 const scrollContainer = ref(null)
 
+// 热门游戏选项卡状态
+const activeHotTab = ref('hot') // 'hot' | 'recent' | 'favorite'
+
 // ==================== 计算属性 ====================
 const isHotGameType = computed(() => {
   return currentGameType.value?.game_type === 'HOT'
 })
+
+// 根据当前选中的选项卡返回对应的游戏列表
+const currentGameList = computed(() => {
+  switch (activeHotTab.value) {
+    case 'hot':
+      return hotGameList.value
+    case 'recent':
+      return recentGameList.value
+    case 'favorite':
+      return favoriteGameList.value
+    default:
+      return hotGameList.value
+  }
+})
+
+// 获取空数据描述文本
+const getEmptyDescription = () => {
+  switch (activeHotTab.value) {
+    case 'hot':
+      return t('game.noHotGames')
+    case 'recent':
+      return t('game.noRecentGames')
+    case 'favorite':
+      return t('game.noFavoriteGames')
+    default:
+      return t('noData')
+  }
+}
+
+// ==================== 热门游戏选项卡切换 ====================
+async function switchHotTab(tab: string) {
+  if (activeHotTab.value === tab) {
+    return
+  }
+
+  // 检查登录状态
+  if (!store.isLogin() && (tab === 'recent' || tab === 'favorite')) {
+    loginHandler()
+    return
+  }
+
+  activeHotTab.value = tab
+  hasMore.value = true
+  currentPage.value = 1
+
+  // 根据选项卡加载对应数据
+  switch (tab) {
+    case 'hot':
+      if (hotGameList.value.length === 0) {
+        await getHotGames(1, false)
+      }
+      break
+    case 'recent':
+      await getRecentGames(1, false)
+      break
+    case 'favorite':
+      await getFavoriteGames(1, false)
+      break
+  }
+}
 
 // ==================== 通知相关方法 ====================
 async function getNotices() {
@@ -257,7 +375,149 @@ async function getGameTypes() {
   }
 }
 
-// ==================== 游戏列表相关方法 ====================
+// ==================== 热门游戏相关方法 ====================
+async function getHotGames(page = 1, isLoadMore = false) {
+  if (isLoadMore) {
+    loadingMore.value = true
+  } else {
+    loading.value = true
+  }
+
+  try {
+    const params = {
+      page: page,
+      limit: 20
+    }
+
+    const resp = await api.gameHotList(params)
+    if (resp && resp.code === 200 && resp.data) {
+      const newGames = resp.data.list || []
+
+      if (isLoadMore) {
+        hotGameList.value.push(...newGames)
+      } else {
+        hotGameList.value = newGames
+        currentPage.value = 1
+      }
+
+      const pagination = resp.data.pagination
+      hasMore.value = pagination?.has_more || false
+      currentPage.value = pagination?.current_page || page
+
+      console.log('热门游戏加载成功:', {
+        count: newGames.length,
+        total: hotGameList.value.length,
+        hasMore: hasMore.value
+      })
+    }
+  } catch (error) {
+    console.error('获取热门游戏失败:', error)
+    showToast(t('game.getHotGamesFailed'))
+  } finally {
+    loading.value = false
+    loadingMore.value = false
+  }
+}
+
+// ==================== 最近游戏相关方法 ====================
+async function getRecentGames(page = 1, isLoadMore = false) {
+  if (!store.isLogin()) {
+    recentGameList.value = []
+    return
+  }
+
+  if (isLoadMore) {
+    loadingMore.value = true
+  } else {
+    loading.value = true
+  }
+
+  try {
+    const params = {
+      page: page,
+      limit: 20
+    }
+
+    const resp = await api.userGameRecentList(params)
+    if (resp && resp.code === 200 && resp.data) {
+      const newGames = resp.data.list || []
+
+      if (isLoadMore) {
+        recentGameList.value.push(...newGames)
+      } else {
+        recentGameList.value = newGames
+        currentPage.value = 1
+      }
+
+      const pagination = resp.data.pagination
+      hasMore.value = pagination?.has_more || false
+      currentPage.value = pagination?.current_page || page
+
+      console.log('最近游戏加载成功:', {
+        count: newGames.length,
+        total: recentGameList.value.length,
+        hasMore: hasMore.value
+      })
+    }
+  } catch (error) {
+    console.error('获取最近游戏失败:', error)
+    showToast(t('game.getRecentGamesFailed'))
+  } finally {
+    loading.value = false
+    loadingMore.value = false
+  }
+}
+
+// ==================== 收藏游戏相关方法 ====================
+async function getFavoriteGames(page = 1, isLoadMore = false) {
+  if (!store.isLogin()) {
+    favoriteGameList.value = []
+    return
+  }
+
+  if (isLoadMore) {
+    loadingMore.value = true
+  } else {
+    loading.value = true
+  }
+
+  try {
+    const params = {
+      page: page,
+      limit: 20
+    }
+
+    const resp = await api.userGameLoveList(params)
+    if (resp && resp.code === 200 && resp.data) {
+      const newGames = resp.data.list || []
+
+      if (isLoadMore) {
+        favoriteGameList.value.push(...newGames)
+      } else {
+        favoriteGameList.value = newGames
+        currentPage.value = 1
+      }
+
+      const pagination = resp.data.pagination
+      hasMore.value = pagination?.has_more || false
+      currentPage.value = pagination?.current_page || page
+
+      console.log('收藏游戏加载成功:', {
+        count: newGames.length,
+        total: favoriteGameList.value.length,
+        hasMore: hasMore.value
+      })
+    }
+  } catch (error) {
+    console.error('获取收藏游戏失败:', error)
+    showToast(t('game.getFavoriteGamesFailed'))
+  } finally {
+    loading.value = false
+    loadingMore.value = false
+  }
+}
+
+// ==================== 游戏列表相关方法（保留用于其他游戏类型） ====================
 async function getGames(gameType = 'HOT', page = 1, isLoadMore = false) {
   if (isLoadMore) {
     loadingMore.value = true
@@ -358,27 +618,46 @@ async function selectGameHandler(gameItem, idx) {
   }
 
   currentGameType.value = gameItem
+
+  // 清空所有游戏列表
   gameList.value = []
+  hotGameList.value = []
+  recentGameList.value = []
+  favoriteGameList.value = []
   supplierList.value = []
+
   hasMore.value = true
   currentPage.value = 1
 
   if (gameItem.game_type === 'HOT') {
-    await getGames('HOT', 1, false)
+    // 切换到热门游戏类型，默认选中热门选项卡
+    activeHotTab.value = 'hot'
+    await getHotGames(1, false)
   } else {
     await getSuppliers(gameItem.game_type, 1, false)
   }
 }
 
 async function loadMore() {
-  if (!currentGameType.value || !hasMore.value || loadingMore.value) {
+  if (!hasMore.value || loadingMore.value) {
     return
   }
 
   const nextPage = currentPage.value + 1
 
   if (isHotGameType.value) {
-    await getGames(currentGameType.value.game_type, nextPage, true)
+    // 根据当前选中的选项卡加载更多数据
+    switch (activeHotTab.value) {
+      case 'hot':
+        await getHotGames(nextPage, true)
+        break
+      case 'recent':
+        await getRecentGames(nextPage, true)
+        break
+      case 'favorite':
+        await getFavoriteGames(nextPage, true)
+        break
+    }
   } else {
     await getSuppliers(currentGameType.value.game_type, nextPage, true)
   }
@@ -546,6 +825,15 @@ async function refreshUserInfo() {
     const resp = await api.getUserInfo()
     if (resp && resp.data) {
       store.setUser(resp.data)
+
+      // 如果当前是热门游戏类型且选中了最近或收藏选项卡，重新加载数据
+      if (isHotGameType.value && (activeHotTab.value === 'recent' || activeHotTab.value === 'favorite')) {
+        if (activeHotTab.value === 'recent') {
+          await getRecentGames(1, false)
+        } else if (activeHotTab.value === 'favorite') {
+          await getFavoriteGames(1, false)
+        }
+      }
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
@@ -569,12 +857,14 @@ async function init() {
     const hotGameType = gameTypes.value.find(type => type.game_type === 'HOT')
     if (hotGameType) {
       currentGameType.value = hotGameType
-      await getGames('HOT', 1, false)
+      activeHotTab.value = 'hot'
+      await getHotGames(1, false)
     } else if (gameTypes.value.length > 0) {
       const firstType = gameTypes.value[0]
       currentGameType.value = firstType
       if (firstType.game_type === 'HOT') {
-        await getGames('HOT', 1, false)
+        activeHotTab.value = 'hot'
+        await getHotGames(1, false)
       } else {
         await getSuppliers(firstType.game_type, 1, false)
       }
@@ -802,6 +1092,62 @@ onMounted(() => {
 
       .m-gameNav-container-list {
         padding: 10px 10px 10px 0px;
+
+        // 热门游戏区域样式
+        .m-hot-games-section {
+          // 热门游戏选项卡样式
+          .m-hot-tabs {
+            display: flex;
+            background: #fff;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+            .m-hot-tab-item {
+              flex: 1;
+              text-align: center;
+              padding: 8px 12px;
+              font-size: 14px;
+              font-weight: 500;
+              color: #666;
+              border-radius: 6px;
+              transition: all 0.3s ease;
+              cursor: pointer;
+
+              &.active {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+              }
+
+              &:hover:not(.active) {
+                background: #f5f5f5;
+                color: #333;
+              }
+            }
+          }
+
+          // 热门游戏内容区域
+          .m-hot-content {
+            .m-login-tip {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              padding: 40px 20px;
+
+              .m-login-tip-content {
+                text-align: center;
+                color: #999;
+
+                p {
+                  margin: 12px 0 16px 0;
+                  font-size: 14px;
+                }
+              }
+            }
+          }
+        }
 
         // 热门游戏列表样式 - 每行3个小图标，1:1比例
         .m-content-games {
