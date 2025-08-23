@@ -167,7 +167,7 @@
                         <div class="m-game-name">{{ item.game_name }}</div>
                         <div v-if="item.is_hot_text" class="m-game-tag">{{ item.is_hot_text }}</div>
                         <!-- 游戏维护状态标识 -->
-                        <div v-if="item.is_can_run === 0" class="m-game-status">{{ $t('maintenance') }}</div>
+                        <div v-if="item.is_can_run === 0" class="m-game-status">{{ $t('mine.maintenance') }}</div>
                       </div>
                     </div>
 
@@ -197,7 +197,7 @@
                     </van-image>
                     <!-- 供应商名称显示在图片底部 -->
                     <div class="m-supplier-name">{{ supplier.name }}</div>
-                    <div v-if="supplier.is_can_run === 0" class="m-supplier-status">{{ $t('maintenance') }}</div>
+                    <div v-if="supplier.is_can_run === 0" class="m-supplier-status">{{ $t('mine.maintenance') }}</div>
                   </div>
                 </div>
 
