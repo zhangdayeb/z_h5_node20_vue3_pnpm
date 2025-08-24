@@ -200,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAppStore } from '@/stores/app'
@@ -246,6 +246,35 @@ const columns = ref([
 ])
 
 const currencyIndex = ref<number>(0)
+
+// 获取邀请码的通用函数 - 支持多种参数名称
+const getInvitationCodeFromUrl = () => {
+  const queryParams = route.query || {}
+  const routeParams = route.params || {}
+
+  // 优先级顺序：invite_code > agent_code > invite
+  const inviteCode = queryParams.invite_code ||
+                     queryParams.agent_code ||
+                     queryParams.invite ||
+                     routeParams.invite_code ||
+                     routeParams.agent_code ||
+                     routeParams.invite ||
+                     ''
+
+  // 开发环境下打印调试信息
+  if (process.env.NODE_ENV === 'development') {
+    console.log('PC端邀请码参数检测:', {
+      fullUrl: window.location.href,
+      query: queryParams,
+      params: routeParams,
+      detectedInviteCode: inviteCode,
+      supportedParams: ['invite_code', 'agent_code', 'invite']
+    })
+  }
+
+  return inviteCode
+}
+
 const frm = ref({
   name: '',
   password: '',
@@ -256,11 +285,24 @@ const frm = ref({
   currency: columns.value[currencyIndex.value].text,
   captcha: '',
   key: '',
-  invite_code: route.query?.invite_code ?? route.params?.invite_code ?? '',
+  invite_code: getInvitationCodeFromUrl(), // 使用新的获取函数
   lang: columns.value[currencyIndex.value].value,
   register_site: '',
   sms_code: '',
 })
+
+// 监听路由变化，动态更新邀请码（如果用户通过不同链接访问）
+watch(
+  () => route.query,
+  (newQuery) => {
+    const newInviteCode = getInvitationCodeFromUrl()
+    if (newInviteCode && newInviteCode !== frm.value.invite_code) {
+      frm.value.invite_code = newInviteCode
+      console.log('PC端检测到新的邀请码:', newInviteCode)
+    }
+  },
+  { deep: true }
+)
 
 // 表单验证规则
 const rules = computed(() => ({
